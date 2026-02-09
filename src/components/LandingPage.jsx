@@ -1,9 +1,12 @@
-import { ArrowRight, Calendar, Clock, MapPin, Trophy, Users, Zap } from 'lucide-react';
+import { ArrowRight, Calendar, Clock, MapPin, Trophy, Users, Zap, LogOut, User } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Button, Card, Input, Badge } from './ui';
+import { useAuth } from '../contexts/AuthContext';
 
 // Navigation Bar Component
 export const Navbar = () => {
+  const { isLoggedIn, user, toggleMockAuth, logout } = useAuth();
+
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 glass border-b border-[var(--border-subtle)]">
       <div className="max-w-7xl mx-auto px-6 lg:px-12">
@@ -24,6 +27,11 @@ export const Navbar = () => {
             <Link to="/facilities" className="text-[var(--text-secondary)] hover:text-[var(--accent-green)] transition-colors font-medium">
               Facilities
             </Link>
+            {isLoggedIn && (
+              <Link to="/dashboard" className="text-[var(--text-secondary)] hover:text-[var(--accent-green)] transition-colors font-medium">
+                My Dashboard
+              </Link>
+            )}
             <Link to="/about" className="text-[var(--text-secondary)] hover:text-[var(--accent-green)] transition-colors font-medium">
               About
             </Link>
@@ -32,18 +40,51 @@ export const Navbar = () => {
             </Link>
           </div>
 
-          {/* Auth Buttons */}
+          {/* Auth Section */}
           <div className="flex items-center gap-4">
-            <Link to="/login">
-              <Button variant="ghost" size="sm">
-                Login
-              </Button>
-            </Link>
-            <Link to="/signup">
-              <Button variant="primary" size="sm">
-                Sign Up
-              </Button>
-            </Link>
+            {/* Mock Auth Toggle (Dev Tool) */}
+            <button
+              onClick={toggleMockAuth}
+              className="flex items-center gap-2 px-3 py-2 rounded-lg bg-[var(--bg-tertiary)] border border-[var(--border-subtle)] hover:border-[var(--accent-green)] transition-all text-sm font-medium"
+              title="Toggle Mock Login (Dev Tool)"
+            >
+              {isLoggedIn ? (
+                <>
+                  <User className="w-4 h-4 text-[var(--accent-green)]" />
+                  <span className="text-[var(--accent-green)]">Logged In</span>
+                </>
+              ) : (
+                <>
+                  <User className="w-4 h-4 text-[var(--text-muted)]" />
+                  <span className="text-[var(--text-muted)]">Guest</span>
+                </>
+              )}
+            </button>
+
+            {/* Conditional Auth Buttons */}
+            {isLoggedIn ? (
+              <>
+                <span className="text-[var(--text-secondary)] text-sm hidden md:block">
+                  {user?.name}
+                </span>
+                <Button variant="ghost" size="sm" onClick={logout} icon={<LogOut className="w-4 h-4" />}>
+                  Logout
+                </Button>
+              </>
+            ) : (
+              <>
+                <Link to="/login">
+                  <Button variant="ghost" size="sm">
+                    Login
+                  </Button>
+                </Link>
+                <Link to="/signup">
+                  <Button variant="primary" size="sm">
+                    Sign Up
+                  </Button>
+                </Link>
+              </>
+            )}
           </div>
         </div>
       </div>
@@ -124,16 +165,15 @@ export const QuickSearch = () => {
 
           <div className="flex flex-col gap-2">
             <label className="text-sm font-medium text-[var(--text-secondary)]">
-              Facility Type
+              Sport Type
             </label>
             <select className="w-full bg-[var(--bg-tertiary)] border border-[var(--border-subtle)] rounded-[var(--radius-md)] px-4 py-3 text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent-green)] focus:ring-2 focus:ring-[rgba(0,255,136,0.2)] transition-all appearance-none bg-[url('data:image/svg+xml;charset=UTF-8,%3csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2712%27 height=%278%27 viewBox=%270 0 12 8%27%3e%3cpath fill=%27%236b6b6b%27 d=%27M6 8L0 0h12z%27/%3e%3c/svg%3e')] bg-[length:12px] bg-[right_1rem_center] bg-no-repeat pr-10">
-              <option>🏀 Court A - Premium Basketball</option>
-              <option>🏀 Court B - Standard Basketball</option>
-              <option>🎾 Court C - Tennis Court 1</option>
-              <option>🎾 Court D - Tennis Court 2</option>
-              <option>🏸 Court E - Badminton Hall</option>
-              <option>🏐 Court F - Volleyball Arena</option>
-              <option>⚽ Court G - Multi-Purpose</option>
+              <option value="all">All Sports</option>
+              <option value="Basketball">🏀 Basketball</option>
+              <option value="Tennis">🎾 Tennis</option>
+              <option value="Badminton">🏸 Badminton</option>
+              <option value="Volleyball">🏐 Volleyball</option>
+              <option value="Multi-Purpose">⚽ Multi-Purpose</option>
             </select>
           </div>
 

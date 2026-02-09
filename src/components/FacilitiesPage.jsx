@@ -100,7 +100,8 @@ const FilterSection = ({ filters, setFilters, onApplyFilters }) => {
         <h3 className="text-xl font-bold">Filter Facilities</h3>
       </div>
       
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      {/* First Row - Main Filters */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
         {/* Sport Type Filter */}
         <div className="flex flex-col gap-2">
           <label className="text-sm font-medium text-[var(--text-secondary)]">
@@ -133,6 +134,19 @@ const FilterSection = ({ filters, setFilters, onApplyFilters }) => {
           />
         </div>
         
+        {/* Time Filter - NEW */}
+        <div className="flex flex-col gap-2">
+          <label className="text-sm font-medium text-[var(--text-secondary)]">
+            Time
+          </label>
+          <input 
+            type="time"
+            className="w-full bg-[var(--bg-tertiary)] border border-[var(--border-subtle)] rounded-[var(--radius-md)] px-4 py-3 text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent-green)] focus:ring-2 focus:ring-[rgba(0,255,136,0.2)] transition-all"
+            value={filters.time}
+            onChange={(e) => setFilters({...filters, time: e.target.value})}
+          />
+        </div>
+        
         {/* Price Range Filter */}
         <div className="flex flex-col gap-2">
           <label className="text-sm font-medium text-[var(--text-secondary)]">
@@ -149,20 +163,18 @@ const FilterSection = ({ filters, setFilters, onApplyFilters }) => {
             <option value="55">Up to ₱55</option>
           </select>
         </div>
-        
-        {/* Apply Button */}
-        <div className="flex flex-col gap-2">
-          <label className="text-sm font-medium text-[var(--text-secondary)] opacity-0">
-            Apply
-          </label>
-          <Button 
-            variant="primary" 
-            className="w-full !rounded-[var(--radius-md)]"
-            onClick={onApplyFilters}
-          >
-            Apply Filters
-          </Button>
-        </div>
+      </div>
+      
+      {/* Second Row - Apply Button */}
+      <div className="flex justify-end">
+        <Button 
+          variant="primary" 
+          className="!rounded-[var(--radius-md)] px-8"
+          onClick={onApplyFilters}
+          icon={<ArrowRight className="w-4 h-4" />}
+        >
+          Apply Filters
+        </Button>
       </div>
     </Card>
   );
@@ -260,6 +272,7 @@ export const FacilitiesPage = () => {
   const [filters, setFilters] = useState({
     sportType: 'all',
     date: '',
+    time: '',
     maxPrice: '999'
   });
   
