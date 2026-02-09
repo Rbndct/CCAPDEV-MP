@@ -15,7 +15,7 @@ export const Navbar = () => {
             </div>
             <span className="text-xl font-bold text-gradient-green">SportsPlex</span>
           </Link>
-          
+
           {/* Nav Links */}
           <div className="hidden md:flex items-center gap-8">
             <Link to="/" className="text-[var(--text-secondary)] hover:text-[var(--accent-green)] transition-colors font-medium">
@@ -24,22 +24,26 @@ export const Navbar = () => {
             <Link to="/facilities" className="text-[var(--text-secondary)] hover:text-[var(--accent-green)] transition-colors font-medium">
               Facilities
             </Link>
-            <a href="#about" className="text-[var(--text-secondary)] hover:text-[var(--accent-green)] transition-colors font-medium">
+            <Link to="/about" className="text-[var(--text-secondary)] hover:text-[var(--accent-green)] transition-colors font-medium">
               About
-            </a>
-            <a href="#contact" className="text-[var(--text-secondary)] hover:text-[var(--accent-green)] transition-colors font-medium">
+            </Link>
+            <Link to="/contact" className="text-[var(--text-secondary)] hover:text-[var(--accent-green)] transition-colors font-medium">
               Contact
-            </a>
+            </Link>
           </div>
-          
+
           {/* Auth Buttons */}
           <div className="flex items-center gap-4">
-            <Button variant="ghost" size="sm">
-              Login
-            </Button>
-            <Button variant="primary" size="sm">
-              Sign Up
-            </Button>
+            <Link to="/login">
+              <Button variant="ghost" size="sm">
+                Login
+              </Button>
+            </Link>
+            <Link to="/signup">
+              <Button variant="primary" size="sm">
+                Sign Up
+              </Button>
+            </Link>
           </div>
         </div>
       </div>
@@ -53,24 +57,24 @@ export const Hero = () => {
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden pt-18">
       {/* Background Gradient */}
       <div className="absolute inset-0 bg-gradient-to-br from-[var(--bg-primary)] via-[var(--bg-secondary)] to-[rgba(0,255,136,0.05)]"></div>
-      
+
       {/* Animated Background Elements */}
       <div className="absolute inset-0 overflow-hidden">
         <div className="absolute top-20 left-10 w-72 h-72 hero-orb-green rounded-full blur-[120px] animate-pulse"></div>
         <div className="absolute bottom-20 right-10 w-96 h-96 hero-orb-blue rounded-full blur-[120px] animate-pulse" style={{ animationDelay: '1s' }}></div>
       </div>
-      
+
       {/* Content */}
       <div className="relative z-10 max-w-5xl mx-auto px-6 text-center animate-fade-in-up">
         <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold mb-6 leading-tight">
           Book Your Court. <br />
           <span className="text-gradient-green">Play Your Game.</span>
         </h1>
-        
+
         <p className="text-xl md:text-2xl text-[var(--text-secondary)] mb-10 max-w-2xl mx-auto">
           Premium sports facilities available 24/7. Reserve your spot in seconds.
         </p>
-        
+
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
           <Button variant="primary" size="lg" icon={<ArrowRight className="w-5 h-5" />}>
             Book Now
@@ -79,7 +83,7 @@ export const Hero = () => {
             View Facilities
           </Button>
         </div>
-        
+
         {/* Stats */}
         <div className="grid grid-cols-3 gap-8 mt-16 max-w-2xl mx-auto">
           <div className="text-center">
@@ -106,18 +110,18 @@ export const QuickSearch = () => {
     <section className="relative -mt-24 z-20 px-6">
       <Card variant="glass" hover="none" className="max-w-5xl mx-auto p-8">
         <h3 className="text-2xl font-bold mb-6 text-center">Find Available Courts</h3>
-        
+
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <Input 
-            type="date" 
+          <Input
+            type="date"
             label="Date"
           />
-          
-          <Input 
-            type="time" 
+
+          <Input
+            type="time"
             label="Time"
           />
-          
+
           <div className="flex flex-col gap-2">
             <label className="text-sm font-medium text-[var(--text-secondary)]">
               Facility Type
@@ -132,7 +136,7 @@ export const QuickSearch = () => {
               <option>⚽ Court G - Multi-Purpose</option>
             </select>
           </div>
-          
+
           <div className="flex flex-col gap-2">
             <label className="text-sm font-medium text-[var(--text-secondary)] opacity-0">
               Search
@@ -169,7 +173,7 @@ export const FacilityHighlights = () => {
       image: 'arena'
     }
   ];
-  
+
   return (
     <section className="py-24 px-6">
       <div className="max-w-7xl mx-auto">
@@ -181,7 +185,7 @@ export const FacilityHighlights = () => {
             State-of-the-art sports facilities designed for peak performance
           </p>
         </div>
-        
+
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {facilities.map((facility, index) => (
             <Card key={index} variant="elevated" hover="lift" className="group cursor-pointer">
@@ -191,7 +195,7 @@ export const FacilityHighlights = () => {
                   {facility.icon}
                 </div>
               </div>
-              
+
               {/* Content */}
               <div className="p-6">
                 <h3 className="text-xl font-bold mb-2">{facility.name}</h3>
@@ -229,7 +233,7 @@ export const Announcements = () => {
       variant: 'success'
     }
   ];
-  
+
   return (
     <section className="py-24 px-6 bg-[var(--bg-secondary)]">
       <div className="max-w-7xl mx-auto">
@@ -241,14 +245,14 @@ export const Announcements = () => {
             Stay informed about new facilities and special offers
           </p>
         </div>
-        
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
           {announcements.map((announcement, index) => (
             <Card key={index} variant="outlined" hover="glow" className="p-6 border-[var(--border-emphasis)] relative">
               <Badge variant={announcement.variant} className="absolute top-6 right-6">
                 {announcement.badge}
               </Badge>
-              
+
               <div className="flex items-start gap-4 mb-4">
                 <div className="w-12 h-12 rounded-lg flex items-center justify-center text-[var(--accent-green)] flex-shrink-0" style={{ backgroundColor: 'rgba(5, 150, 105, 0.1)' }}>
                   {announcement.icon}
@@ -257,7 +261,7 @@ export const Announcements = () => {
                   <h3 className="text-xl font-bold mb-2">{announcement.title}</h3>
                 </div>
               </div>
-              
+
               <p className="text-[var(--text-secondary)] mb-4">
                 {announcement.description}
               </p>
@@ -291,7 +295,7 @@ export const Footer = () => {
               Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore.
             </p>
           </div>
-          
+
           {/* Quick Links */}
           <div>
             <h4 className="font-bold mb-4">Quick Links</h4>
@@ -318,7 +322,7 @@ export const Footer = () => {
               </li>
             </ul>
           </div>
-          
+
           {/* Contact */}
           <div>
             <h4 className="font-bold mb-4">Contact Us</h4>
@@ -337,7 +341,7 @@ export const Footer = () => {
               </li>
             </ul>
           </div>
-          
+
           {/* Team */}
           <div>
             <h4 className="font-bold mb-4">Our Team</h4>
@@ -349,7 +353,7 @@ export const Footer = () => {
             </ul>
           </div>
         </div>
-        
+
         <div className="border-t border-[var(--border-subtle)] pt-8 text-center">
           <p className="text-[var(--text-muted)] text-sm">
             © 2026 SportsPlex. All rights reserved.
