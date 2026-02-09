@@ -1,16 +1,29 @@
 # Court Reservation System 🎾
 
-A modern court reservation system built with **React + Vite + Tailwind CSS + shadcn/ui**.
+A modern court reservation system built with **React + Vite + Tailwind CSS**.
 
 ## 🚀 What's Included
 
 - ⚡ **Vite** - Lightning-fast development server with HMR
 - ⚛️ **React 18** - Modern React with hooks
 - 🎨 **Tailwind CSS** - Utility-first CSS framework
-- 🧩 **shadcn/ui** - Beautiful, accessible component system
+- 🧩 **Custom UI Components** - Hand-crafted, accessible component system
+- 🎭 **Lucide React** - Beautiful icon library
 - 📱 **Responsive Design** - Mobile-first approach
 
-## 📦 Getting Started
+## 🔧 Installing Vite (For New Projects)
+
+```bash
+# Create a new Vite + React project
+npm create vite@latest my-project-name -- --template react
+cd my-project-name
+npm install
+npm run dev
+```
+
+**Templates:** `react` (JavaScript) | `react-ts` (TypeScript) | `react-swc` (faster)
+
+## 📦 Getting Started (This Project)
 
 ### 1. Install Dependencies
 
@@ -18,42 +31,22 @@ A modern court reservation system built with **React + Vite + Tailwind CSS + sha
 npm install
 ```
 
-This will install all the required packages including:
-- React and React DOM
-- Vite build tool
-- Tailwind CSS with PostCSS and Autoprefixer
-- shadcn/ui utilities (clsx, tailwind-merge)
-
 ### 2. Start Development Server
 
 ```bash
 npm run dev
 ```
 
-The app will be available at `http://localhost:5173`
+Open `http://localhost:5173` in your browser.
 
-### 3. Install shadcn/ui Components
+### 3. Custom UI Components
 
-shadcn/ui is configured and ready to use. Install components as needed:
+Custom components in `src/components/ui.jsx`:
+- **Button** - Variants: primary, secondary, outline, ghost
+- **Card** - Hover effects: lift, scale, glow
+- **Input** - With label and icon support
+- **Badge** - Status indicators
 
-```bash
-# Install a button component
-npx shadcn@latest add button
-
-# Install a calendar component (great for court reservations!)
-npx shadcn@latest add calendar
-
-# Install a card component
-npx shadcn@latest add card
-
-# Install a dialog component (for booking confirmations)
-npx shadcn@latest add dialog
-
-# Install a form component
-npx shadcn@latest add form
-```
-
-View all available components at [ui.shadcn.com](https://ui.shadcn.com/docs/components)
 
 ## 🏗️ Project Structure
 
@@ -61,9 +54,17 @@ View all available components at [ui.shadcn.com](https://ui.shadcn.com/docs/comp
 court-reservation/
 ├── public/              # Static assets
 ├── src/
-│   ├── components/      # React components (shadcn/ui components will go here)
+│   ├── components/      # React components
+│   │   ├── ui.jsx      # Custom UI components (Button, Card, Input, Badge)
+│   │   ├── LandingPage.jsx
+│   │   ├── FacilitiesPage.jsx
+│   │   ├── AvailabilityCalendar.jsx
+│   │   └── ThemeToggle.jsx
+│   ├── pages/          # Page components
+│   │   ├── HomePage.jsx
+│   │   └── FacilitiesPage.jsx
 │   ├── lib/
-│   │   └── utils.js    # Utility functions
+│   │   └── utils.js    # Utility functions (cn helper)
 │   ├── App.jsx         # Main app component
 │   ├── App.css         # App styles
 │   ├── main.jsx        # Entry point
@@ -72,27 +73,21 @@ court-reservation/
 ├── package.json        # Dependencies
 ├── vite.config.js      # Vite configuration
 ├── tailwind.config.js  # Tailwind configuration
-├── postcss.config.js   # PostCSS configuration
-└── components.json     # shadcn/ui configuration
+└── postcss.config.js   # PostCSS configuration
 ```
 
-## 🎨 Using shadcn/ui Components
-
-After installing components with the CLI, they'll be added to `src/components/ui/`. Import and use them like this:
+## 🎨 Using Custom UI Components
 
 ```jsx
-import { Button } from "@/components/ui/button"
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
+import { Button, Card, Input, Badge } from "@/components/ui"
 
 function MyComponent() {
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Court Reservation</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <Button>Book Now</Button>
-      </CardContent>
+    <Card variant="glass" hover="lift" className="p-6">
+      <h3 className="text-xl font-bold mb-4">Court Reservation</h3>
+      <Input label="Your Name" placeholder="Enter your name" />
+      <Button variant="primary" className="mt-4">Book Now</Button>
+      <Badge variant="success">Available</Badge>
     </Card>
   )
 }
@@ -116,23 +111,22 @@ Here are some features you might want to build:
 5. **Confirmation Dialog** - Confirm bookings with users
 6. **Admin Dashboard** - Manage reservations and courts
 
-### Recommended shadcn/ui Components
+### Component Ideas
 
-- `calendar` - For date selection
-- `card` - For court cards
-- `button` - For actions
-- `dialog` - For confirmations
-- `form` - For booking forms
-- `table` - For admin reservation list
-- `select` - For court/time selection
-- `toast` - For notifications
+You can extend the custom UI components or create new ones:
+- **Calendar** - For date selection
+- **Dialog/Modal** - For confirmations
+- **Form** - For booking forms with validation
+- **Table** - For admin reservation list
+- **Select/Dropdown** - For court/time selection
+- **Toast/Notification** - For user feedback
 
 ## 📚 Resources
 
 - [Vite Documentation](https://vite.dev)
 - [React Documentation](https://react.dev)
 - [Tailwind CSS Documentation](https://tailwindcss.com/docs)
-- [shadcn/ui Documentation](https://ui.shadcn.com)
+- [Lucide React Icons](https://lucide.dev/guide/packages/lucide-react)
 
 ---
 
