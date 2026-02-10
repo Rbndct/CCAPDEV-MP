@@ -10,43 +10,53 @@ A modern court reservation system built with **React + Vite + Tailwind CSS**.
 - 🧩 **Custom UI Components** - Hand-crafted, accessible component system
 - 🎭 **Lucide React** - Beautiful icon library
 - 📱 **Responsive Design** - Mobile-first approach
+- 🐳 **Docker** - Consistent development environment (no Node.js needed!)
 
-## 🔧 Installing Vite (For New Projects)
+## 📦 Getting Started
 
-```bash
-# Create a new Vite + React project
-npm create vite@latest my-project-name -- --template react
-cd my-project-name
-npm install
-npm run dev
-```
+### Option 1: Docker (Recommended) ⭐
 
-**Templates:** `react` (JavaScript) | `react-ts` (TypeScript) | `react-swc` (faster)
+**No Node.js installation required!** Docker provides everything you need.
 
-## 📦 Getting Started (This Project)
+#### First Time Setup
 
-### 1. Install Dependencies
-
-```bash
-npm install
-```
-
-### 2. Start Development Server
-
-```bash
-npm run dev
-```
+1. Install [Docker Desktop](https://www.docker.com/products/docker-desktop)
+2. Clone the repository
+3. Navigate to the docker directory:
+   ```bash
+   cd docker
+   docker-compose build
+   docker-compose up
+   ```
 
 Open `http://localhost:5173` in your browser.
 
-### 3. Custom UI Components
+👉 **Detailed guide:** See [DOCKER_GUIDE.md](DOCKER_GUIDE.md) for complete setup instructions.
 
-Custom components in `src/components/ui.jsx`:
+### Option 2: Local Development (Requires Node.js)
+
+If you prefer to run without Docker:
+
+#### 1. Install Dependencies
+
+```bash
+npm install
+```
+
+#### 2. Start Development Server
+
+```bash
+npm run dev
+```
+
+## 🎨 Custom UI Components
+
+Custom components available in `src/components/ui.jsx`:
+
 - **Button** - Variants: primary, secondary, outline, ghost
 - **Card** - Hover effects: lift, scale, glow
 - **Input** - With label and icon support
 - **Badge** - Status indicators
-
 
 ## 🏗️ Project Structure
 
@@ -79,17 +89,19 @@ court-reservation/
 ## 🎨 Using Custom UI Components
 
 ```jsx
-import { Button, Card, Input, Badge } from "@/components/ui"
+import { Button, Card, Input, Badge } from "@/components/ui";
 
 function MyComponent() {
   return (
     <Card variant="glass" hover="lift" className="p-6">
       <h3 className="text-xl font-bold mb-4">Court Reservation</h3>
       <Input label="Your Name" placeholder="Enter your name" />
-      <Button variant="primary" className="mt-4">Book Now</Button>
+      <Button variant="primary" className="mt-4">
+        Book Now
+      </Button>
       <Badge variant="success">Available</Badge>
     </Card>
-  )
+  );
 }
 ```
 
@@ -114,6 +126,7 @@ Here are some features you might want to build:
 ### Component Ideas
 
 You can extend the custom UI components or create new ones:
+
 - **Calendar** - For date selection
 - **Dialog/Modal** - For confirmations
 - **Form** - For booking forms with validation

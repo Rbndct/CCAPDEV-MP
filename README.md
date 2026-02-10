@@ -2,9 +2,9 @@
 
 A modern court reservation system built with **React + Vite + Tailwind CSS**.
 
-## 🚀 Quick Start
+## 🚀 Quick Start with Docker (Recommended)
 
-### Using Docker (Recommended)
+**No Node.js installation required!** Just Docker Desktop.
 
 ```bash
 cd docker
@@ -13,9 +13,17 @@ docker-compose up
 
 Open **http://localhost:5173** in your browser.
 
-👉 **First time using Docker?** See the [Docker Setup Guide](docs/DOCKER_GUIDE.md)
+### First Time Setup?
 
-### Local Development
+1. **Install Docker Desktop** - [Download here](https://www.docker.com/products/docker-desktop)
+2. **Clone the repo** - `git clone <repo-url> && cd CCAPDEV-MP`
+3. **Start the app** - `cd docker && docker-compose up`
+
+👉 **Detailed guide:** [Docker Setup Guide](docs/DOCKER_GUIDE.md)
+
+### Alternative: Local Development (Requires Node.js)
+
+If you prefer to run without Docker:
 
 ```bash
 npm install
@@ -35,6 +43,7 @@ npm run dev
 - 🧩 **Custom UI Components** - Accessible component system
 - 🎭 **Lucide React** - Beautiful icons
 - 📱 **Responsive Design** - Mobile-first approach
+- 🐳 **Docker** - Consistent development environment
 
 ## 🛠️ Available Scripts
 
