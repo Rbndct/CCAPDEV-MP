@@ -1,8 +1,16 @@
+import { useState } from 'react';
 import { Card, Button, Badge } from '../../components/ui';
 import { Users, DollarSign, Calendar, TrendingUp, ArrowRight, AlertTriangle, Plus, Lock } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { ViewAllReservationsModal } from '../../components/modals/ViewAllReservationsModal';
+import { NewBookingModal } from '../../components/modals/NewBookingModal';
+import { BlockSlotModal } from '../../components/modals/BlockSlotModal';
 
 export function AdminDashboardPage() {
+    const [isViewAllModalOpen, setIsViewAllModalOpen] = useState(false);
+    const [isNewBookingModalOpen, setIsNewBookingModalOpen] = useState(false);
+    const [isBlockSlotModalOpen, setIsBlockSlotModalOpen] = useState(false);
+
     const stats = [
         { label: 'Total Revenue', value: '₱124,500', change: '+12%', icon: DollarSign, color: 'text-green-500' },
         { label: 'Occupancy Rate', value: '85%', change: '+5%', icon: TrendingUp, color: 'text-blue-500' },
@@ -18,16 +26,12 @@ export function AdminDashboardPage() {
                     <p className="text-[var(--text-secondary)]">Welcome back, here's what's happening today.</p>
                 </div>
                 <div className="flex gap-3">
-                    <Link to="/admin/walk-in">
-                        <Button variant="primary" className="gap-2">
-                            <Plus size={18} /> New Booking
-                        </Button>
-                    </Link>
-                    <Link to="/admin/schedule">
-                        <Button variant="outline" className="gap-2">
-                            <Lock size={18} /> Block Slot
-                        </Button>
-                    </Link>
+                    <Button variant="primary" className="gap-2" onClick={() => setIsNewBookingModalOpen(true)}>
+                        <Plus size={18} /> New Booking
+                    </Button>
+                    <Button variant="outline" className="gap-2" onClick={() => setIsBlockSlotModalOpen(true)}>
+                        <Lock size={18} /> Block Slot
+                    </Button>
                 </div>
             </div>
 
@@ -52,7 +56,7 @@ export function AdminDashboardPage() {
                 <Card variant="elevated" className="p-6 lg:col-span-2">
                     <div className="flex items-center justify-between mb-6">
                         <h3 className="text-xl font-bold">Recent Signups</h3>
-                        <Button variant="ghost" size="sm" className="gap-2">
+                        <Button variant="ghost" size="sm" className="gap-2" onClick={() => setIsViewAllModalOpen(true)}>
                             View All <ArrowRight size={16} />
                         </Button>
                     </div>
@@ -97,6 +101,11 @@ export function AdminDashboardPage() {
                     </div>
                 </Card>
             </div>
+
+            {/* Modals */}
+            <ViewAllReservationsModal isOpen={isViewAllModalOpen} onClose={() => setIsViewAllModalOpen(false)} />
+            <NewBookingModal isOpen={isNewBookingModalOpen} onClose={() => setIsNewBookingModalOpen(false)} />
+            <BlockSlotModal isOpen={isBlockSlotModalOpen} onClose={() => setIsBlockSlotModalOpen(false)} />
         </div>
     );
 }

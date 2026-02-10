@@ -1,18 +1,30 @@
+import { useState } from 'react';
 import { Card, Button, Badge } from '../../components/ui';
 import { Plus, Edit2, Trash2 } from 'lucide-react';
+import { AddStaffModal } from '../../components/modals/AddStaffModal';
+import { EditStaffModal } from '../../components/modals/EditStaffModal';
 
 export function StaffManagementPage() {
+    const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+    const [selectedStaff, setSelectedStaff] = useState(null);
+
     const staff = [
-        { id: 1, name: 'John Doe', role: 'Trainer', status: 'Active' },
-        { id: 2, name: 'Jane Smith', role: 'Receptionist', status: 'On Leave' },
-        { id: 3, name: 'Mike Johnson', role: 'Maintenance', status: 'Active' },
+        { id: 1, name: 'John Doe', email: 'john@sportsplex.com', phone: '+63 912 345 6789', role: 'Trainer', status: 'Active' },
+        { id: 2, name: 'Jane Smith', email: 'jane@sportsplex.com', phone: '+63 923 456 7890', role: 'Receptionist', status: 'On Leave' },
+        { id: 3, name: 'Mike Johnson', email: 'mike@sportsplex.com', phone: '+63 934 567 8901', role: 'Maintenance', status: 'Active' },
     ];
+
+    const handleEdit = (staffMember) => {
+        setSelectedStaff(staffMember);
+        setIsEditModalOpen(true);
+    };
 
     return (
         <div className="space-y-6">
             <div className="flex items-center justify-between">
                 <h1 className="text-3xl font-bold">Staff Management</h1>
-                <Button variant="primary" className="gap-2">
+                <Button variant="primary" className="gap-2" onClick={() => setIsAddModalOpen(true)}>
                     <Plus size={18} /> Add Staff
                 </Button>
             </div>
@@ -40,7 +52,10 @@ export function StaffManagementPage() {
                                     </td>
                                     <td className="p-4 text-right">
                                         <div className="flex items-center justify-end gap-2">
-                                            <button className="p-2 hover:bg-[var(--accent-green)]/10 text-[var(--accent-green)] rounded-lg transition-colors">
+                                            <button
+                                                className="p-2 hover:bg-[var(--accent-green)]/10 text-[var(--accent-green)] rounded-lg transition-colors"
+                                                onClick={() => handleEdit(member)}
+                                            >
                                                 <Edit2 size={16} />
                                             </button>
                                             <button className="p-2 hover:bg-red-500/10 text-red-500 rounded-lg transition-colors">
@@ -54,6 +69,10 @@ export function StaffManagementPage() {
                     </table>
                 </div>
             </Card>
+
+            {/* Modals */}
+            <AddStaffModal isOpen={isAddModalOpen} onClose={() => setIsAddModalOpen(false)} />
+            <EditStaffModal isOpen={isEditModalOpen} onClose={() => setIsEditModalOpen(false)} staffMember={selectedStaff} />
         </div>
     );
 }

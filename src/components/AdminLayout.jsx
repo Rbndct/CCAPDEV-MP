@@ -8,7 +8,8 @@ import {
     Building2,
     CalendarDays,
     Menu,
-    X
+    X,
+    ClipboardList
 } from 'lucide-react';
 import { useState } from 'react';
 
@@ -25,6 +26,7 @@ export function AdminLayout() {
 
     const navItems = [
         { icon: <LayoutDashboard size={20} />, label: 'Dashboard', path: '/admin/dashboard' },
+        { icon: <ClipboardList size={20} />, label: 'Reservations', path: '/admin/reservations' },
         { icon: <Users size={20} />, label: 'Staff Management', path: '/admin/staff' },
         { icon: <Building2 size={20} />, label: 'Facilities', path: '/admin/facilities' },
         { icon: <CalendarDays size={20} />, label: 'Bookings', path: '/admin/bookings' },
