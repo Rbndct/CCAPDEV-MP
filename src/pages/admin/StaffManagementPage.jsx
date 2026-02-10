@@ -1,0 +1,59 @@
+import { Card, Button, Badge } from '../../components/ui';
+import { Plus, Edit2, Trash2 } from 'lucide-react';
+
+export function StaffManagementPage() {
+    const staff = [
+        { id: 1, name: 'John Doe', role: 'Trainer', status: 'Active' },
+        { id: 2, name: 'Jane Smith', role: 'Receptionist', status: 'On Leave' },
+        { id: 3, name: 'Mike Johnson', role: 'Maintenance', status: 'Active' },
+    ];
+
+    return (
+        <div className="space-y-6">
+            <div className="flex items-center justify-between">
+                <h1 className="text-3xl font-bold">Staff Management</h1>
+                <Button variant="primary" className="gap-2">
+                    <Plus size={18} /> Add Staff
+                </Button>
+            </div>
+
+            <Card variant="elevated" className="overflow-hidden">
+                <div className="overflow-x-auto">
+                    <table className="w-full text-left">
+                        <thead className="bg-[var(--bg-secondary)] border-b border-[var(--border-subtle)]">
+                            <tr>
+                                <th className="p-4 font-medium">Name</th>
+                                <th className="p-4 font-medium">Role</th>
+                                <th className="p-4 font-medium">Status</th>
+                                <th className="p-4 font-medium text-right">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {staff.map((member) => (
+                                <tr key={member.id} className="border-b border-[var(--border-subtle)] last:border-0 hover:bg-[var(--bg-secondary)]/50 transition-colors">
+                                    <td className="p-4 font-medium">{member.name}</td>
+                                    <td className="p-4 text-[var(--text-secondary)]">{member.role}</td>
+                                    <td className="p-4">
+                                        <Badge variant={member.status === 'Active' ? 'success' : 'warning'}>
+                                            {member.status}
+                                        </Badge>
+                                    </td>
+                                    <td className="p-4 text-right">
+                                        <div className="flex items-center justify-end gap-2">
+                                            <button className="p-2 hover:bg-[var(--accent-green)]/10 text-[var(--accent-green)] rounded-lg transition-colors">
+                                                <Edit2 size={16} />
+                                            </button>
+                                            <button className="p-2 hover:bg-red-500/10 text-red-500 rounded-lg transition-colors">
+                                                <Trash2 size={16} />
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+            </Card>
+        </div>
+    );
+}

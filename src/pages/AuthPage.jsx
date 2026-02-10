@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { Navbar, Footer } from '../components/LandingPage';
 import { Button, Input, Card } from '../components/ui';
 import { Mail, Lock, Eye, EyeOff, Check, User, Shield, ArrowRight, Chrome, Facebook, Smartphone } from 'lucide-react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
 
 export const AuthPage = () => {
     const location = useLocation();
@@ -17,10 +18,31 @@ export const AuthPage = () => {
         setOtpSent(false); // Reset OTP state when switching tabs
     };
 
+    const { login } = useAuth(); // Get login from context
+    const navigate = useNavigate();
+
     const handleLogin = (e) => {
         e.preventDefault();
-        console.log(`Logging in as ${userType}...`);
-        // Mock login logic here
+
+        // Get values from inputs (or use state if we were using state for inputs)
+        const emailInput = document.querySelector('input[placeholder="Enter your email or phone number"]');
+        const passwordInput = document.querySelector('input[type="password"]');
+
+        const email = emailInput?.value || '';
+        const password = passwordInput?.value || '';
+
+        console.log(`Logging in...`);
+
+        // Use the context login function
+        login(email, password);
+
+        // Redirect based on role (this logic might be better placed in a useEffect or inside login if it returned a promise)
+        // For now, we'll manually check the email to decide where to go, mirroring the context logic
+        if (email.includes('admin')) {
+            navigate('/admin/dashboard');
+        } else {
+            navigate('/dashboard');
+        }
     };
 
     const handleRegister = (e) => {
@@ -61,8 +83,8 @@ export const AuthPage = () => {
                         <button
                             onClick={() => toggleTab('login')}
                             className={`flex-1 py-2 text-sm font-medium rounded-lg transition-all ${activeTab === 'login'
-                                    ? 'bg-[var(--bg-primary)] text-[var(--text-primary)] shadow-sm'
-                                    : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+                                ? 'bg-[var(--bg-primary)] text-[var(--text-primary)] shadow-sm'
+                                : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
                                 }`}
                         >
                             Login
@@ -70,8 +92,8 @@ export const AuthPage = () => {
                         <button
                             onClick={() => toggleTab('register')}
                             className={`flex-1 py-2 text-sm font-medium rounded-lg transition-all ${activeTab === 'register'
-                                    ? 'bg-[var(--bg-primary)] text-[var(--text-primary)] shadow-sm'
-                                    : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+                                ? 'bg-[var(--bg-primary)] text-[var(--text-primary)] shadow-sm'
+                                : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
                                 }`}
                         >
                             Register
@@ -85,8 +107,8 @@ export const AuthPage = () => {
                             <div className="grid grid-cols-2 gap-4 mb-6">
                                 <div
                                     className={`cursor-pointer border rounded-xl p-4 flex flex-col items-center justify-center gap-2 transition-all ${userType === 'user'
-                                            ? 'border-[var(--accent-green)] bg-[rgba(0,255,136,0.05)]'
-                                            : 'border-[var(--border-subtle)] hover:border-[var(--text-secondary)]'
+                                        ? 'border-[var(--accent-green)] bg-[rgba(0,255,136,0.05)]'
+                                        : 'border-[var(--border-subtle)] hover:border-[var(--text-secondary)]'
                                         }`}
                                     onClick={() => setUserType('user')}
                                 >
@@ -95,8 +117,8 @@ export const AuthPage = () => {
                                 </div>
                                 <div
                                     className={`cursor-pointer border rounded-xl p-4 flex flex-col items-center justify-center gap-2 transition-all ${userType === 'admin'
-                                            ? 'border-[var(--accent-green)] bg-[rgba(0,255,136,0.05)]'
-                                            : 'border-[var(--border-subtle)] hover:border-[var(--text-secondary)]'
+                                        ? 'border-[var(--accent-green)] bg-[rgba(0,255,136,0.05)]'
+                                        : 'border-[var(--border-subtle)] hover:border-[var(--text-secondary)]'
                                         }`}
                                     onClick={() => setUserType('admin')}
                                 >
@@ -145,6 +167,28 @@ export const AuthPage = () => {
                             <Button variant="primary" size="lg" className="w-full" icon={<ArrowRight className="w-5 h-5" />}>
                                 Log In
                             </Button>
+
+                            <div className="text-center">
+                                <span className="text-sm text-[var(--text-secondary)]">Demo Access: </span>
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        // Mock admin login
+                                        const emailInput = document.querySelector('input[placeholder="Enter your email or phone number"]');
+                                        const passwordInput = document.querySelector('input[type="password"]');
+                                        if (emailInput) emailInput.value = 'admin@sportsplex.com';
+                                        if (passwordInput) passwordInput.value = 'password';
+                                        handleLogin({ preventDefault: () => { } });
+                                        // Since handleLogin is a mock in this component and doesn't explicitly call auth context, 
+                                        // and the actual auth context usage is likely wrapped or handled differently in the full implementation,
+                                        // we might need to simulate the user typing or direct the user to use the specific credentials.
+                                        // For now, let's just pre-fill.
+                                    }}
+                                    className="text-sm text-[var(--accent-green)] hover:underline font-medium"
+                                >
+                                    Auto-fill Admin Credentials
+                                </button>
+                            </div>
                         </form>
                     )}
 

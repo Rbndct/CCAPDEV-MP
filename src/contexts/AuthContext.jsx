@@ -9,7 +9,15 @@ export function AuthProvider({ children }) {
   const mockUser = {
     id: 1,
     name: 'Demo User',
-    email: 'demo@sportsplex.com'
+    email: 'demo@sportsplex.com',
+    role: 'user'
+  };
+
+  const mockAdmin = {
+    id: 2,
+    name: 'Admin User',
+    email: 'admin@sportsplex.com',
+    role: 'admin'
   };
 
   const toggleMockAuth = () => {
@@ -18,16 +26,21 @@ export function AuthProvider({ children }) {
       setIsLoggedIn(false);
       setUser(null);
     } else {
-      // Login with mock user
+      // Login with mock user by default
       setIsLoggedIn(true);
       setUser(mockUser);
     }
   };
 
   const login = (email, password) => {
-    // Mock login - replace with real API call later
-    setIsLoggedIn(true);
-    setUser(mockUser);
+    // Mock login - simple check for admin email
+    if (email.includes('admin')) {
+      setIsLoggedIn(true);
+      setUser(mockAdmin);
+    } else {
+      setIsLoggedIn(true);
+      setUser(mockUser);
+    }
   };
 
   const logout = () => {
@@ -36,12 +49,12 @@ export function AuthProvider({ children }) {
   };
 
   return (
-    <AuthContext.Provider value={{ 
-      isLoggedIn, 
-      user, 
-      toggleMockAuth, 
-      login, 
-      logout 
+    <AuthContext.Provider value={{
+      isLoggedIn,
+      user,
+      toggleMockAuth,
+      login,
+      logout
     }}>
       {children}
     </AuthContext.Provider>
