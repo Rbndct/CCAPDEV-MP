@@ -10,12 +10,15 @@ import { ProtectedRoute } from './components/ProtectedRoute';
 import { AdminRoute } from './components/AdminRoute';
 import { AdminLayout } from './components/AdminLayout';
 import { AdminDashboardPage } from './pages/admin/AdminDashboardPage';
+import { UserManagementPage } from './pages/admin/UserManagementPage';
 import { ReservationsPage } from './pages/admin/ReservationsPage';
 import { FacilitiesManagementPage } from './pages/admin/FacilitiesManagementPage';
 import { BookingsPage } from './pages/admin/BookingsPage';
 import { SettingsPage } from './pages/admin/SettingsPage';
 import { StaffManagementPage } from './pages/admin/StaffManagementPage';
 import { ThemeToggle } from './components/ThemeToggle';
+
+
 import './App.css';
 
 function App() {
@@ -45,6 +48,7 @@ function App() {
               <Route index element={<Navigate to="/admin/dashboard" replace />} />
               <Route path="dashboard" element={<AdminDashboardPage />} />
               <Route path="reservations" element={<ReservationsPage />} />
+              <Route path="users" element={<UserManagementPage />} />
               <Route path="staff" element={<StaffManagementPage />} />
               <Route path="facilities" element={<FacilitiesManagementPage />} />
               <Route path="bookings" element={<BookingsPage />} />

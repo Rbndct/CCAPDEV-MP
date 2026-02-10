@@ -27,11 +27,13 @@ export function AdminLayout() {
     const navItems = [
         { icon: <LayoutDashboard size={20} />, label: 'Dashboard', path: '/admin/dashboard' },
         { icon: <ClipboardList size={20} />, label: 'Reservations', path: '/admin/reservations' },
+        { icon: <Users size={20} />, label: 'User Management', path: '/admin/users' },
         { icon: <Users size={20} />, label: 'Staff Management', path: '/admin/staff' },
         { icon: <Building2 size={20} />, label: 'Facilities', path: '/admin/facilities' },
         { icon: <CalendarDays size={20} />, label: 'Bookings', path: '/admin/bookings' },
         { icon: <Settings size={20} />, label: 'Settings', path: '/admin/settings' },
     ];
+
 
     const isActive = (path) => location.pathname === path;
 
