@@ -3,14 +3,14 @@ version: '3.8'
 services:
   frontend:
     build:
-      context: .
-      dockerfile: Dockerfile.dev
+      context: ..
+      dockerfile: docker/Dockerfile.dev
     container_name: court-reservation-dev
     ports:
       - "5173:5173"
     volumes:
       # Mount source code for hot reload
-      - .:/app
+      - ..:/app
       # Use container's node_modules (faster)
       - /app/node_modules
     environment:

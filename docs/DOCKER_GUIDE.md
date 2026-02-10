@@ -40,6 +40,7 @@ cd CCAPDEV-MP
 Open your terminal in the project folder and run:
 
 ```bash
+cd docker
 docker-compose build
 ```
 
@@ -52,6 +53,7 @@ docker-compose build
 Every time you want to work on the project, run:
 
 ```bash
+cd docker
 docker-compose up
 ```
 
@@ -89,7 +91,7 @@ docker-compose down
 
 ```bash
 # Navigate to project folder
-cd CCAPDEV-MP
+cd CCAPDEV-MP/docker
 
 # Start the server
 docker-compose up
@@ -194,6 +196,7 @@ Something else is using port 5173. Either:
 ## 📝 Quick Reference Card
 
 ```
+NAVIGATE:  cd docker
 START:     docker-compose up
 STOP:      Ctrl + C  or  docker-compose down
 REBUILD:   docker-compose build
