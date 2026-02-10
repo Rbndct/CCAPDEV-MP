@@ -10,6 +10,7 @@ export const EditReservationModal = ({ isOpen, onClose, booking, onSave }) => {
         { value: 'Court D - Tennis Court 2', label: 'Court D - Tennis Court 2' },
         { value: 'Court E - Badminton Hall', label: 'Court E - Badminton Hall' },
         { value: 'Court F - Volleyball Arena', label: 'Court F - Volleyball Arena' },
+        { value: 'Court H - Pickleball Arena', label: 'Court H - Pickleball Arena' },
     ];
 
     const [formData, setFormData] = useState({

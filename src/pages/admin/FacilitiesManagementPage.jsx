@@ -13,6 +13,7 @@ export function FacilitiesManagementPage() {
         { id: 1, name: 'Basketball Court A', type: 'Basketball', status: 'Available', rate: '₱600/hr', capacity: 10 },
         { id: 2, name: 'Tennis Court 1', type: 'Tennis', status: 'Available', rate: '₱500/hr', capacity: 4 },
         { id: 3, name: 'Badminton Hall', type: 'Badminton', status: 'Maintenance', rate: '₱500/hr', capacity: 8 },
+        { id: 4, name: 'Pickleball Court', type: 'Pickleball', status: 'Available', rate: '₱500/hr', capacity: 8 },
     ];
 
     const handleEdit = (facility) => {

@@ -37,6 +37,7 @@ export const NewBookingModal = ({ isOpen, onClose }) => {
         { value: 'tennis-2', label: 'Tennis Court 2' },
         { value: 'badminton', label: 'Badminton Hall' },
         { value: 'volleyball', label: 'Volleyball Arena' },
+        { value: 'pickleball', label: 'Pickleball Arena' },
     ];
 
     const paymentOptions = [

@@ -25,6 +25,7 @@ export function BookingsPage() {
         { value: 'Tennis Court 1', label: 'Tennis Court 1' },
         { value: 'Badminton Hall', label: 'Badminton Hall' },
         { value: 'Volleyball Arena', label: 'Volleyball Arena' },
+        { value: 'Pickleball Arena', label: 'Pickleball Arena' },
     ];
 
     const statuses = [

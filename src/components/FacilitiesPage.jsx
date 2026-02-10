@@ -88,6 +88,18 @@ const facilitiesData = [
     amenities: ['Convertible', 'Multiple Sports', 'Flexible Setup'],
     description: 'Versatile court suitable for basketball, badminton, volleyball, and futsal.',
     availability: 'high'
+  },
+  {
+    id: 8,
+    name: 'Court H - Pickleball Arena',
+    type: 'Pickleball',
+    icon: '🏓',
+    price: 500,
+    rating: 4.9,
+    capacity: 8,
+    amenities: ['Professional Court', 'Paddle Rental', 'Good Lighting'],
+    description: 'Dedicated pickleball court with professional surface and equipment.',
+    availability: 'high'
   }
 ];
 
@@ -117,6 +129,7 @@ const FilterSection = ({ filters, setFilters, onApplyFilters }) => {
             <option value="Tennis">🎾 Tennis</option>
             <option value="Badminton">🏸 Badminton</option>
             <option value="Volleyball">🏐 Volleyball</option>
+            <option value="Pickleball">🏓 Pickleball</option>
             <option value="Multi-Purpose">⚽ Multi-Purpose</option>
           </select>
         </div>
