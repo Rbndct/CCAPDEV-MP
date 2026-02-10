@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Calendar, Clock, DollarSign, Star, Users, MapPin, Zap, ArrowRight, Filter } from 'lucide-react';
+import { Calendar, Clock, Star, Users, MapPin, Zap, ArrowRight, Filter } from 'lucide-react';
 import { Card, Button, Badge } from './ui';
 import { AvailabilityCalendar } from './AvailabilityCalendar';
 
@@ -10,7 +10,7 @@ const facilitiesData = [
     name: 'Court A - Premium Basketball',
     type: 'Basketball',
     icon: '🏀',
-    price: 50,
+    price: 600,
     rating: 4.9,
     capacity: 10,
     amenities: ['Air Conditioned', 'Professional Grade', 'Scoreboard'],
@@ -22,7 +22,7 @@ const facilitiesData = [
     name: 'Court B - Standard Basketball',
     type: 'Basketball',
     icon: '🏀',
-    price: 35,
+    price: 500,
     rating: 4.5,
     capacity: 10,
     amenities: ['Good Lighting', 'Standard Equipment'],
@@ -34,7 +34,7 @@ const facilitiesData = [
     name: 'Court C - Tennis Court 1',
     type: 'Tennis',
     icon: '🎾',
-    price: 40,
+    price: 500,
     rating: 4.8,
     capacity: 4,
     amenities: ['Hard Court', 'Professional Net', 'Ball Machine'],
@@ -46,7 +46,7 @@ const facilitiesData = [
     name: 'Court D - Tennis Court 2',
     type: 'Tennis',
     icon: '🎾',
-    price: 45,
+    price: 500,
     rating: 4.9,
     capacity: 4,
     amenities: ['Tournament Grade', 'Spectator Seating', 'Premium Surface'],
@@ -58,7 +58,7 @@ const facilitiesData = [
     name: 'Court E - Badminton Hall',
     type: 'Badminton',
     icon: '🏸',
-    price: 30,
+    price: 500,
     rating: 4.7,
     capacity: 16,
     amenities: ['4 Courts', 'High Ceiling', 'Quality Nets'],
@@ -70,7 +70,7 @@ const facilitiesData = [
     name: 'Court F - Volleyball Arena',
     type: 'Volleyball',
     icon: '🏐',
-    price: 55,
+    price: 500,
     rating: 4.8,
     capacity: 12,
     amenities: ['Professional Court', 'Sand Option', 'Scoreboards'],
@@ -82,7 +82,7 @@ const facilitiesData = [
     name: 'Court G - Multi-Purpose',
     type: 'Multi-Purpose',
     icon: '⚽',
-    price: 40,
+    price: 500,
     rating: 4.6,
     capacity: 20,
     amenities: ['Convertible', 'Multiple Sports', 'Flexible Setup'],
@@ -158,9 +158,8 @@ const FilterSection = ({ filters, setFilters, onApplyFilters }) => {
             onChange={(e) => setFilters({...filters, maxPrice: e.target.value})}
           >
             <option value="999">Any Price</option>
-            <option value="35">Up to ₱35</option>
-            <option value="45">Up to ₱45</option>
-            <option value="55">Up to ₱55</option>
+            <option value="500">Up to ₱500</option>
+            <option value="600">Up to ₱600</option>
           </select>
         </div>
       </div>
@@ -227,7 +226,7 @@ const FacilityCard = ({ facility, onViewSchedule }) => {
         {/* Info Grid */}
         <div className="grid grid-cols-2 gap-3 mb-4">
           <div className="flex items-center gap-2 text-sm">
-            <DollarSign className="w-4 h-4 text-[var(--accent-green)]" />
+            <span className="w-4 h-4 text-[var(--accent-green)] font-bold text-sm flex items-center justify-center">₱</span>
             <span className="text-[var(--text-secondary)]">₱{facility.price}/hour</span>
           </div>
           <div className="flex items-center gap-2 text-sm">

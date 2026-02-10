@@ -1,11 +1,14 @@
 import { useState } from 'react';
 import { Card, Button, Badge } from '../../components/ui';
-import { Search, Filter, Calendar, Clock, MapPin, MoreVertical, X, Check, Archive } from 'lucide-react';
+import { Search, Filter, Calendar, Clock, MapPin, MoreVertical, X, Check, Archive, Pencil } from 'lucide-react';
+import { EditReservationModal } from '../../components/modals/EditReservationModal';
 
 export function ReservationsPage() {
     const [filterStatus, setFilterStatus] = useState('all');
     const [searchTerm, setSearchTerm] = useState('');
     const [showArchived, setShowArchived] = useState(false);
+    const [editingReservation, setEditingReservation] = useState(null);
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
     // Helper function to check if booking is older than 2 days
     const isOlderThanTwoDays = (dateString) => {
@@ -40,6 +43,27 @@ export function ReservationsPage() {
     const handleUnarchive = (id) => {
         setReservations(reservations.map(res =>
             res.id === id ? { ...res, archived: false } : res
+        ));
+    };
+
+    const handleEdit = (reservation) => {
+        // The modal expects 'court' property but reservation has 'facility', map it
+        const bookingForModal = {
+            ...reservation,
+            court: reservation.facility
+        };
+        setEditingReservation(bookingForModal);
+        setIsEditModalOpen(true);
+    };
+
+    const handleSaveEdit = (updatedBooking) => {
+        setReservations(reservations.map(res =>
+            res.id === updatedBooking.id ? {
+                ...res,
+                facility: updatedBooking.court, // Map back 'court' to 'facility'
+                date: updatedBooking.date,
+                time: updatedBooking.time
+            } : res
         ));
     };
 
@@ -151,6 +175,15 @@ export function ReservationsPage() {
                                     </td>
                                     <td className="p-4 text-right">
                                         <div className="flex justify-end gap-2">
+                                            {!showArchived && (
+                                                <button
+                                                    title="Edit Reservation"
+                                                    onClick={() => handleEdit(res)}
+                                                    className="p-1 hover:bg-[var(--accent-green)]/10 text-[var(--accent-green)] rounded"
+                                                >
+                                                    <Pencil size={18} />
+                                                </button>
+                                            )}
                                             {!showArchived && res.status === 'pending' && (
                                                 <button
                                                     title="Confirm"
@@ -204,6 +237,13 @@ export function ReservationsPage() {
                     </table>
                 </div>
             </Card>
+
+            <EditReservationModal
+                isOpen={isEditModalOpen}
+                onClose={() => { setIsEditModalOpen(false); setEditingReservation(null); }}
+                booking={editingReservation}
+                onSave={handleSaveEdit}
+            />
         </div>
     );
 }

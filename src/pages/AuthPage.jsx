@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Navbar, Footer } from '../components/LandingPage';
 import { Button, Input, Card } from '../components/ui';
 import { Mail, Lock, Eye, EyeOff, Check, User, Shield, ArrowRight, Chrome, Facebook, Smartphone } from 'lucide-react';
@@ -9,6 +9,10 @@ export const AuthPage = () => {
     const location = useLocation();
     const isRegister = location.pathname === '/signup';
     const [activeTab, setActiveTab] = useState(isRegister ? 'register' : 'login');
+
+    useEffect(() => {
+        setActiveTab(isRegister ? 'register' : 'login');
+    }, [location.pathname]);
     const [userType, setUserType] = useState('user'); // 'user' or 'admin'
     const [showPassword, setShowPassword] = useState(false);
     const [otpSent, setOtpSent] = useState(false);

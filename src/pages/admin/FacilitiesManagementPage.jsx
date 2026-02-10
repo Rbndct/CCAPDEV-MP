@@ -10,9 +10,9 @@ export function FacilitiesManagementPage() {
     const [selectedFacility, setSelectedFacility] = useState(null);
 
     const facilities = [
-        { id: 1, name: 'Basketball Court A', type: 'Basketball', status: 'Available', rate: '₱50/hr', capacity: 10 },
-        { id: 2, name: 'Tennis Court 1', type: 'Tennis', status: 'Available', rate: '₱40/hr', capacity: 4 },
-        { id: 3, name: 'Badminton Hall', type: 'Badminton', status: 'Maintenance', rate: '₱30/hr', capacity: 8 },
+        { id: 1, name: 'Basketball Court A', type: 'Basketball', status: 'Available', rate: '₱600/hr', capacity: 10 },
+        { id: 2, name: 'Tennis Court 1', type: 'Tennis', status: 'Available', rate: '₱500/hr', capacity: 4 },
+        { id: 3, name: 'Badminton Hall', type: 'Badminton', status: 'Maintenance', rate: '₱500/hr', capacity: 8 },
     ];
 
     const handleEdit = (facility) => {

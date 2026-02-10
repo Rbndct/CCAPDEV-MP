@@ -1,6 +1,7 @@
 import { Navbar, Footer } from '../components/LandingPage';
 import { Users, Target, Heart, Trophy, Star, ArrowRight } from 'lucide-react';
 import { Card } from '../components/ui';
+import kirstenImg from '../assets/images/kirs.jpg';
 
 export const AboutPage = () => {
     const teamMembers = [
@@ -19,7 +20,7 @@ export const AboutPage = () => {
         {
             name: 'Kirsten',
             role: 'Community Directior',
-            image: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Kirsten',
+            image: kirstenImg,
             bio: 'Building a vibrant and inclusive sports community.'
         },
         {

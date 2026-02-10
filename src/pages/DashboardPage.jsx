@@ -1,8 +1,10 @@
+import { useState } from 'react';
 import { Navbar, Footer } from '../components/LandingPage';
 import { Card, Button, Badge } from '../components/ui';
-import { Calendar, Clock, Trophy, ArrowRight, TrendingUp, Bell } from 'lucide-react';
+import { Calendar, Clock, Trophy, ArrowRight, TrendingUp, Bell, Pencil, X } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { EditReservationModal } from '../components/modals/EditReservationModal';
 
 // Mock booking data
 const mockUpcomingBookings = [
@@ -12,7 +14,7 @@ const mockUpcomingBookings = [
     date: '2026-02-12',
     time: '14:00 - 16:00',
     status: 'confirmed',
-    price: 50
+    price: 600
   },
   {
     id: 2,
@@ -20,7 +22,7 @@ const mockUpcomingBookings = [
     date: '2026-02-15',
     time: '10:00 - 11:00',
     status: 'confirmed',
-    price: 40
+    price: 500
   },
   {
     id: 3,
@@ -28,7 +30,7 @@ const mockUpcomingBookings = [
     date: '2026-02-18',
     time: '18:00 - 19:00',
     status: 'pending',
-    price: 30
+    price: 500
   }
 ];
 
@@ -89,6 +91,28 @@ const statusConfig = {
 
 export const DashboardPage = () => {
   const { user } = useAuth();
+  const [upcomingBookings, setUpcomingBookings] = useState(mockUpcomingBookings);
+  const [editingBooking, setEditingBooking] = useState(null);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+
+  const handleEditClick = (booking) => {
+    setEditingBooking(booking);
+    setIsEditModalOpen(true);
+  };
+
+  const handleSaveEdit = (updatedBooking) => {
+    setUpcomingBookings(prev =>
+      prev.map(b => b.id === updatedBooking.id ? updatedBooking : b)
+    );
+  };
+
+  const handleCancelBooking = (bookingId) => {
+    if (window.confirm('Are you sure you want to cancel this reservation?')) {
+      setUpcomingBookings(prev =>
+        prev.map(b => b.id === bookingId ? { ...b, status: 'cancelled' } : b)
+      );
+    }
+  };
 
   return (
     <>
@@ -123,7 +147,7 @@ export const DashboardPage = () => {
                 </div>
 
                 <div className="space-y-4">
-                  {mockUpcomingBookings.map((booking) => (
+                  {upcomingBookings.map((booking) => (
                     <Card key={booking.id} variant="glass" className="p-4 hover:border-[var(--accent-green)] transition-all">
                       <div className="flex items-start justify-between">
                         <div className="flex-1">
@@ -144,9 +168,29 @@ export const DashboardPage = () => {
                             </div>
                           </div>
                         </div>
-                        <div className="text-right">
+                        <div className="text-right flex flex-col items-end gap-2">
                           <p className="text-2xl font-bold text-[var(--accent-green)]">₱{booking.price}</p>
                           <p className="text-xs text-[var(--text-muted)]">per hour</p>
+                          {(booking.status === 'confirmed' || booking.status === 'pending') && (
+                            <div className="flex items-center gap-2 mt-1">
+                              <button
+                                onClick={() => handleEditClick(booking)}
+                                className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-lg bg-[var(--bg-tertiary)] border border-[var(--border-subtle)] hover:border-[var(--accent-green)] hover:text-[var(--accent-green)] transition-all"
+                                title="Edit reservation"
+                              >
+                                <Pencil className="w-3.5 h-3.5" />
+                                Edit
+                              </button>
+                              <button
+                                onClick={() => handleCancelBooking(booking.id)}
+                                className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-lg bg-[var(--bg-tertiary)] border border-[var(--border-subtle)] hover:border-red-500 hover:text-red-500 transition-all"
+                                title="Cancel reservation"
+                              >
+                                <X className="w-3.5 h-3.5" />
+                                Cancel
+                              </button>
+                            </div>
+                          )}
                         </div>
                       </div>
                     </Card>
@@ -238,6 +282,13 @@ export const DashboardPage = () => {
       </div>
 
       <Footer />
+
+      <EditReservationModal
+        isOpen={isEditModalOpen}
+        onClose={() => { setIsEditModalOpen(false); setEditingBooking(null); }}
+        booking={editingBooking}
+        onSave={handleSaveEdit}
+      />
     </>
   );
 };

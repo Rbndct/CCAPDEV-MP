@@ -1,6 +1,8 @@
 import { Navbar, Footer } from '../components/LandingPage';
 import { Mail, Phone, MapPin, Send, Facebook } from 'lucide-react';
 import { Card, Button, Input } from '../components/ui';
+import kirstenImg from '../assets/images/kirs.jpg';
+
 
 export const ContactPage = () => {
     const teamContacts = [
@@ -26,7 +28,7 @@ export const ContactPage = () => {
             email: 'julia_palomo@dlsu.edu.ph',
             fbLink: 'https://www.facebook.com/JuliaKirstenPalomo',
             phone: '+63 917 456 7867',
-            image: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Kirsten'
+            image: kirstenImg
         },
         {
             name: 'Raphael Maagma',

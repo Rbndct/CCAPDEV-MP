@@ -117,12 +117,16 @@ export const Hero = () => {
         </p>
 
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-          <Button variant="primary" size="lg" icon={<ArrowRight className="w-5 h-5" />}>
-            Book Now
-          </Button>
-          <Button variant="outline" size="lg">
-            View Facilities
-          </Button>
+          <Link to="/login">
+            <Button variant="primary" size="lg" icon={<ArrowRight className="w-5 h-5" />}>
+              Book Now
+            </Button>
+          </Link>
+          <Link to="/facilities">
+            <Button variant="outline" size="lg">
+              View Facilities
+            </Button>
+          </Link>
         </div>
 
         {/* Stats */}
