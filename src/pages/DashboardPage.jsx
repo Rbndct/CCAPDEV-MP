@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Navbar, Footer } from '../components/LandingPage';
-import { Card, Button, Badge } from '../components/ui';
+import { Card, Badge } from '../components/ui';
 import { Calendar, Clock, Trophy, ArrowRight, TrendingUp, Bell, Pencil, X } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
@@ -230,24 +230,61 @@ export const DashboardPage = () => {
 
             {/* Right Column - Quick Actions & Announcements */}
             <div className="space-y-8">
-              {/* Quick Actions */}
+              {/* Quick Actions - Card Grid */}
               <Card variant="elevated" className="p-6">
-                <h2 className="text-2xl font-bold mb-6">Quick Actions</h2>
-                <div className="space-y-3">
+                <h2 className="text-xl font-bold mb-6">Quick Actions</h2>
+                <div className="grid grid-cols-2 gap-4">
+                  {/* Book a Court */}
                   <Link to="/facilities">
-                    <Button variant="primary" className="w-full !rounded-[var(--radius-md)]" icon={<ArrowRight className="w-4 h-4" />}>
-                      Book a Facility
-                    </Button>
+                    <Card 
+                      variant="glass" 
+                      className="p-4 text-center hover:border-[var(--accent-green)] hover:shadow-[var(--glow-green)] transition-all cursor-pointer group h-full flex flex-col items-center justify-center gap-3"
+                    >
+                      <div className="w-12 h-12 rounded-xl bg-[rgba(0,255,136,0.1)] flex items-center justify-center group-hover:scale-110 transition-transform">
+                        <Calendar className="w-6 h-6 text-[var(--accent-green)]" />
+                      </div>
+                      <h3 className="font-semibold text-sm">Book a Court</h3>
+                    </Card>
                   </Link>
+
+                  {/* My Reservations */}
                   <Link to="/bookings">
-                    <Button variant="outline" className="w-full !rounded-[var(--radius-md)]">
-                      View All Bookings
-                    </Button>
+                    <Card 
+                      variant="glass" 
+                      className="p-4 text-center hover:border-[var(--accent-green)] hover:shadow-[var(--glow-green)] transition-all cursor-pointer group h-full flex flex-col items-center justify-center gap-3 relative"
+                    >
+                      <div className="absolute top-2 right-2 w-2 h-2 bg-[var(--accent-green)] rounded-full animate-pulse"></div>
+                      <div className="w-12 h-12 rounded-xl bg-[rgba(0,255,136,0.1)] flex items-center justify-center group-hover:scale-110 transition-transform">
+                        <Clock className="w-6 h-6 text-[var(--accent-green)]" />
+                      </div>
+                      <h3 className="font-semibold text-sm">Reservations</h3>
+                    </Card>
                   </Link>
+
+                  {/* Profile */}
+                  <Link to="/profile">
+                    <Card 
+                      variant="glass" 
+                      className="p-4 text-center hover:border-[var(--accent-green)] hover:shadow-[var(--glow-green)] transition-all cursor-pointer group h-full flex flex-col items-center justify-center gap-3"
+                    >
+                      <div className="w-12 h-12 rounded-xl bg-[rgba(0,255,136,0.1)] flex items-center justify-center group-hover:scale-110 transition-transform">
+                        <Trophy className="w-6 h-6 text-[var(--accent-green)]" />
+                      </div>
+                      <h3 className="font-semibold text-sm">My Profile</h3>
+                    </Card>
+                  </Link>
+
+                  {/* Browse All */}
                   <Link to="/facilities">
-                    <Button variant="ghost" className="w-full !rounded-[var(--radius-md)]">
-                      Browse Facilities
-                    </Button>
+                    <Card 
+                      variant="glass" 
+                      className="p-4 text-center hover:border-[var(--accent-green)] hover:shadow-[var(--glow-green)] transition-all cursor-pointer group h-full flex flex-col items-center justify-center gap-3"
+                    >
+                      <div className="w-12 h-12 rounded-xl bg-[rgba(0,255,136,0.1)] flex items-center justify-center group-hover:scale-110 transition-transform">
+                        <ArrowRight className="w-6 h-6 text-[var(--accent-green)]" />
+                      </div>
+                      <h3 className="font-semibold text-sm">Browse All</h3>
+                    </Card>
                   </Link>
                 </div>
               </Card>
