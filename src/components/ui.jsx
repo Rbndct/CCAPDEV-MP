@@ -108,7 +108,13 @@ export const Badge = ({
     info: 'bg-[var(--info)] text-white',
     warning: 'bg-[var(--warning)] text-[var(--bg-primary)]',
     error: 'bg-[var(--error)] text-white',
-    neon: 'bg-[var(--neon-green)] text-[var(--bg-primary)] animate-pulse-glow'
+    neon: 'bg-[var(--neon-green)] text-[var(--bg-primary)] animate-pulse-glow',
+    // Facility Tag Variants
+    primary: 'bg-[rgba(0,255,136,0.1)] text-[var(--accent-green)] border border-[rgba(0,255,136,0.2)]',
+    blue: 'bg-blue-500/10 text-blue-400 border border-blue-500/20',
+    purple: 'bg-purple-500/10 text-purple-400 border border-purple-500/20',
+    orange: 'bg-orange-500/10 text-orange-400 border border-orange-500/20',
+    gray: 'bg-gray-500/10 text-gray-400 border border-gray-500/20'
   };
 
   return (
