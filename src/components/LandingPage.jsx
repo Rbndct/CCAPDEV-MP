@@ -1,4 +1,4 @@
-import { ArrowRight, Calendar, Clock, MapPin, Trophy, Users, Zap, LogOut, User } from 'lucide-react';
+import { ArrowRight, Calendar, Clock, MapPin, Trophy, Users, Zap, LogOut, User, Facebook, Twitter, Instagram, Linkedin } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Button, Card, Input, Badge } from './ui';
 import { useAuth } from '../contexts/AuthContext';
@@ -117,7 +117,7 @@ export const Hero = () => {
         </p>
 
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-          <Link to="/login">
+          <Link to="/facilities?booking=true">
             <Button variant="primary" size="lg" icon={<ArrowRight className="w-5 h-5" />}>
               Book Now
             </Button>
@@ -154,7 +154,10 @@ export const QuickSearch = () => {
   return (
     <section className="relative -mt-24 z-20 px-6">
       <Card variant="glass" hover="none" className="max-w-5xl mx-auto p-8">
-        <h3 className="text-2xl font-bold mb-6 text-center">Find Available Courts</h3>
+        <div className="text-center mb-6">
+          <h3 className="text-2xl font-bold mb-2">Find Available Courts</h3>
+          <p className="text-sm text-[var(--text-muted)]">Quick search for immediate booking</p>
+        </div>
 
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <Input
@@ -185,10 +188,18 @@ export const QuickSearch = () => {
             <label className="text-sm font-medium text-[var(--text-secondary)] opacity-0">
               Search
             </label>
-            <Button variant="primary" className="w-full !rounded-[var(--radius-md)]" icon={<ArrowRight className="w-5 h-5" />}>
-              Search
-            </Button>
+            <Link to="/facilities">
+              <Button variant="primary" className="w-full !rounded-[var(--radius-md)]" icon={<ArrowRight className="w-5 h-5" />}>
+                Search
+              </Button>
+            </Link>
           </div>
+        </div>
+
+        <div className="mt-4 text-center">
+          <Link to="/facilities" className="text-sm text-[var(--text-muted)] hover:text-[var(--accent-green)] transition-colors">
+            Need more filters? Try our <span className="font-medium">Advanced Search →</span>
+          </Link>
         </div>
       </Card>
     </section>
@@ -246,10 +257,10 @@ export const FacilityHighlights = () => {
                 <p className="text-[var(--text-secondary)] text-sm mb-4">
                   {facility.description}
                 </p>
-                <a href="#" className="inline-flex items-center gap-2 text-[var(--accent-green)] hover:gap-3 transition-all font-medium">
+                <Link to={`/facilities/${index + 1}`} className="inline-flex items-center gap-2 text-[var(--accent-green)] hover:gap-3 transition-all font-medium">
                   View Details
                   <ArrowRight className="w-4 h-4" />
-                </a>
+                </Link>
               </div>
             </Card>
           ))}
@@ -324,84 +335,130 @@ export const Announcements = () => {
 // Footer Component
 export const Footer = () => {
   return (
-    <footer className="bg-[var(--bg-primary)] border-t border-[var(--border-subtle)] py-12 px-6">
+    <footer className="bg-[var(--bg-primary)] border-t border-[var(--border-subtle)] pt-16 pb-8 px-6">
       <div className="max-w-7xl mx-auto">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-8">
-          {/* Logo & About */}
-          <div>
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 bg-[var(--accent-green)] rounded-full flex items-center justify-center">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-16">
+          {/* Column 1: Brand */}
+          <div className="space-y-6">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-[var(--accent-green)] rounded-lg flex items-center justify-center">
                 <Trophy className="w-6 h-6 text-[var(--bg-primary)]" />
               </div>
               <span className="text-xl font-bold text-gradient-green">SportsPlex</span>
             </div>
-            <p className="text-[var(--text-muted)] text-sm">
-              Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore.
+            <p className="text-[var(--text-muted)] text-sm leading-relaxed">
+              Premium sports facilities available 24/7. Experience professional-grade courts and equipment for your best game yet.
             </p>
+            {/* Social Media Links - Moved here for branding context */}
+            <div className="flex items-center gap-3">
+              <a href="#" className="w-8 h-8 rounded-full bg-[var(--bg-tertiary)] flex items-center justify-center text-[var(--text-secondary)] hover:bg-[var(--accent-green)] hover:text-white transition-all">
+                <Facebook className="w-4 h-4" />
+              </a>
+              <a href="#" className="w-8 h-8 rounded-full bg-[var(--bg-tertiary)] flex items-center justify-center text-[var(--text-secondary)] hover:bg-[var(--accent-green)] hover:text-white transition-all">
+                <Twitter className="w-4 h-4" />
+              </a>
+              <a href="#" className="w-8 h-8 rounded-full bg-[var(--bg-tertiary)] flex items-center justify-center text-[var(--text-secondary)] hover:bg-[var(--accent-green)] hover:text-white transition-all">
+                <Instagram className="w-4 h-4" />
+              </a>
+            </div>
           </div>
 
-          {/* Quick Links */}
+          {/* Column 2: Quick Links */}
           <div>
-            <h4 className="font-bold mb-4">Quick Links</h4>
-            <ul className="space-y-2">
+            <h4 className="font-bold text-[var(--text-primary)] mb-6">Explore</h4>
+            <ul className="space-y-4">
+              <li>
+                <Link to="/facilities" className="text-[var(--text-muted)] hover:text-[var(--accent-green)] transition-colors text-sm">
+                  Find a Court
+                </Link>
+              </li>
+              <li>
+                <Link to="/about" className="text-[var(--text-muted)] hover:text-[var(--accent-green)] transition-colors text-sm">
+                  About Us
+                </Link>
+              </li>
+              <li>
+                <Link to="/contact" className="text-[var(--text-muted)] hover:text-[var(--accent-green)] transition-colors text-sm">
+                  Contact Support
+                </Link>
+              </li>
+              <li>
+                <Link to="/dashboard" className="text-[var(--text-muted)] hover:text-[var(--accent-green)] transition-colors text-sm">
+                  My Dashboard
+                </Link>
+              </li>
+            </ul>
+          </div>
+
+          {/* Column 3: Community */}
+          <div>
+            <h4 className="font-bold text-[var(--text-primary)] mb-6">Community</h4>
+            <ul className="space-y-4">
               <li>
                 <a href="#" className="text-[var(--text-muted)] hover:text-[var(--accent-green)] transition-colors text-sm">
-                  Home
+                  Events & Tournaments
                 </a>
               </li>
               <li>
                 <a href="#" className="text-[var(--text-muted)] hover:text-[var(--accent-green)] transition-colors text-sm">
-                  Facilities
+                  Training Programs
                 </a>
               </li>
               <li>
                 <a href="#" className="text-[var(--text-muted)] hover:text-[var(--accent-green)] transition-colors text-sm">
-                  Pricing
+                  Partner with Us
                 </a>
               </li>
               <li>
                 <a href="#" className="text-[var(--text-muted)] hover:text-[var(--accent-green)] transition-colors text-sm">
-                  Contact
+                  Careers
                 </a>
               </li>
             </ul>
           </div>
 
-          {/* Contact */}
+          {/* Column 4: Contact */}
           <div>
-            <h4 className="font-bold mb-4">Contact Us</h4>
-            <ul className="space-y-3 text-sm">
-              <li className="flex items-start gap-2 text-[var(--text-muted)]">
-                <MapPin className="w-4 h-4 text-[var(--accent-green)] mt-0.5 flex-shrink-0" />
-                <span>123 Sports Ave, City</span>
+            <h4 className="font-bold text-[var(--text-primary)] mb-6">Contact</h4>
+            <ul className="space-y-4">
+              <li className="flex items-start gap-3">
+                <MapPin className="w-5 h-5 text-[var(--accent-green)] flex-shrink-0" />
+                <span className="text-[var(--text-muted)] text-sm">
+                  123 Sports Ave, <br />Metro Manila, Philippines
+                </span>
               </li>
-              <li className="flex items-start gap-2 text-[var(--text-muted)]">
-                <span className="text-[var(--accent-green)] flex-shrink-0">✉</span>
-                <span>info@sportsplex.com</span>
+              <li className="flex items-center gap-3">
+                <div className="w-5 h-5 flex items-center justify-center text-[var(--accent-green)]">✉</div>
+                <a href="mailto:hello@sportsplex.com" className="text-[var(--text-muted)] hover:text-[var(--accent-green)] transition-colors text-sm">
+                  hello@sportsplex.com
+                </a>
               </li>
-              <li className="flex items-start gap-2 text-[var(--text-muted)]">
-                <span className="text-[var(--accent-green)] flex-shrink-0">☎</span>
-                <span>(123) 456-7890</span>
+              <li className="flex items-center gap-3">
+                <div className="w-5 h-5 flex items-center justify-center text-[var(--accent-green)]">☎</div>
+                <a href="tel:+631234567890" className="text-[var(--text-muted)] hover:text-[var(--accent-green)] transition-colors text-sm">
+                  +63 (123) 456-7890
+                </a>
               </li>
-            </ul>
-          </div>
-
-          {/* Team */}
-          <div>
-            <h4 className="font-bold mb-4">Our Team</h4>
-            <ul className="space-y-2 text-sm text-[var(--text-muted)]">
-              <li>Aaron</li>
-              <li>Cris</li>
-              <li>Kirsten</li>
-              <li>Rbee</li>
             </ul>
           </div>
         </div>
 
-        <div className="border-t border-[var(--border-subtle)] pt-8 text-center">
-          <p className="text-[var(--text-muted)] text-sm">
+        {/* Bottom Bar */}
+        <div className="border-t border-[var(--border-subtle)] pt-8 mt-8 flex flex-col md:flex-row justify-between items-center gap-4">
+          <p className="text-[var(--text-muted)] text-xs">
             © 2026 SportsPlex. All rights reserved.
           </p>
+          <div className="flex gap-6">
+            <Link to="#" className="text-[var(--text-muted)] hover:text-[var(--accent-green)] transition-colors text-xs">
+              Privacy Policy
+            </Link>
+            <Link to="#" className="text-[var(--text-muted)] hover:text-[var(--accent-green)] transition-colors text-xs">
+              Terms of Service
+            </Link>
+            <Link to="#" className="text-[var(--text-muted)] hover:text-[var(--accent-green)] transition-colors text-xs">
+              Cookie Policy
+            </Link>
+          </div>
         </div>
       </div>
     </footer>

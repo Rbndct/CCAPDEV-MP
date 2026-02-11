@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { Calendar, Clock, Star, Users, MapPin, Zap, ArrowRight, Filter } from 'lucide-react';
 import { Card, Button, Badge } from './ui';
 import { AvailabilityCalendar } from './AvailabilityCalendar';
@@ -266,14 +267,15 @@ const FacilityCard = ({ facility, onViewSchedule }) => {
         </div>
         
         {/* Action Button */}
-        <Button 
-          variant="outline" 
-          className="w-full !rounded-[var(--radius-md)]"
-          icon={<ArrowRight className="w-4 h-4" />}
-          onClick={() => onViewSchedule(facility)}
-        >
-          View Schedule
-        </Button>
+        <Link to={`/facilities/${facility.id}`} className="block">
+          <Button 
+            variant="outline" 
+            className="w-full !rounded-[var(--radius-md)]"
+            icon={<ArrowRight className="w-4 h-4" />}
+          >
+            View Details
+          </Button>
+        </Link>
       </div>
     </Card>
   );
