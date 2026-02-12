@@ -13,22 +13,31 @@ export const EditReservationModal = ({ isOpen, onClose, booking, onSave }) => {
         { value: 'Court H - Pickleball Arena', label: 'Court H - Pickleball Arena' },
     ];
 
+    const statuses = [
+        { value: 'pending', label: 'Pending' },
+        { value: 'confirmed', label: 'Confirmed' },
+        { value: 'cancelled', label: 'Cancelled' },
+        { value: 'no-show', label: 'No-Show' },
+    ];
+
     const [formData, setFormData] = useState({
         court: '',
         date: '',
         startTime: '',
         endTime: '',
+        status: '',
     });
 
     // Pre-populate form when booking changes
     useEffect(() => {
         if (booking) {
-            const [startTime, endTime] = booking.time.split(' - ');
+            const [startTime, endTime] = (booking.time || '').split(' - ');
             setFormData({
-                court: booking.court,
-                date: booking.date,
+                court: booking.court || booking.facility || '',
+                date: booking.date || '',
                 startTime: startTime || '',
                 endTime: endTime || '',
+                status: booking.status || 'pending',
             });
         }
     }, [booking]);
@@ -52,6 +61,7 @@ export const EditReservationModal = ({ isOpen, onClose, booking, onSave }) => {
             court: formData.court,
             date: formData.date,
             time: `${formData.startTime} - ${formData.endTime}`,
+            status: formData.status,
         });
         onClose();
     };
@@ -76,14 +86,24 @@ export const EditReservationModal = ({ isOpen, onClose, booking, onSave }) => {
             }
         >
             <form onSubmit={handleSubmit} className="space-y-4">
-                <Select
-                    label="Facility / Court"
-                    name="court"
-                    value={formData.court}
-                    onChange={handleChange}
-                    options={facilities}
-                    required
-                />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <Select
+                        label="Facility / Court"
+                        name="court"
+                        value={formData.court}
+                        onChange={handleChange}
+                        options={facilities}
+                        required
+                    />
+                    <Select
+                        label="Status"
+                        name="status"
+                        value={formData.status}
+                        onChange={handleChange}
+                        options={statuses}
+                        required
+                    />
+                </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <DatePicker
@@ -112,6 +132,7 @@ export const EditReservationModal = ({ isOpen, onClose, booking, onSave }) => {
                 <div className="p-4 bg-[var(--bg-secondary)] rounded-lg border border-[var(--border-subtle)]">
                     <h4 className="font-medium mb-2 text-sm">Updated Summary</h4>
                     <div className="text-sm text-[var(--text-secondary)] space-y-1">
+                        <p><strong>Status:</strong> <span className="capitalize">{formData.status}</span></p>
                         <p><strong>Court:</strong> {formData.court || 'N/A'}</p>
                         <p><strong>Date:</strong> {formData.date ? new Date(formData.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'N/A'}</p>
                         <p><strong>Time:</strong> {formData.startTime && formData.endTime ? `${formData.startTime} - ${formData.endTime}` : 'N/A'}</p>

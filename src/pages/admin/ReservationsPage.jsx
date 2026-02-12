@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Card, Button, Badge } from '../../components/ui';
-import { Search, Filter, Calendar, Clock, MapPin, MoreVertical, X, Check, Archive, Pencil } from 'lucide-react';
+import { Search, Filter, Calendar, Clock, MapPin, MoreVertical, X, Check, Archive, Pencil, AlertTriangle } from 'lucide-react';
 import { EditReservationModal } from '../../components/modals/EditReservationModal';
 
 export function ReservationsPage() {
@@ -62,9 +62,27 @@ export function ReservationsPage() {
                 ...res,
                 facility: updatedBooking.court, // Map back 'court' to 'facility'
                 date: updatedBooking.date,
-                time: updatedBooking.time
+                time: updatedBooking.time,
+                status: updatedBooking.status
             } : res
         ));
+    };
+
+    const handleBulkArchive = () => {
+        const archivableIds = reservations
+            .filter(res => !res.archived && isOlderThanTwoDays(res.date))
+            .map(res => res.id);
+
+        if (archivableIds.length === 0) {
+            alert('No reservations found that are older than 2 days.');
+            return;
+        }
+
+        if (window.confirm(`Are you sure you want to archive ${archivableIds.length} reservations?`)) {
+            setReservations(reservations.map(res =>
+                archivableIds.includes(res.id) ? { ...res, archived: true } : res
+            ));
+        }
     };
 
     const filteredReservations = reservations.filter(res => {
@@ -85,7 +103,7 @@ export function ReservationsPage() {
             case 'confirmed': return 'success';
             case 'pending': return 'warning';
             case 'cancelled': return 'error';
-            case 'no-show': return 'error';
+            case 'no-show': return 'warning';
             default: return 'default';
         }
     };
@@ -102,12 +120,20 @@ export function ReservationsPage() {
                     <Button variant={filterStatus === 'pending' ? 'primary' : 'outline'} onClick={() => setFilterStatus('pending')}>Pending</Button>
                     <Button variant={filterStatus === 'confirmed' ? 'primary' : 'outline'} onClick={() => setFilterStatus('confirmed')}>Confirmed</Button>
                     <Button
+                        variant="outline"
+                        className="gap-2 border-blue-500/50 text-blue-500 hover:bg-blue-500/10"
+                        onClick={handleBulkArchive}
+                    >
+                        <Archive size={16} />
+                        Bulk Archive Older
+                    </Button>
+                    <Button
                         variant={showArchived ? 'primary' : 'outline'}
                         className="gap-2"
                         onClick={() => setShowArchived(!showArchived)}
                     >
                         <Archive size={16} />
-                        {showArchived ? 'Show Active' : `Archived (${archivableCount})`}
+                        {showArchived ? 'Show Active' : `Archived (${reservations.filter(r => r.archived).length})`}
                     </Button>
                 </div>
             </div>
@@ -176,55 +202,58 @@ export function ReservationsPage() {
                                     <td className="p-4 text-right">
                                         <div className="flex justify-end gap-2">
                                             {!showArchived && (
-                                                <button
-                                                    title="Edit Reservation"
-                                                    onClick={() => handleEdit(res)}
-                                                    className="p-1 hover:bg-[var(--accent-green)]/10 text-[var(--accent-green)] rounded"
-                                                >
-                                                    <Pencil size={18} />
-                                                </button>
-                                            )}
-                                            {!showArchived && res.status === 'pending' && (
-                                                <button
-                                                    title="Confirm"
-                                                    onClick={() => handleStatusChange(res.id, 'confirmed')}
-                                                    className="p-1 hover:bg-green-500/10 text-green-500 rounded"
-                                                >
-                                                    <Check size={18} />
-                                                </button>
-                                            )}
-                                            {!showArchived && (
                                                 <>
+                                                    <button
+                                                        title="Edit Reservation"
+                                                        onClick={() => handleEdit(res)}
+                                                        className="p-1 hover:bg-[var(--accent-green)]/10 text-[var(--accent-green)] rounded transition-colors"
+                                                    >
+                                                        <Pencil size={18} />
+                                                    </button>
+                                                    <button
+                                                        title="Confirm Reservation"
+                                                        onClick={() => handleStatusChange(res.id, 'confirmed')}
+                                                        className={`p-1 rounded transition-colors ${res.status === 'confirmed'
+                                                            ? 'bg-green-500/20 text-green-500 ring-1 ring-green-500/30'
+                                                            : 'hover:bg-green-500/10 text-green-500'
+                                                            }`}
+                                                    >
+                                                        <Check size={18} />
+                                                    </button>
                                                     <button
                                                         title="Mark No-Show"
                                                         onClick={() => handleStatusChange(res.id, 'no-show')}
-                                                        className="p-1 hover:bg-orange-500/10 text-orange-500 rounded"
+                                                        className={`p-1 rounded transition-colors ${res.status === 'no-show'
+                                                            ? 'bg-orange-500/20 text-orange-500 ring-1 ring-orange-500/30'
+                                                            : 'hover:bg-orange-500/10 text-orange-500'
+                                                            }`}
                                                     >
-                                                        <Clock size={18} />
+                                                        <AlertTriangle size={18} />
                                                     </button>
                                                     <button
-                                                        title="Cancel"
+                                                        title="Cancel Reservation"
                                                         onClick={() => handleStatusChange(res.id, 'cancelled')}
-                                                        className="p-1 hover:bg-red-500/10 text-red-500 rounded"
+                                                        className={`p-1 rounded transition-colors ${res.status === 'cancelled'
+                                                            ? 'bg-red-500/20 text-red-500 ring-1 ring-red-500/30'
+                                                            : 'hover:bg-red-500/10 text-red-500'
+                                                            }`}
                                                     >
                                                         <X size={18} />
                                                     </button>
+                                                    <button
+                                                        title="Archive booking"
+                                                        onClick={() => handleArchive(res.id)}
+                                                        className="p-1 hover:bg-blue-500/10 text-blue-500 rounded transition-colors"
+                                                    >
+                                                        <Archive size={18} />
+                                                    </button>
                                                 </>
-                                            )}
-                                            {!showArchived && isOlderThanTwoDays(res.date) && (
-                                                <button
-                                                    title="Archive booking"
-                                                    onClick={() => handleArchive(res.id)}
-                                                    className="p-1 hover:bg-blue-500/10 text-blue-500 rounded"
-                                                >
-                                                    <Archive size={18} />
-                                                </button>
                                             )}
                                             {showArchived && (
                                                 <button
                                                     title="Unarchive booking"
                                                     onClick={() => handleUnarchive(res.id)}
-                                                    className="p-1 hover:bg-[var(--accent-green)]/10 text-[var(--accent-green)] rounded"
+                                                    className="p-1 hover:bg-[var(--accent-green)]/10 text-[var(--accent-green)] rounded transition-colors"
                                                 >
                                                     <Archive size={18} />
                                                 </button>
