@@ -2,6 +2,9 @@ import { Navbar, Footer } from '../components/LandingPage';
 import { Mail, Phone, MapPin, Send, Facebook } from 'lucide-react';
 import { Card, Button, Input } from '../components/ui';
 import kirstenImg from '../assets/images/kirs.jpg';
+import rbeeImg from '../assets/images/rbeeImg.jpg';
+import aaronImg from '../assets/images/aaronImg.jpg';
+import crisImg from '../assets/images/crisImg.jpg';
 
 
 export const ContactPage = () => {
@@ -12,7 +15,7 @@ export const ContactPage = () => {
             email: 'aaron_escandor@dlsu.edu.ph',
             fbLink: 'https://www.facebook.com/aaron.escandor',
             phone: '+63 917 123 4567',
-            image: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Aaron'
+            image: aaronImg
         },
         {
             name: 'Cris Delacruz',
@@ -20,7 +23,7 @@ export const ContactPage = () => {
             email: 'cris_delacruz@dlsu.edu.ph',
             fbLink: 'https://www.facebook.com/cj.delacruz.334491/',
             phone: '+63 917 345 6767',
-            image: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Cris'
+            image: crisImg
         },
         {
             name: 'Julia Kirsten Palomo',
@@ -36,7 +39,7 @@ export const ContactPage = () => {
             email: 'raphael_maagma@dlsu.edu.ph',
             fbLink: 'https://www.facebook.com/RbeeMaagma13',
             phone: '+63 917 234 5667',
-            image: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Rbee'
+            image: rbeeImg
         }
     ];
 
