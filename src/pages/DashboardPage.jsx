@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Navbar, Footer } from '../components/LandingPage';
 import { Card, Badge } from '../components/ui';
-import { Calendar, Clock, Trophy, ArrowRight, TrendingUp, Bell, Pencil, X } from 'lucide-react';
+import { Calendar, Clock, TrendingUp, Bell, Pencil, X } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { EditReservationModal } from '../components/modals/EditReservationModal';
@@ -228,67 +228,8 @@ export const DashboardPage = () => {
               </Card>
             </div>
 
-            {/* Right Column - Quick Actions & Announcements */}
+            {/* Right Column - Announcements */}
             <div className="space-y-8">
-              {/* Quick Actions - Card Grid */}
-              <Card variant="elevated" className="p-6">
-                <h2 className="text-xl font-bold mb-6">Quick Actions</h2>
-                <div className="grid grid-cols-2 gap-4">
-                  {/* Book a Court */}
-                  <Link to="/facilities">
-                    <Card 
-                      variant="glass" 
-                      className="p-4 text-center hover:border-[var(--accent-green)] hover:shadow-[var(--glow-green)] transition-all cursor-pointer group h-full flex flex-col items-center justify-center gap-3"
-                    >
-                      <div className="w-12 h-12 rounded-xl bg-[rgba(0,255,136,0.1)] flex items-center justify-center group-hover:scale-110 transition-transform">
-                        <Calendar className="w-6 h-6 text-[var(--accent-green)]" />
-                      </div>
-                      <h3 className="font-semibold text-sm">Book a Court</h3>
-                    </Card>
-                  </Link>
-
-                  {/* My Reservations */}
-                  <Link to="/bookings">
-                    <Card 
-                      variant="glass" 
-                      className="p-4 text-center hover:border-[var(--accent-green)] hover:shadow-[var(--glow-green)] transition-all cursor-pointer group h-full flex flex-col items-center justify-center gap-3 relative"
-                    >
-                      <div className="absolute top-2 right-2 w-2 h-2 bg-[var(--accent-green)] rounded-full animate-pulse"></div>
-                      <div className="w-12 h-12 rounded-xl bg-[rgba(0,255,136,0.1)] flex items-center justify-center group-hover:scale-110 transition-transform">
-                        <Clock className="w-6 h-6 text-[var(--accent-green)]" />
-                      </div>
-                      <h3 className="font-semibold text-sm">Reservations</h3>
-                    </Card>
-                  </Link>
-
-                  {/* Profile */}
-                  <Link to="/profile">
-                    <Card 
-                      variant="glass" 
-                      className="p-4 text-center hover:border-[var(--accent-green)] hover:shadow-[var(--glow-green)] transition-all cursor-pointer group h-full flex flex-col items-center justify-center gap-3"
-                    >
-                      <div className="w-12 h-12 rounded-xl bg-[rgba(0,255,136,0.1)] flex items-center justify-center group-hover:scale-110 transition-transform">
-                        <Trophy className="w-6 h-6 text-[var(--accent-green)]" />
-                      </div>
-                      <h3 className="font-semibold text-sm">My Profile</h3>
-                    </Card>
-                  </Link>
-
-                  {/* Browse All */}
-                  <Link to="/facilities">
-                    <Card 
-                      variant="glass" 
-                      className="p-4 text-center hover:border-[var(--accent-green)] hover:shadow-[var(--glow-green)] transition-all cursor-pointer group h-full flex flex-col items-center justify-center gap-3"
-                    >
-                      <div className="w-12 h-12 rounded-xl bg-[rgba(0,255,136,0.1)] flex items-center justify-center group-hover:scale-110 transition-transform">
-                        <ArrowRight className="w-6 h-6 text-[var(--accent-green)]" />
-                      </div>
-                      <h3 className="font-semibold text-sm">Browse All</h3>
-                    </Card>
-                  </Link>
-                </div>
-              </Card>
-
               {/* Facility Announcements */}
               <Card variant="elevated" className="p-6">
                 <div className="flex items-center gap-3 mb-6">

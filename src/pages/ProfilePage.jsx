@@ -39,10 +39,10 @@ export const ProfilePage = () => {
                 <Camera className="w-4 h-4" />
               </button>
             </div>
-            
+
             <h2 className="text-xl font-bold mb-1">{userInfo.name}</h2>
             <p className="text-sm text-[var(--text-muted)] mb-4">Member since Feb 2026</p>
-            
+
             <Badge variant="success" className="px-3 py-1">Active Member</Badge>
 
             <div className="mt-8 grid grid-cols-2 gap-4 text-center border-t border-[var(--border-subtle)] pt-6">
@@ -58,21 +58,21 @@ export const ProfilePage = () => {
           </Card>
 
           <Card variant="glass" className="p-0 overflow-hidden">
-             <div className="p-4 border-b border-[var(--border-subtle)]">
-               <h3 className="font-bold flex items-center gap-2">
-                 <Shield className="w-4 h-4 text-[var(--accent-green)]" />
-                 Account Security
-               </h3>
-             </div>
-             <div className="p-4 space-y-4">
-               <div className="flex items-center justify-between">
-                 <span className="text-sm text-[var(--text-secondary)]">2-Factor Auth</span>
-                 <div className={`w-10 h-6 rounded-full p-1 cursor-pointer transition-colors ${userInfo.twoFactor ? 'bg-[var(--accent-green)]' : 'bg-[var(--bg-tertiary)]'}`} onClick={() => setUserInfo({...userInfo, twoFactor: !userInfo.twoFactor})}>
-                   <div className={`w-4 h-4 bg-white rounded-full transition-transform ${userInfo.twoFactor ? 'translate-x-4' : 'translate-x-0'}`} />
-                 </div>
-               </div>
-               <Button variant="outline" className="w-full text-xs">Change Password</Button>
-             </div>
+            <div className="p-4 border-b border-[var(--border-subtle)]">
+              <h3 className="font-bold flex items-center gap-2">
+                <Shield className="w-4 h-4 text-[var(--accent-green)]" />
+                Account Security
+              </h3>
+            </div>
+            <div className="p-4 space-y-4">
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-[var(--text-secondary)]">2-Factor Auth</span>
+                <div className={`w-10 h-6 rounded-full p-1 cursor-pointer transition-colors ${userInfo.twoFactor ? 'bg-[var(--accent-green)]' : 'bg-[var(--bg-tertiary)]'}`} onClick={() => setUserInfo({ ...userInfo, twoFactor: !userInfo.twoFactor })}>
+                  <div className={`w-4 h-4 bg-white rounded-full transition-transform ${userInfo.twoFactor ? 'translate-x-4' : 'translate-x-0'}`} />
+                </div>
+              </div>
+              <Button variant="outline" className="w-full text-xs">Change Password</Button>
+            </div>
           </Card>
         </div>
 
@@ -81,7 +81,7 @@ export const ProfilePage = () => {
           <Card variant="elevated" className="p-6">
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-xl font-bold">Personal Information</h3>
-              <Button 
+              <Button
                 variant={isEditing ? 'ghost' : 'outline'}
                 size="sm"
                 onClick={() => setIsEditing(!isEditing)}
@@ -98,10 +98,10 @@ export const ProfilePage = () => {
                   <label className="text-sm font-medium text-[var(--text-secondary)]">Full Name</label>
                   <div className="relative">
                     <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-muted)]" />
-                    <input 
-                      type="text" 
+                    <input
+                      type="text"
                       value={userInfo.name}
-                      onChange={(e) => setUserInfo({...userInfo, name: e.target.value})}
+                      onChange={(e) => setUserInfo({ ...userInfo, name: e.target.value })}
                       disabled={!isEditing}
                       className="w-full pl-10 pr-4 py-2 bg-[var(--bg-tertiary)] border border-[var(--border-subtle)] rounded-lg focus:border-[var(--accent-green)] focus:outline-none disabled:opacity-50"
                     />
@@ -112,10 +112,10 @@ export const ProfilePage = () => {
                   <label className="text-sm font-medium text-[var(--text-secondary)]">Email Address</label>
                   <div className="relative">
                     <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-muted)]" />
-                    <input 
-                      type="email" 
+                    <input
+                      type="email"
                       value={userInfo.email}
-                      onChange={(e) => setUserInfo({...userInfo, email: e.target.value})}
+                      onChange={(e) => setUserInfo({ ...userInfo, email: e.target.value })}
                       disabled={!isEditing}
                       className="w-full pl-10 pr-4 py-2 bg-[var(--bg-tertiary)] border border-[var(--border-subtle)] rounded-lg focus:border-[var(--accent-green)] focus:outline-none disabled:opacity-50"
                     />
@@ -126,10 +126,10 @@ export const ProfilePage = () => {
                   <label className="text-sm font-medium text-[var(--text-secondary)]">Phone Number</label>
                   <div className="relative">
                     <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-muted)]" />
-                    <input 
-                      type="tel" 
+                    <input
+                      type="tel"
                       value={userInfo.phone}
-                      onChange={(e) => setUserInfo({...userInfo, phone: e.target.value})}
+                      onChange={(e) => setUserInfo({ ...userInfo, phone: e.target.value })}
                       disabled={!isEditing}
                       className="w-full pl-10 pr-4 py-2 bg-[var(--bg-tertiary)] border border-[var(--border-subtle)] rounded-lg focus:border-[var(--accent-green)] focus:outline-none disabled:opacity-50"
                     />
@@ -140,8 +140,8 @@ export const ProfilePage = () => {
                   <label className="text-sm font-medium text-[var(--text-secondary)]">Date of Birth</label>
                   <div className="relative">
                     <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-muted)]" />
-                    <input 
-                      type="date" 
+                    <input
+                      type="date"
                       disabled={!isEditing}
                       className="w-full pl-10 pr-4 py-2 bg-[var(--bg-tertiary)] border border-[var(--border-subtle)] rounded-lg focus:border-[var(--accent-green)] focus:outline-none disabled:opacity-50"
                     />
@@ -151,9 +151,9 @@ export const ProfilePage = () => {
 
               <div className="space-y-2">
                 <label className="text-sm font-medium text-[var(--text-secondary)]">Bio</label>
-                <textarea 
+                <textarea
                   value={userInfo.bio}
-                  onChange={(e) => setUserInfo({...userInfo, bio: e.target.value})}
+                  onChange={(e) => setUserInfo({ ...userInfo, bio: e.target.value })}
                   disabled={!isEditing}
                   rows={4}
                   className="w-full p-4 bg-[var(--bg-tertiary)] border border-[var(--border-subtle)] rounded-lg focus:border-[var(--accent-green)] focus:outline-none disabled:opacity-50"
@@ -170,19 +170,7 @@ export const ProfilePage = () => {
             </form>
           </Card>
 
-          <Card variant="outlined" className="p-6 border-red-500/20">
-            <h3 className="text-lg font-bold text-red-500 mb-4">Danger Zone</h3>
-            <div className="flex items-center justify-between">
-              <div>
-                <h4 className="font-semibold">Sign Out</h4>
-                <p className="text-sm text-[var(--text-muted)]">Sign out of your account on this device</p>
-              </div>
-              <Button variant="outline" className="text-red-500 border-red-500/50 hover:bg-red-500/10" onClick={logout}>
-                <LogOut className="w-4 h-4 mr-2" />
-                Sign Out
-              </Button>
-            </div>
-          </Card>
+
         </div>
       </div>
     </div>

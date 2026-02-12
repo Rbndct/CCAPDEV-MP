@@ -7,7 +7,6 @@ import { AuthModal } from '../components/AuthModal';
 import { BookingSuccessModal, generateConfirmationCode } from '../components/BookingSuccessModal';
 import { PublicAvailabilityCalendar } from '../components/PublicAvailabilityCalendar';
 import { LocationSection } from '../components/LocationSection';
-import { useAuth } from '../contexts/AuthContext';
 
 // Mock facility data (in real app, this would come from API/database)
 const facilitiesData = {
@@ -206,12 +205,9 @@ const facilitiesData = {
 export const FacilityDetailPage = () => {
   const { facilityId } = useParams();
   const navigate = useNavigate();
-  const { isLoggedIn } = useAuth();
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [bookingData, setBookingData] = useState(null);
-  const [selectedDate, setSelectedDate] = useState('');
-  const [selectedTime, setSelectedTime] = useState('');
 
   const facility = facilitiesData[facilityId];
 
@@ -233,35 +229,24 @@ export const FacilityDetailPage = () => {
     );
   }
 
-  const handleReserve = () => {
-    if (!isLoggedIn) {
-      setShowAuthModal(true);
-    } else {
-      // Create booking data
-      const booking = {
-        courtName: facility.name,
-        courtId: facility.id,
-        date: selectedDate,
-        startTime: selectedTime,
-        endTime: `${parseInt(selectedTime.split(':')[0]) + 2}:${selectedTime.split(':')[1]}`,
-        duration: 2,
-        totalPrice: facility.price * 2,
-        confirmationCode: generateConfirmationCode({
-          date: selectedDate,
-          courtId: facility.id.toString(),
-          startTime: selectedTime
-        })
-      };
+  const handleSlotSelect = ({ date, startTime, endTime, duration }) => {
+    const booking = {
+      courtName: facility.name,
+      courtId: facility.id,
+      date,
+      startTime,
+      endTime,
+      duration,
+      totalPrice: duration * facility.price,
+      confirmationCode: generateConfirmationCode({
+        date,
+        courtId: facility.id.toString(),
+        startTime
+      })
+    };
 
-      setBookingData(booking);
-      setShowSuccessModal(true);
-    }
-  };
-
-  const handleSlotSelect = ({ date, time }) => {
-    setSelectedDate(date);
-    setSelectedTime(time);
-    handleReserve();
+    setBookingData(booking);
+    setShowSuccessModal(true);
   };
 
   return (
@@ -354,10 +339,12 @@ export const FacilityDetailPage = () => {
               </Card>
 
               {/* Availability Calendar */}
-              <PublicAvailabilityCalendar
-                facility={facility}
-                onSlotSelect={handleSlotSelect}
-              />
+              <div id="availability-calendar">
+                <PublicAvailabilityCalendar
+                  facility={facility}
+                  onSlotSelect={handleSlotSelect}
+                />
+              </div>
 
               {/* Location */}
               <LocationSection facility={facility} />
@@ -374,42 +361,17 @@ export const FacilityDetailPage = () => {
                     <div className="text-sm text-[var(--text-muted)]">per hour</div>
                   </div>
 
-                  {/* Date Picker */}
-                  <div className="space-y-4 mb-6">
-                    <div>
-                      <label className="text-sm font-medium text-[var(--text-secondary)] mb-2 block">
-                        Select Date
-                      </label>
-                      <input
-                        type="date"
-                        value={selectedDate}
-                        onChange={(e) => setSelectedDate(e.target.value)}
-                        className="w-full bg-[var(--bg-tertiary)] border border-[var(--border-subtle)] rounded-[var(--radius-md)] px-4 py-3 text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent-green)] focus:ring-2 focus:ring-[rgba(0,255,136,0.2)] transition-all"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="text-sm font-medium text-[var(--text-secondary)] mb-2 block">
-                        Select Time
-                      </label>
-                      <input
-                        type="time"
-                        value={selectedTime}
-                        onChange={(e) => setSelectedTime(e.target.value)}
-                        className="w-full bg-[var(--bg-tertiary)] border border-[var(--border-subtle)] rounded-[var(--radius-md)] px-4 py-3 text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent-green)] focus:ring-2 focus:ring-[rgba(0,255,136,0.2)] transition-all"
-                      />
-                    </div>
-                  </div>
-
-                  {/* Reserve Button */}
                   <Button
                     variant="primary"
                     className="w-full !rounded-[var(--radius-md)] mb-4"
-                    onClick={handleReserve}
-                    disabled={!selectedDate || !selectedTime}
+                    onClick={() => document.getElementById('availability-calendar')?.scrollIntoView({ behavior: 'smooth' })}
                   >
-                    Reserve This Slot
+                    Book Now
                   </Button>
+
+                  <p className="text-xs text-center text-[var(--text-muted)] mb-4">
+                    Select your time slots in the calendar below
+                  </p>
 
                   <p className="text-xs text-center text-[var(--text-muted)]">
                     Free cancellation up to 24 hours before
