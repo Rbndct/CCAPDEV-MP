@@ -4,11 +4,14 @@ import { Card, Button, Badge } from './ui';
 import { useAuth } from '../contexts/AuthContext';
 import { AuthModal } from './AuthModal';
 
-// Generate time slots for a day
+// Generate time slots for a day (30-minute intervals)
 const generateTimeSlots = () => {
   const slots = [];
   for (let hour = 6; hour <= 22; hour++) {
     slots.push(`${hour.toString().padStart(2, '0')}:00`);
+    if (hour < 22) {
+      slots.push(`${hour.toString().padStart(2, '0')}:30`);
+    }
   }
   return slots;
 };
@@ -18,7 +21,7 @@ const getMockAvailability = (date, time) => {
   // Simulate some booked slots
   const hash = (date + time).split('').reduce((a, b) => ((a << 5) - a) + b.charCodeAt(0), 0);
   const random = Math.abs(hash % 100);
-  
+
   if (random < 30) return 'booked';
   if (random < 35) return 'blocked';
   return 'available';
@@ -29,15 +32,15 @@ export const PublicAvailabilityCalendar = ({ facility, onSlotSelect }) => {
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [timeFilter, setTimeFilter] = useState('all');
-  
+
   const timeSlots = generateTimeSlots();
-  
+
   // Get week dates
   const getWeekDates = (date) => {
     const week = [];
     const current = new Date(date);
     current.setDate(current.getDate() - current.getDay()); // Start from Sunday
-    
+
     for (let i = 0; i < 7; i++) {
       week.push(new Date(current));
       current.setDate(current.getDate() + 1);
@@ -62,9 +65,9 @@ export const PublicAvailabilityCalendar = ({ facility, onSlotSelect }) => {
   const handleSlotClick = (date, time) => {
     const dateStr = date.toISOString().split('T')[0];
     const status = getMockAvailability(dateStr, time);
-    
+
     if (status !== 'available') return;
-    
+
     if (!isLoggedIn) {
       setShowAuthModal(true);
     } else {
@@ -186,7 +189,7 @@ export const PublicAvailabilityCalendar = ({ facility, onSlotSelect }) => {
                   const dateStr = date.toISOString().split('T')[0];
                   const status = getMockAvailability(dateStr, time);
                   const isPast = date < new Date() || (date.toDateString() === new Date().toDateString() && parseInt(time) < new Date().getHours());
-                  
+
                   return (
                     <button
                       key={idx}
@@ -197,8 +200,8 @@ export const PublicAvailabilityCalendar = ({ facility, onSlotSelect }) => {
                         ${status === 'available' && !isPast
                           ? 'bg-[rgba(0,255,136,0.1)] border-[var(--accent-green)] hover:bg-[rgba(0,255,136,0.2)] cursor-pointer'
                           : status === 'booked'
-                          ? 'bg-[rgba(239,68,68,0.1)] border-red-500 cursor-not-allowed'
-                          : 'bg-[var(--bg-tertiary)] border-[var(--border-subtle)] cursor-not-allowed'
+                            ? 'bg-[rgba(239,68,68,0.1)] border-red-500 cursor-not-allowed'
+                            : 'bg-[var(--bg-tertiary)] border-[var(--border-subtle)] cursor-not-allowed'
                         }
                         ${isPast ? 'opacity-50' : ''}
                       `}
@@ -217,7 +220,7 @@ export const PublicAvailabilityCalendar = ({ facility, onSlotSelect }) => {
       {/* Info Note */}
       <div className="mt-4 p-3 bg-[var(--bg-secondary)] rounded-lg">
         <p className="text-sm text-[var(--text-muted)]">
-          {isLoggedIn 
+          {isLoggedIn
             ? '💡 Click on an available slot to book it'
             : '💡 Login to book a time slot'
           }

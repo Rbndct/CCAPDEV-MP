@@ -1,9 +1,9 @@
 import { Navbar, Footer } from '../components/LandingPage';
 import { Users, Target, Heart, Trophy, Star, ArrowRight } from 'lucide-react';
 import { Card } from '../components/ui';
+
 import kirstenImg from '../assets/images/kirs.jpg';
 import aaronImg from '../assets/images/aaronImg.jpg';
-
 import crisImg from '../assets/images/crisImg.jpg';
 import rbeeImg from '../assets/images/rbeeImg.jpg';
 
