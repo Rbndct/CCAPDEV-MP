@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Navbar, Footer } from '../components/LandingPage';
 import { Card, Badge } from '../components/ui';
-import { Calendar, Clock, TrendingUp, Bell, Pencil, X } from 'lucide-react';
+import { Calendar, Clock, TrendingUp, Bell, Pencil, X, Search, Users } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { EditReservationModal } from '../components/modals/EditReservationModal';
@@ -82,6 +82,13 @@ const mockAnnouncements = [
   }
 ];
 
+const mockPlayers = [
+  { id: 1, name: 'Pogi 1', sport: 'Basketball', avatar: 'J' },
+  { id: 2, name: 'Pogi 2', sport: 'Tennis', avatar: 'M' },
+  { id: 3, name: 'Ganda 3', sport: 'Badminton', avatar: 'C' },
+
+];
+
 const statusConfig = {
   confirmed: { variant: 'success', label: 'Confirmed' },
   pending: { variant: 'warning', label: 'Pending' },
@@ -94,6 +101,11 @@ export const DashboardPage = () => {
   const [upcomingBookings, setUpcomingBookings] = useState(mockUpcomingBookings);
   const [editingBooking, setEditingBooking] = useState(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [playerSearch, setPlayerSearch] = useState('');
+
+  const filteredPlayers = playerSearch.trim()
+    ? mockPlayers.filter(p => p.name.toLowerCase().includes(playerSearch.toLowerCase()) || p.sport.toLowerCase().includes(playerSearch.toLowerCase()))
+    : [];
 
   const handleEditClick = (booking) => {
     setEditingBooking(booking);
@@ -228,8 +240,55 @@ export const DashboardPage = () => {
               </Card>
             </div>
 
-            {/* Right Column - Announcements */}
+            {/* Right Column - Search & Announcements */}
             <div className="space-y-8">
+              {/* Search Players */}
+              <Card variant="elevated" className="p-6">
+                <div className="flex items-center gap-3 mb-4">
+                  <Users className="w-6 h-6 text-[var(--accent-green)]" />
+                  <h2 className="text-2xl font-bold">Find Users</h2>
+                </div>
+
+                <div className="relative mb-4">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-muted)]" />
+                  <input
+                    type="text"
+                    placeholder="Search by name or sport..."
+                    value={playerSearch}
+                    onChange={(e) => setPlayerSearch(e.target.value)}
+                    className="w-full pl-10 pr-4 py-2.5 bg-[var(--bg-tertiary)] border border-[var(--border-subtle)] rounded-lg text-sm focus:border-[var(--accent-green)] focus:outline-none focus:ring-2 focus:ring-[rgba(0,255,136,0.2)] transition-all placeholder:text-[var(--text-muted)]"
+                  />
+                </div>
+
+                {playerSearch.trim() && (
+                  <div className="space-y-2 max-h-64 overflow-y-auto">
+                    {filteredPlayers.length > 0 ? (
+                      filteredPlayers.map((player) => (
+                        <Link key={player.id} to={`/dashboard/user/${player.id}`}>
+                          <div className="flex items-center gap-3 p-3 rounded-lg bg-[var(--bg-secondary)] border border-[var(--border-subtle)] hover:border-[var(--accent-green)] transition-all cursor-pointer">
+                            <div className="w-9 h-9 rounded-full bg-[var(--bg-tertiary)] flex items-center justify-center flex-shrink-0">
+                              <span className="text-sm font-bold text-[var(--accent-green)]">{player.avatar}</span>
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="font-medium text-sm truncate">{player.name}</p>
+                              <p className="text-xs text-[var(--text-muted)]">{player.sport}</p>
+                            </div>
+                          </div>
+                        </Link>
+                      ))
+                    ) : (
+                      <p className="text-sm text-[var(--text-muted)] text-center py-4">No players found</p>
+                    )}
+                  </div>
+                )}
+
+                {!playerSearch.trim() && (
+                  <p className="text-xs text-[var(--text-muted)] text-center">
+                    Search for players by name or sport
+                  </p>
+                )}
+              </Card>
+
               {/* Facility Announcements */}
               <Card variant="elevated" className="p-6">
                 <div className="flex items-center gap-3 mb-6">

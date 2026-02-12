@@ -10,6 +10,7 @@ import { PaymentPage } from './pages/PaymentPage';
 import { ProfilePage } from './pages/ProfilePage';
 import { FavoritesPage } from './pages/FavoritesPage';
 import { SettingsPage } from './pages/SettingsPage';
+import { UserProfilePage } from './pages/UserProfilePage';
 import { DashboardLayout } from './components/DashboardLayout';
 import { AuthProvider } from './contexts/AuthContext';
 import { ProtectedRoute } from './components/ProtectedRoute';
@@ -52,6 +53,7 @@ function App() {
               <Route path="payments" element={<PaymentPage />} />
               <Route path="profile" element={<ProfilePage />} />
               <Route path="settings" element={<SettingsPage />} />
+              <Route path="user/:userId" element={<UserProfilePage />} />
             </Route>
 
             {/* Admin Routes */}
