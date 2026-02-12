@@ -11,6 +11,8 @@ export function UserManagementPage() {
         { id: "U-001", name: "John Doe", email: "john@example.com", bookings: 5, status: "active" },
         { id: "U-002", name: "Jane Smith", email: "jane@example.com", bookings: 2, status: "inactive" },
         { id: "U-003", name: "Mike Ross", email: "mike@example.com", bookings: 8, status: "active" },
+        { id: "U-004", name: "Harvey Specter", email: "Harvey@example.com", bookings: 7, status: "active" },
+        { id: "U-005", name: "Louis Litt", email: "littfire@example.com", bookings: 6, status: "active" },
     ]);
 
     const toggleUserStatus = (id) => {
@@ -102,8 +104,8 @@ export function UserManagementPage() {
                                             title={user.status === "active" ? "Deactivate User" : "Activate User"}
                                             onClick={() => toggleUserStatus(user.id)}
                                             className={`p-1 rounded ${user.status === "active"
-                                                    ? "hover:bg-red-500/10 text-red-500"
-                                                    : "hover:bg-green-500/10 text-green-500"
+                                                ? "hover:bg-red-500/10 text-red-500"
+                                                : "hover:bg-green-500/10 text-green-500"
                                                 }`}
                                         >
                                             {user.status === "active" ? <UserX size={18} /> : <UserCheck size={18} />}

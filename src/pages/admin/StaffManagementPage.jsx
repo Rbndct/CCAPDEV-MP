@@ -13,6 +13,9 @@ export function StaffManagementPage() {
         { id: 1, name: 'John Doe', email: 'john@sportsplex.com', phone: '+63 912 345 6789', role: 'Trainer', status: 'Active' },
         { id: 2, name: 'Jane Smith', email: 'jane@sportsplex.com', phone: '+63 923 456 7890', role: 'Receptionist', status: 'On Leave' },
         { id: 3, name: 'Mike Johnson', email: 'mike@sportsplex.com', phone: '+63 934 567 8901', role: 'Maintenance', status: 'Active' },
+        { id: 4, name: 'Mike Kingston', email: 'mike2@sportsplex.com', phone: '+63 934 667 8601', role: 'Trainer', status: 'Active' },
+        { id: 5, name: 'Justine Bieber', email: 'BABYBABYOHHHH@sportsplex.com', phone: '+63 934 667 6701', role: 'Receptionist', status: 'Active' },
+
     ];
 
     const handleEdit = (staffMember) => {
