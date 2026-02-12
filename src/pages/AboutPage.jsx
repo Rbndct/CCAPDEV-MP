@@ -2,32 +2,41 @@ import { Navbar, Footer } from '../components/LandingPage';
 import { Users, Target, Heart, Trophy, Star, ArrowRight } from 'lucide-react';
 import { Card } from '../components/ui';
 import kirstenImg from '../assets/images/kirs.jpg';
+import aaronImg from '../assets/images/aaronImg.jpg';
+
+import crisImg from '../assets/images/crisImg.jpg';
+import rbeeImg from '../assets/images/rbeeImg.jpg';
+
+
+
+
+
 
 export const AboutPage = () => {
     const teamMembers = [
         {
             name: 'Aaron',
             role: 'Co-Founder & CEO',
-            image: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Aaron',
-            bio: 'Passionate about bringing professional-grade facilities to everyone.'
+            image: aaronImg,
+            bio: ''
         },
         {
             name: 'Cris',
             role: 'Head of Operations',
-            image: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Cris', // Using specific seeds for consistent avatars
-            bio: 'Ensuring smooth daily operations and exceptional member experiences.'
+            image: crisImg, // Using specific seeds for consistent avatars
+            bio: ''
         },
         {
             name: 'Kirsten',
             role: 'Community Directior',
             image: kirstenImg,
-            bio: 'Building a vibrant and inclusive sports community.'
+            bio: ''
         },
         {
             name: 'Rbee',
             role: 'Technical Lead',
-            image: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Rbee',
-            bio: 'Innovating the digital experience for seamless booking.'
+            image: rbeeImg,
+            bio: ''
         }
     ];
 

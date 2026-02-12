@@ -99,7 +99,7 @@ const facilitiesData = {
     surface: 'Clay Court',
     amenities: [
       'Tournament Grade',
-      'Spectator Seating', 
+      'Spectator Seating',
       'Premium Surface',
       'Locker Rooms',
       'Equipment Shop'
@@ -252,7 +252,7 @@ export const FacilityDetailPage = () => {
           startTime: selectedTime
         })
       };
-      
+
       setBookingData(booking);
       setShowSuccessModal(true);
     }
@@ -267,7 +267,7 @@ export const FacilityDetailPage = () => {
   return (
     <>
       <Navbar />
-      
+
       <div className="min-h-screen bg-[var(--bg-primary)] pt-24 pb-16 px-6">
         <div className="max-w-7xl mx-auto">
           {/* Back Button */}
@@ -354,7 +354,7 @@ export const FacilityDetailPage = () => {
               </Card>
 
               {/* Availability Calendar */}
-              <PublicAvailabilityCalendar 
+              <PublicAvailabilityCalendar
                 facility={facility}
                 onSlotSelect={handleSlotSelect}
               />
