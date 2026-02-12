@@ -377,21 +377,7 @@ export const FacilityDetailPage = () => {
                     Free cancellation up to 24 hours before
                   </p>
 
-                  {/* Quick Info */}
-                  <div className="mt-6 pt-6 border-t border-[var(--border-subtle)] space-y-3">
-                    <div className="flex items-center gap-3 text-sm">
-                      <Zap className="w-4 h-4 text-[var(--accent-green)]" />
-                      <span className="text-[var(--text-secondary)]">Instant confirmation</span>
-                    </div>
-                    <div className="flex items-center gap-3 text-sm">
-                      <Trophy className="w-4 h-4 text-[var(--accent-green)]" />
-                      <span className="text-[var(--text-secondary)]">Professional equipment</span>
-                    </div>
-                    <div className="flex items-center gap-3 text-sm">
-                      <Users className="w-4 h-4 text-[var(--accent-green)]" />
-                      <span className="text-[var(--text-secondary)]">Up to {facility.capacity} players</span>
-                    </div>
-                  </div>
+
                 </Card>
               </div>
             </div>
