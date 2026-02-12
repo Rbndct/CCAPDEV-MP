@@ -21,6 +21,7 @@ import { ReservationsPage } from './pages/admin/ReservationsPage';
 import { FacilitiesManagementPage } from './pages/admin/FacilitiesManagementPage';
 import { BookingsPage } from './pages/admin/BookingsPage';
 import { StaffManagementPage } from './pages/admin/StaffManagementPage';
+import { AdminSettingsPage } from './pages/admin/SettingsPage';
 import { ThemeToggle } from './components/ThemeToggle';
 import './App.css';
 
@@ -37,7 +38,7 @@ function App() {
             <Route path="/contact" element={<ContactPage />} />
             <Route path="/login" element={<AuthPage />} />
             <Route path="/signup" element={<AuthPage />} />
-            
+
             {/* Dashboard Routes with Sidebar Layout */}
             <Route path="/dashboard" element={
               <ProtectedRoute>
@@ -66,6 +67,7 @@ function App() {
               <Route path="staff" element={<StaffManagementPage />} />
               <Route path="facilities" element={<FacilitiesManagementPage />} />
               <Route path="bookings" element={<BookingsPage />} />
+              <Route path="settings" element={<AdminSettingsPage />} />
               {/* Add other admin routes here as needed */}
             </Route>
           </Routes>

@@ -3,11 +3,13 @@ import { Card, Button, Badge } from '../../components/ui';
 import { Users, DollarSign, Calendar, TrendingUp, ArrowRight, AlertTriangle, Plus, Lock } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { ViewAllReservationsModal } from '../../components/modals/ViewAllReservationsModal';
+import { ViewNoShowsModal } from '../../components/modals/ViewNoShowsModal';
 import { NewBookingModal } from '../../components/modals/NewBookingModal';
 import { BlockSlotModal } from '../../components/modals/BlockSlotModal';
 
 export function AdminDashboardPage() {
     const [isViewAllModalOpen, setIsViewAllModalOpen] = useState(false);
+    const [isNoShowsModalOpen, setIsNoShowsModalOpen] = useState(false);
     const [isNewBookingModalOpen, setIsNewBookingModalOpen] = useState(false);
     const [isBlockSlotModalOpen, setIsBlockSlotModalOpen] = useState(false);
 
@@ -56,9 +58,11 @@ export function AdminDashboardPage() {
                 <Card variant="elevated" className="p-6 lg:col-span-2">
                     <div className="flex items-center justify-between mb-6">
                         <h3 className="text-xl font-bold">Recent Signups</h3>
-                        <Button variant="ghost" size="sm" className="gap-2" onClick={() => setIsViewAllModalOpen(true)}>
-                            View All <ArrowRight size={16} />
-                        </Button>
+                        <Link to="/admin/users">
+                            <Button variant="ghost" size="sm" className="gap-2">
+                                View All <ArrowRight size={16} />
+                            </Button>
+                        </Link>
                     </div>
                     <div className="space-y-4">
                         {[1, 2, 3].map((i) => (
@@ -81,7 +85,7 @@ export function AdminDashboardPage() {
                 <Card variant="elevated" className="p-6">
                     <div className="flex items-center justify-between mb-6">
                         <h3 className="text-xl font-bold">No-Show Alerts</h3>
-                        <Button variant="ghost" size="sm" className="gap-2">
+                        <Button variant="ghost" size="sm" className="gap-2" onClick={() => setIsNoShowsModalOpen(true)}>
                             View All <ArrowRight size={16} />
                         </Button>
                     </div>
@@ -104,6 +108,7 @@ export function AdminDashboardPage() {
 
             {/* Modals */}
             <ViewAllReservationsModal isOpen={isViewAllModalOpen} onClose={() => setIsViewAllModalOpen(false)} />
+            <ViewNoShowsModal isOpen={isNoShowsModalOpen} onClose={() => setIsNoShowsModalOpen(false)} />
             <NewBookingModal isOpen={isNewBookingModalOpen} onClose={() => setIsNewBookingModalOpen(false)} />
             <BlockSlotModal isOpen={isBlockSlotModalOpen} onClose={() => setIsBlockSlotModalOpen(false)} />
         </div>

@@ -1,7 +1,31 @@
+import { useState } from 'react';
 import { Card, Button, Input } from '../../components/ui';
-import { Save, Bell, Moon, Globe } from 'lucide-react';
+import { Save, Bell, Globe } from 'lucide-react';
 
-export function SettingsPage() {
+export function AdminSettingsPage() {
+    const [notifications, setNotifications] = useState({
+        bookings: true,
+        noShow: true,
+        summary: false
+    });
+
+    const [general, setGeneral] = useState({
+        businessName: 'SportsPlex',
+        contactEmail: 'admin@sportsplex.com',
+        timezone: 'GMT+8 (Manila)'
+    });
+
+    const [isSaving, setIsSaving] = useState(false);
+
+    const handleSave = () => {
+        setIsSaving(true);
+        // Mock API call
+        setTimeout(() => {
+            setIsSaving(false);
+            alert('Settings saved successfully!');
+        }, 1000);
+    };
+
     return (
         <div className="space-y-6">
             <div>
@@ -18,15 +42,30 @@ export function SettingsPage() {
                     <div className="space-y-4">
                         <label className="flex items-center justify-between cursor-pointer">
                             <span className="text-sm">Email notifications for new bookings</span>
-                            <input type="checkbox" className="w-4 h-4" defaultChecked />
+                            <input
+                                type="checkbox"
+                                className="w-4 h-4"
+                                checked={notifications.bookings}
+                                onChange={(e) => setNotifications({ ...notifications, bookings: e.target.checked })}
+                            />
                         </label>
                         <label className="flex items-center justify-between cursor-pointer">
                             <span className="text-sm">No-show alerts</span>
-                            <input type="checkbox" className="w-4 h-4" defaultChecked />
+                            <input
+                                type="checkbox"
+                                className="w-4 h-4"
+                                checked={notifications.noShow}
+                                onChange={(e) => setNotifications({ ...notifications, noShow: e.target.checked })}
+                            />
                         </label>
                         <label className="flex items-center justify-between cursor-pointer">
                             <span className="text-sm">Daily summary reports</span>
-                            <input type="checkbox" className="w-4 h-4" />
+                            <input
+                                type="checkbox"
+                                className="w-4 h-4"
+                                checked={notifications.summary}
+                                onChange={(e) => setNotifications({ ...notifications, summary: e.target.checked })}
+                            />
                         </label>
                     </div>
                 </Card>
@@ -39,15 +78,27 @@ export function SettingsPage() {
                     <div className="space-y-4">
                         <div>
                             <label className="text-sm font-medium mb-2 block">Business Name</label>
-                            <Input placeholder="SportsPlex" />
+                            <Input
+                                value={general.businessName}
+                                onChange={(e) => setGeneral({ ...general, businessName: e.target.value })}
+                                placeholder="SportsPlex"
+                            />
                         </div>
                         <div>
                             <label className="text-sm font-medium mb-2 block">Contact Email</label>
-                            <Input placeholder="admin@sportsplex.com" />
+                            <Input
+                                value={general.contactEmail}
+                                onChange={(e) => setGeneral({ ...general, contactEmail: e.target.value })}
+                                placeholder="admin@sportsplex.com"
+                            />
                         </div>
                         <div>
                             <label className="text-sm font-medium mb-2 block">Timezone</label>
-                            <select className="w-full bg-[var(--bg-tertiary)] border border-[var(--border-subtle)] rounded-lg px-4 py-2">
+                            <select
+                                className="w-full bg-[var(--bg-tertiary)] border border-[var(--border-subtle)] rounded-lg px-4 py-2"
+                                value={general.timezone}
+                                onChange={(e) => setGeneral({ ...general, timezone: e.target.value })}
+                            >
                                 <option>GMT+8 (Manila)</option>
                                 <option>GMT+0 (UTC)</option>
                             </select>
@@ -57,8 +108,13 @@ export function SettingsPage() {
             </div>
 
             <div className="flex justify-end">
-                <Button variant="primary" className="gap-2">
-                    <Save size={18} /> Save Changes
+                <Button
+                    variant="primary"
+                    className="gap-2"
+                    onClick={handleSave}
+                    disabled={isSaving}
+                >
+                    <Save size={18} /> {isSaving ? 'Saving...' : 'Save Changes'}
                 </Button>
             </div>
         </div>
