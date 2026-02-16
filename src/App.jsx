@@ -22,6 +22,7 @@ import { ReservationsPage } from './pages/admin/ReservationsPage';
 import { FacilitiesManagementPage } from './pages/admin/FacilitiesManagementPage';
 import { BookingsPage } from './pages/admin/BookingsPage';
 import { StaffManagementPage } from './pages/admin/StaffManagementPage';
+import { BookingsPage as UserBookingsPage } from './pages/BookingsPage';
 import { AdminSettingsPage } from './pages/admin/SettingsPage';
 import { ThemeToggle } from './components/ThemeToggle';
 import './App.css';
@@ -48,7 +49,7 @@ function App() {
             }>
               <Route index element={<DashboardPage />} />
               <Route path="book" element={<FacilitiesPage />} />
-              <Route path="bookings" element={<DashboardPage />} />
+              <Route path="bookings" element={<BookingsPage />} />
               <Route path="favorites" element={<FavoritesPage />} />
               <Route path="payments" element={<PaymentPage />} />
               <Route path="profile" element={<ProfilePage />} />
