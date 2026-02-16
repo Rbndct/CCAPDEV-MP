@@ -64,7 +64,7 @@ export const BookingSuccessModal = ({ isOpen, onClose, booking }) => {
 
           {/* Heading */}
           <h2 className="text-3xl font-bold text-center mb-2">
-            Booking Confirmed! 🎉
+            Booking Confirmed!
           </h2>
           
           {/* Subheading */}
