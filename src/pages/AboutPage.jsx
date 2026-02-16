@@ -109,7 +109,7 @@ export const AboutPage = () => {
                                     <img
                                         src={member.image}
                                         alt={member.name}
-                                        className="w-full h-full rounded-full bg-[var(--bg-tertiary)]"
+                                        className="w-full h-full object-cover bg-[var(--bg-tertiary)]"
                                     />
                                 </div>
                                 <h3 className="text-xl font-bold mb-1">{member.name}</h3>

@@ -35,7 +35,7 @@ const facilitiesData = {
     ],
     description: 'Our premium indoor basketball court features professional-grade wooden flooring, state-of-the-art lighting, and climate control for optimal playing conditions. Perfect for competitive games, team practices, or casual pickup games.',
     images: ['🏀', '🎯', '🏆'],
-    location: '123 Sports Ave, Metro Manila',
+    location: 'De La Salle University, 2401 Taft Ave, Malate, Manila',
     availability: 'high'
   },
   2: {
@@ -58,7 +58,7 @@ const facilitiesData = {
     ],
     description: 'Standard indoor basketball court perfect for casual games and practice sessions. Well-maintained with good lighting and standard equipment.',
     images: ['🏀', '⛹️', '🎯'],
-    location: '123 Sports Ave, Metro Manila',
+    location: 'Makati Sports Club, L.P. Leviste Street, Makati, Metro Manila',
     availability: 'medium'
   },
   3: {
@@ -82,7 +82,7 @@ const facilitiesData = {
     ],
     description: 'Indoor hard surface tennis court with professional-grade equipment. Suitable for singles and doubles matches with excellent lighting.',
     images: ['🎾', '🏆', '⭐'],
-    location: '123 Sports Ave, Metro Manila',
+    location: 'Quezon City Memorial Circle, Elliptical Road, Diliman, Quezon City',
     availability: 'high'
   },
   4: {
@@ -105,7 +105,7 @@ const facilitiesData = {
     ],
     description: 'Tournament-grade clay tennis court suitable for competitive matches. Features spectator seating and premium surface maintenance.',
     images: ['🎾', '🏟️', '👟'],
-    location: '123 Sports Ave, Metro Manila',
+    location: 'Rizal Memorial Sports Complex, M. Adriatico St, Malate, Manila',
     availability: 'low'
   },
   5: {

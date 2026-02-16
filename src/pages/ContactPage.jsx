@@ -38,7 +38,7 @@ export const ContactPage = () => {
             role: 'Technical Lead',
             email: 'raphael_maagma@dlsu.edu.ph',
             fbLink: 'https://www.facebook.com/RbeeMaagma13',
-            phone: '+63 917 234 5667',
+            phone: '+63 969 420 6767',
             image: rbeeImg
         }
     ];
@@ -70,7 +70,7 @@ export const ContactPage = () => {
                                     <img
                                         src={member.image}
                                         alt={member.name}
-                                        className="w-full h-full rounded-full bg-[var(--bg-tertiary)]"
+                                        className="w-full h-full object-cover bg-[var(--bg-tertiary)]"
                                     />
                                 </div>
                                 <h3 className="text-lg font-bold mb-1">{member.name}</h3>
@@ -82,9 +82,9 @@ export const ContactPage = () => {
                                         <span className="text-sm truncate">Facebook Profile</span>
                                     </a>
 
-                                    <a href={`mailto:${member.email}`} className="flex items-center gap-3 text-[var(--text-secondary)] hover:text-[var(--accent-green)] transition-colors p-2 rounded-lg hover:bg-[var(--bg-tertiary)]">
+                                    <a href={`mailto:${member.email}`} className="flex items-center gap-3 text-[var(--text-secondary)] hover:text-[var(--accent-green)] transition-colors p-2 rounded-lg hover:bg-[var(--bg-tertiary)] group">
                                         <Mail className="w-5 h-5 flex-shrink-0" />
-                                        <span className="text-sm truncate" title={member.email}>{member.email}</span>
+                                        <span className="text-sm break-all" title={member.email}>{member.email}</span>
                                     </a>
 
                                     <a href={`tel:${member.phone}`} className="flex items-center gap-3 text-[var(--text-secondary)] hover:text-[var(--accent-green)] transition-colors p-2 rounded-lg hover:bg-[var(--bg-tertiary)]">
@@ -126,37 +126,56 @@ export const ContactPage = () => {
                     {/* General Info */}
                     <div className="flex flex-col justify-center">
                         <h2 className="text-3xl font-bold mb-8">Visit Us</h2>
-                        <Card variant="glass" className="p-8 space-y-8">
-                            <div className="flex items-start gap-4">
-                                <div className="w-12 h-12 bg-[rgba(0,255,136,0.1)] rounded-xl flex items-center justify-center text-[var(--accent-green)] flex-shrink-0">
-                                    <MapPin className="w-6 h-6" />
-                                </div>
-                                <div>
-                                    <h3 className="text-xl font-bold mb-2">Location</h3>
-                                    <p className="text-[var(--text-secondary)]">
-                                        123 Sports Avenue, <br />
-                                        University District, Manila
-                                    </p>
-                                </div>
-                            </div>
+                        <Card variant="glass" className="p-8">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 h-full">
+                                <div className="space-y-8">
+                                    <div className="flex items-start gap-4">
+                                        <div className="w-12 h-12 bg-[rgba(0,255,136,0.1)] rounded-xl flex items-center justify-center text-[var(--accent-green)] flex-shrink-0">
+                                            <MapPin className="w-6 h-6" />
+                                        </div>
+                                        <div>
+                                            <h3 className="text-xl font-bold mb-2">Location</h3>
+                                            <p className="text-[var(--text-secondary)]">
+                                                123 Sports Avenue, <br />
+                                                University District, Manila
+                                            </p>
+                                        </div>
+                                    </div>
 
-                            <div className="flex items-start gap-4">
-                                <div className="w-12 h-12 bg-[rgba(0,255,136,0.1)] rounded-xl flex items-center justify-center text-[var(--accent-green)] flex-shrink-0">
-                                    <Mail className="w-6 h-6" />
-                                </div>
-                                <div>
-                                    <h3 className="text-xl font-bold mb-2">General Inquiries</h3>
-                                    <p className="text-[var(--text-secondary)]">info@sportsplex.com</p>
-                                </div>
-                            </div>
+                                    <div className="flex items-start gap-4">
+                                        <div className="w-12 h-12 bg-[rgba(0,255,136,0.1)] rounded-xl flex items-center justify-center text-[var(--accent-green)] flex-shrink-0">
+                                            <Mail className="w-6 h-6" />
+                                        </div>
+                                        <div>
+                                            <h3 className="text-xl font-bold mb-2">General Inquiries</h3>
+                                            <p className="text-[var(--text-secondary)]">info@sportsplex.com</p>
+                                        </div>
+                                    </div>
 
-                            <div className="flex items-start gap-4">
-                                <div className="w-12 h-12 bg-[rgba(0,255,136,0.1)] rounded-xl flex items-center justify-center text-[var(--accent-green)] flex-shrink-0">
-                                    <Phone className="w-6 h-6" />
+                                    <div className="flex items-start gap-4">
+                                        <div className="w-12 h-12 bg-[rgba(0,255,136,0.1)] rounded-xl flex items-center justify-center text-[var(--accent-green)] flex-shrink-0">
+                                            <Phone className="w-6 h-6" />
+                                        </div>
+                                        <div>
+                                            <h3 className="text-xl font-bold mb-2">Front Desk</h3>
+                                            <p className="text-[var(--text-secondary)]">+63 (02) 8123 4567</p>
+                                        </div>
+                                    </div>
                                 </div>
-                                <div>
-                                    <h3 className="text-xl font-bold mb-2">Front Desk</h3>
-                                    <p className="text-[var(--text-secondary)]">+63 (02) 8123 4567</p>
+
+                                {/* Google Map - Moved inside the card, beside details */}
+                                <div className="rounded-[var(--radius-lg)] overflow-hidden border border-[var(--border-subtle)] h-full min-h-[300px]">
+                                    <iframe 
+                                        width="100%" 
+                                        height="100%" 
+                                        id="gmap_canvas" 
+                                        src="https://maps.google.com/maps?q=De%20La%20Salle%20University%20Manila&t=&z=15&ie=UTF8&iwloc=&output=embed" 
+                                        frameBorder="0" 
+                                        scrolling="no" 
+                                        marginHeight="0" 
+                                        marginWidth="0"
+                                        title="Google Map Location"
+                                    ></iframe>
                                 </div>
                             </div>
                         </Card>
