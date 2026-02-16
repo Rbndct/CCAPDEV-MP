@@ -153,7 +153,7 @@ export const DashboardPage = () => {
                     <Calendar className="w-6 h-6 text-[var(--accent-green)]" />
                     <h2 className="text-2xl font-bold">Upcoming Reservations</h2>
                   </div>
-                  <Link to="/bookings" className="text-[var(--accent-green)] hover:underline text-sm font-medium">
+                  <Link to="/dashboard/bookings?tab=upcoming" className="text-[var(--accent-green)] hover:underline text-sm font-medium">
                     View All
                   </Link>
                 </div>
@@ -217,7 +217,7 @@ export const DashboardPage = () => {
                     <TrendingUp className="w-6 h-6 text-[var(--accent-green)]" />
                     <h2 className="text-2xl font-bold">Recent History</h2>
                   </div>
-                  <Link to="/bookings/history" className="text-[var(--accent-green)] hover:underline text-sm font-medium">
+                  <Link to="/dashboard/bookings?tab=history" className="text-[var(--accent-green)] hover:underline text-sm font-medium">
                     View Full History
                   </Link>
                 </div>

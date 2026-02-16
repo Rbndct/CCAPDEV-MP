@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Card, Button } from '../components/ui';
-import { Star, ArrowRight, Calendar, Heart } from 'lucide-react';
+import { Star, ArrowRight, Calendar, Heart, Trophy, Activity, Dumbbell } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 // Mock Favorites Data
@@ -9,7 +9,7 @@ const mockFavorites = [
     id: 1,
     name: 'Court A - Premium Basketball',
     type: 'Basketball',
-    icon: '🏀',
+    icon: <Trophy className="w-8 h-8 text-[var(--accent-green)]" />,
     price: 600,
     rating: 4.9,
     availability: 'high'
@@ -18,7 +18,7 @@ const mockFavorites = [
     id: 8,
     name: 'Court H - Pickleball Arena',
     type: 'Pickleball',
-    icon: '🏓',
+    icon: <Dumbbell className="w-8 h-8 text-[var(--accent-green)]" />,
     price: 500,
     rating: 4.9,
     availability: 'high'
@@ -27,7 +27,7 @@ const mockFavorites = [
     id: 3,
     name: 'Court C - Tennis Court 1',
     type: 'Tennis',
-    icon: '🎾',
+    icon: <Activity className="w-8 h-8 text-[var(--accent-green)]" />,
     price: 500,
     rating: 4.8,
     availability: 'high'
