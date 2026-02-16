@@ -31,6 +31,29 @@ export const LocationSection = ({ facility }) => {
     window.open(`https://www.google.com/maps/@${coords},3a,75y,90t/data=!3m6!1e1`, '_blank');
   };
 
+
+
+  // Public Transport
+  const handlePublicTransport = () => {
+    const encodedAddress = encodeURIComponent(address);
+    
+    if ("geolocation" in navigator) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const { latitude, longitude } = position.coords;
+          window.open(`https://www.google.com/maps/dir/?api=1&origin=${latitude},${longitude}&destination=${encodedAddress}&travelmode=transit`, '_blank');
+        },
+        (error) => {
+          console.error("Error getting location:", error);
+          // Fallback if location access denied
+          window.open(`https://www.google.com/maps/dir/?api=1&destination=${encodedAddress}&travelmode=transit`, '_blank');
+        }
+      );
+    } else {
+      window.open(`https://www.google.com/maps/dir/?api=1&destination=${encodedAddress}&travelmode=transit`, '_blank');
+    }
+  };
+
   return (
     <Card variant="outlined" className="p-6">
       {/* Header */}
@@ -100,7 +123,7 @@ export const LocationSection = ({ facility }) => {
           <span className="font-semibold text-sm">Parking Available</span>
         </div>
         <p className="text-sm text-[var(--text-muted)]">
-          50 parking slots • Free for customers • Basement Level 1
+          67 parking slots • Free for customers • Basement Level 67
         </p>
       </div>
 
@@ -110,10 +133,18 @@ export const LocationSection = ({ facility }) => {
           <Train className="w-4 h-4 text-[var(--accent-green)]" />
           <span className="font-semibold text-sm">Public Transport</span>
         </div>
-        <ul className="text-sm text-[var(--text-muted)] space-y-1">
-          <li>🚇 Ayala MRT Station - 10 min walk</li>
-          <li>🚌 Bus routes: P2P, City Bus</li>
-        </ul>
+        <p className="text-xs text-[var(--text-muted)] mb-3">
+          Find the best route from your current location via bus, train, or jeepney.
+        </p>
+        <Button 
+          variant="outline" 
+          size="sm"
+          className="w-full"
+          onClick={handlePublicTransport}
+          icon={<Navigation className="w-3 h-3" />}
+        >
+          Get Transit Route
+        </Button>
       </div>
     </Card>
   );

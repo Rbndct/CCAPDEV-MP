@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Calendar, ChevronLeft, ChevronRight, Clock, X } from 'lucide-react';
+import { Calendar, ChevronLeft, ChevronRight, Clock, X, Check, Lightbulb } from 'lucide-react';
 import { Card, Button, Badge } from './ui';
 import { useAuth } from '../contexts/AuthContext';
 import { AuthModal } from './AuthModal';
@@ -295,8 +295,8 @@ export const PublicAvailabilityCalendar = ({ facility, onSlotSelect }) => {
                       {inSelection && isStart && 'START'}
                       {inSelection && isEnd && 'END'}
                       {inSelection && !isStart && !isEnd && '•'}
-                      {!inSelection && status === 'available' && !isPast && '✓'}
-                      {status === 'booked' && '✕'}
+                      {!inSelection && status === 'available' && !isPast && <Check className="w-3 h-3 mx-auto" />}
+                      {status === 'booked' && <X className="w-3 h-3 mx-auto" />}
                     </button>
                   );
                 })}
@@ -357,8 +357,8 @@ export const PublicAvailabilityCalendar = ({ facility, onSlotSelect }) => {
         <div className="mt-4 p-3 bg-[var(--bg-secondary)] rounded-lg">
           <p className="text-sm text-[var(--text-muted)]">
             {isLoggedIn
-              ? '💡 Click a start time, then click an end time on the same day to select your duration'
-              : '💡 Login to book a time slot'
+              ? <span className="flex items-center gap-2"><Lightbulb className="w-4 h-4 text-[var(--accent-yellow)]" /> Click a start time, then click an end time on the same day to select your duration</span>
+              : <span className="flex items-center gap-2"><Lightbulb className="w-4 h-4 text-[var(--accent-yellow)]" /> Login to book a time slot</span>
             }
           </p>
         </div>
@@ -367,7 +367,7 @@ export const PublicAvailabilityCalendar = ({ facility, onSlotSelect }) => {
       {selectionStart && !selectionEnd && (
         <div className="mt-2 p-3 bg-[var(--bg-secondary)] rounded-lg">
           <p className="text-sm text-[var(--text-muted)]">
-            💡 Now click an end time on the same day to complete your selection
+            <span className="flex items-center gap-2"><Lightbulb className="w-4 h-4 text-[var(--accent-yellow)]" /> Now click an end time on the same day to complete your selection</span>
           </p>
         </div>
       )}

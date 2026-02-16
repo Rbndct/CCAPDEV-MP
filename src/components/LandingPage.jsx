@@ -1,7 +1,74 @@
-import { ArrowRight, Calendar, Clock, MapPin, Trophy, Users, Zap, LogOut, User, Facebook, Twitter, Instagram, Linkedin } from 'lucide-react';
+import { ArrowRight, Calendar, Clock, MapPin, Trophy, Users, Zap, LogOut, User, Facebook, Twitter, Instagram, Linkedin, Mail, Phone, Activity, Dribbble, Wind, Check, ChevronDown } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Button, Card, Input, Badge } from './ui';
 import { useAuth } from '../contexts/AuthContext';
+import { useState, useRef, useEffect } from 'react';
+
+// Custom Sport Select with Icons (Same as FacilitiesPage)
+const SportSelect = ({ value, onChange }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const dropdownRef = useRef(null);
+
+  const sports = [
+    { id: 'all', label: 'All Sports', icon: Activity },
+    { id: 'Basketball', label: 'Basketball', icon: Dribbble },
+    { id: 'Tennis', label: 'Tennis', icon: Trophy },
+    { id: 'Badminton', label: 'Badminton', icon: Wind },
+    { id: 'Volleyball', label: 'Volleyball', icon: Activity },
+    { id: 'Pickleball', label: 'Pickleball', icon: Activity },
+    { id: 'Multi-Purpose', label: 'Multi-Purpose', icon: Activity },
+  ];
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const selectedSport = sports.find(s => s.id === value) || sports[0];
+  const SelectedIcon = selectedSport.icon;
+
+  return (
+    <div className="relative" ref={dropdownRef}>
+      <div 
+        className="w-full bg-[var(--bg-tertiary)] border border-[var(--border-subtle)] rounded-[var(--radius-md)] px-4 py-3 text-[var(--text-primary)] cursor-pointer flex items-center justify-between hover:border-[var(--accent-green)] transition-all"
+        onClick={() => setIsOpen(!isOpen)}
+      >
+        <div className="flex items-center gap-2">
+          <SelectedIcon className="w-4 h-4 text-[var(--accent-green)]" />
+          <span>{selectedSport.label}</span>
+        </div>
+        <ChevronDown className={`w-4 h-4 text-[var(--text-muted)] transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+      </div>
+
+      {isOpen && (
+        <div className="absolute z-50 top-full left-0 right-0 mt-2 bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-[var(--radius-md)] shadow-xl max-h-60 overflow-y-auto">
+          {sports.map((sport) => {
+            const Icon = sport.icon;
+            return (
+              <div 
+                key={sport.id}
+                className={`flex items-center gap-3 px-4 py-3 cursor-pointer transition-colors ${value === sport.id ? 'bg-[var(--accent-green)] text-black' : 'hover:bg-[var(--bg-tertiary)]'}`}
+                onClick={() => {
+                  onChange(sport.id);
+                  setIsOpen(false);
+                }}
+              >
+                <Icon className={`w-4 h-4 ${value === sport.id ? 'text-black' : 'text-[var(--accent-green)]'}`} />
+                <span>{sport.label}</span>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+};
+
 
 // Navigation Bar Component
 export const Navbar = () => {
@@ -132,11 +199,11 @@ export const Hero = () => {
         {/* Stats */}
         <div className="grid grid-cols-3 gap-8 mt-16 max-w-2xl mx-auto">
           <div className="text-center">
-            <div className="text-3xl md:text-4xl font-bold text-[var(--accent-green)]">12+</div>
+            <div className="text-3xl md:text-4xl font-bold text-[var(--accent-green)]">67+</div>
             <div className="text-sm text-[var(--text-muted)] mt-1">Facilities</div>
           </div>
           <div className="text-center">
-            <div className="text-3xl md:text-4xl font-bold text-[var(--accent-green)]">5K+</div>
+            <div className="text-3xl md:text-4xl font-bold text-[var(--accent-green)]">694200</div>
             <div className="text-sm text-[var(--text-muted)] mt-1">Members</div>
           </div>
           <div className="text-center">
@@ -153,7 +220,7 @@ export const Hero = () => {
 export const QuickSearch = () => {
   return (
     <section className="relative -mt-24 z-20 px-6">
-      <Card variant="glass" hover="none" className="max-w-5xl mx-auto p-8">
+      <Card variant="glass" hover="none" className="max-w-5xl mx-auto p-8 !overflow-visible">
         <div className="text-center mb-6">
           <h3 className="text-2xl font-bold mb-2">Find Available Courts</h3>
           <p className="text-sm text-[var(--text-muted)]">Quick search for immediate booking</p>
@@ -170,18 +237,11 @@ export const QuickSearch = () => {
             label="Time"
           />
 
-          <div className="flex flex-col gap-2">
+            <div className="flex flex-col gap-2">
             <label className="text-sm font-medium text-[var(--text-secondary)]">
               Sport Type
             </label>
-            <select className="w-full bg-[var(--bg-tertiary)] border border-[var(--border-subtle)] rounded-[var(--radius-md)] px-4 py-3 text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent-green)] focus:ring-2 focus:ring-[rgba(0,255,136,0.2)] transition-all appearance-none bg-[url('data:image/svg+xml;charset=UTF-8,%3csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2712%27 height=%278%27 viewBox=%270 0 12 8%27%3e%3cpath fill=%27%236b6b6b%27 d=%27M6 8L0 0h12z%27/%3e%3c/svg%3e')] bg-[length:12px] bg-[right_1rem_center] bg-no-repeat pr-10">
-              <option value="all">All Sports</option>
-              <option value="Basketball">🏀 Basketball</option>
-              <option value="Tennis">🎾 Tennis</option>
-              <option value="Badminton">🏸 Badminton</option>
-              <option value="Volleyball">🏐 Volleyball</option>
-              <option value="Multi-Purpose">⚽ Multi-Purpose</option>
-            </select>
+            <SportSelect value="all" onChange={() => {}} />
           </div>
 
           <div className="flex flex-col gap-2">
@@ -337,7 +397,7 @@ export const Footer = () => {
   return (
     <footer className="bg-[var(--bg-primary)] border-t border-[var(--border-subtle)] pt-16 pb-8 px-6">
       <div className="max-w-7xl mx-auto">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-16">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-12 mb-16">
           {/* Column 1: Brand */}
           <div className="space-y-6">
             <div className="flex items-center gap-3">
@@ -346,21 +406,9 @@ export const Footer = () => {
               </div>
               <span className="text-xl font-bold text-gradient-green">SportsPlex</span>
             </div>
-            <p className="text-[var(--text-muted)] text-sm leading-relaxed">
+            <p className="text-[var(--text-muted)] text-sm leading-relaxed text-left">
               Premium sports facilities available 24/7. Experience professional-grade courts and equipment for your best game yet.
             </p>
-            {/* Social Media Links - Moved here for branding context */}
-            <div className="flex items-center gap-3">
-              <a href="#" className="w-8 h-8 rounded-full bg-[var(--bg-tertiary)] flex items-center justify-center text-[var(--text-secondary)] hover:bg-[var(--accent-green)] hover:text-white transition-all">
-                <Facebook className="w-4 h-4" />
-              </a>
-              <a href="#" className="w-8 h-8 rounded-full bg-[var(--bg-tertiary)] flex items-center justify-center text-[var(--text-secondary)] hover:bg-[var(--accent-green)] hover:text-white transition-all">
-                <Twitter className="w-4 h-4" />
-              </a>
-              <a href="#" className="w-8 h-8 rounded-full bg-[var(--bg-tertiary)] flex items-center justify-center text-[var(--text-secondary)] hover:bg-[var(--accent-green)] hover:text-white transition-all">
-                <Instagram className="w-4 h-4" />
-              </a>
-            </div>
           </div>
 
           {/* Column 2: Quick Links */}
@@ -382,59 +430,41 @@ export const Footer = () => {
                   Contact Support
                 </Link>
               </li>
-              <li>
-                <Link to="/dashboard" className="text-[var(--text-muted)] hover:text-[var(--accent-green)] transition-colors text-sm">
-                  My Dashboard
-                </Link>
-              </li>
+
+              {useAuth().isLoggedIn && (
+                <li>
+                  <Link to="/dashboard" className="text-[var(--text-muted)] hover:text-[var(--accent-green)] transition-colors text-sm">
+                    My Dashboard
+                  </Link>
+                </li>
+              )}
             </ul>
           </div>
 
-          {/* Column 3: Community */}
-          <div>
-            <h4 className="font-bold text-[var(--text-primary)] mb-6">Community</h4>
-            <ul className="space-y-4">
-              <li>
-                <a href="#" className="text-[var(--text-muted)] hover:text-[var(--accent-green)] transition-colors text-sm">
-                  Events & Tournaments
-                </a>
-              </li>
-              <li>
-                <a href="#" className="text-[var(--text-muted)] hover:text-[var(--accent-green)] transition-colors text-sm">
-                  Training Programs
-                </a>
-              </li>
-              <li>
-                <a href="#" className="text-[var(--text-muted)] hover:text-[var(--accent-green)] transition-colors text-sm">
-                  Partner with Us
-                </a>
-              </li>
-              <li>
-                <a href="#" className="text-[var(--text-muted)] hover:text-[var(--accent-green)] transition-colors text-sm">
-                  Careers
-                </a>
-              </li>
-            </ul>
-          </div>
-
-          {/* Column 4: Contact */}
+          {/* Column 3: Contact */}
           <div>
             <h4 className="font-bold text-[var(--text-primary)] mb-6">Contact</h4>
             <ul className="space-y-4">
               <li className="flex items-start gap-3">
-                <MapPin className="w-5 h-5 text-[var(--accent-green)] flex-shrink-0" />
-                <span className="text-[var(--text-muted)] text-sm">
+                <div className="w-5 h-5 flex items-center justify-center text-[var(--accent-green)] flex-shrink-0 mt-0.5">
+                  <MapPin className="w-4 h-4" />
+                </div>
+                <span className="text-[var(--text-muted)] text-sm text-left">
                   123 Sports Ave, <br />Metro Manila, Philippines
                 </span>
               </li>
               <li className="flex items-center gap-3">
-                <div className="w-5 h-5 flex items-center justify-center text-[var(--accent-green)]">✉</div>
+                <div className="w-5 h-5 flex items-center justify-center text-[var(--accent-green)]">
+                  <Mail className="w-4 h-4" />
+                </div>
                 <a href="mailto:hello@sportsplex.com" className="text-[var(--text-muted)] hover:text-[var(--accent-green)] transition-colors text-sm">
                   hello@sportsplex.com
                 </a>
               </li>
               <li className="flex items-center gap-3">
-                <div className="w-5 h-5 flex items-center justify-center text-[var(--accent-green)]">☎</div>
+                <div className="w-5 h-5 flex items-center justify-center text-[var(--accent-green)]">
+                  <Phone className="w-4 h-4" />
+                </div>
                 <a href="tel:+631234567890" className="text-[var(--text-muted)] hover:text-[var(--accent-green)] transition-colors text-sm">
                   +63 (123) 456-7890
                 </a>
@@ -446,18 +476,12 @@ export const Footer = () => {
         {/* Bottom Bar */}
         <div className="border-t border-[var(--border-subtle)] pt-8 mt-8 flex flex-col md:flex-row justify-between items-center gap-4">
           <p className="text-[var(--text-muted)] text-xs">
-            © 2026 SportsPlex. All rights reserved.
+            © 2026 SportsPlex. Best Group 67
           </p>
           <div className="flex gap-6">
-            <Link to="#" className="text-[var(--text-muted)] hover:text-[var(--accent-green)] transition-colors text-xs">
-              Privacy Policy
-            </Link>
-            <Link to="#" className="text-[var(--text-muted)] hover:text-[var(--accent-green)] transition-colors text-xs">
-              Terms of Service
-            </Link>
-            <Link to="#" className="text-[var(--text-muted)] hover:text-[var(--accent-green)] transition-colors text-xs">
-              Cookie Policy
-            </Link>
+            <span className="text-[var(--text-muted)] text-xs font-medium tracking-widest">
+              MAAGMA PALOMO DELA CRUZ ESCANDOR
+            </span>
           </div>
         </div>
       </div>
