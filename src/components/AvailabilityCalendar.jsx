@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { X, Calendar as CalendarIcon } from 'lucide-react';
+import { X, Calendar as CalendarIcon, Check, AlertTriangle } from 'lucide-react';
 import { Card, Button, Badge } from './ui';
 
 // Availability Calendar Component
@@ -91,9 +91,9 @@ export const AvailabilityCalendar = ({ facility, onClose }) => {
                       className={`border-2 rounded-lg p-2 text-xs text-center transition-all ${statusColors[status]}`}
                       title={`${day} ${time} - ${statusLabels[status]}`}
                     >
-                      {status === 'available' && '✓'}
-                      {status === 'booked' && '✕'}
-                      {status === 'maintenance' && '⚠'}
+                      {status === 'available' && <Check className="w-3 h-3 mx-auto" />}
+                      {status === 'booked' && <X className="w-3 h-3 mx-auto" />}
+                      {status === 'maintenance' && <AlertTriangle className="w-3 h-3 mx-auto" />}
                     </div>
                   );
                 })}
