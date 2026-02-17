@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, Button, Badge } from '../../components/ui';
 import { Users, DollarSign, Calendar, TrendingUp, ArrowRight, AlertTriangle, Plus, Lock } from 'lucide-react';
 import { Link } from 'react-router-dom';
@@ -12,6 +12,23 @@ export function AdminDashboardPage() {
     const [isNoShowsModalOpen, setIsNoShowsModalOpen] = useState(false);
     const [isNewBookingModalOpen, setIsNewBookingModalOpen] = useState(false);
     const [isBlockSlotModalOpen, setIsBlockSlotModalOpen] = useState(false);
+    
+    const [recentUsers, setRecentUsers] = useState([]);
+
+    useEffect(() => {
+        const fetchRecentUsers = async () => {
+            try {
+                const response = await fetch('http://localhost:5001/api/users');
+                const data = await response.json();
+                // Take top 3 (API already sorts by created_at DESC)
+                setRecentUsers(data.slice(0, 3));
+            } catch (error) {
+                console.error("Failed to fetch recent users:", error);
+            }
+        };
+
+        fetchRecentUsers();
+    }, []);
 
     const stats = [
         { label: 'Total Revenue', value: '₱124,500', change: '+12%', icon: DollarSign, color: 'text-green-500' },
@@ -65,20 +82,26 @@ export function AdminDashboardPage() {
                         </Link>
                     </div>
                     <div className="space-y-4">
-                        {[1, 2, 3].map((i) => (
-                            <div key={i} className="flex items-center justify-between p-3 rounded-lg bg-[var(--bg-secondary)]">
-                                <div className="flex items-center gap-3">
-                                    <div className="w-10 h-10 rounded-full bg-[var(--bg-primary)] flex items-center justify-center font-bold">
-                                        U{i}
+                        {recentUsers.length > 0 ? (
+                            recentUsers.map((user) => (
+                                <div key={user._id} className="flex items-center justify-between p-3 rounded-lg bg-[var(--bg-secondary)]">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-10 h-10 rounded-full bg-[var(--bg-primary)] flex items-center justify-center font-bold text-[var(--accent-green)]">
+                                            {user.full_name.charAt(0)}
+                                        </div>
+                                        <div>
+                                            <p className="font-medium">{user.full_name}</p>
+                                            <p className="text-xs text-[var(--text-muted)]">{user.email}</p>
+                                        </div>
                                     </div>
-                                    <div>
-                                        <p className="font-medium">New User {i}</p>
-                                        <p className="text-xs text-[var(--text-muted)]">user{i}@example.com</p>
-                                    </div>
+                                    <span className="text-xs text-[var(--text-muted)]">
+                                        {new Date(user.created_at).toLocaleDateString()}
+                                    </span>
                                 </div>
-                                <span className="text-xs text-[var(--text-muted)]">2 mins ago</span>
-                            </div>
-                        ))}
+                            ))
+                        ) : (
+                            <p className="text-center text-[var(--text-muted)] py-4">No recent signups</p>
+                        )}
                     </div>
                 </Card>
 

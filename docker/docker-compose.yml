@@ -1,18 +1,58 @@
+version: '3.8'
+
 services:
   frontend:
     build:
       context: ..
       dockerfile: docker/Dockerfile.dev
-    container_name: court-reservation-dev
+    container_name: court-reservation-frontend
     ports:
       - "5173:5173"
     volumes:
-      # Mount source code for hot reload
       - ..:/app
-      # Use container's node_modules (faster)
       - /app/node_modules
     environment:
       - NODE_ENV=development
       - CHOKIDAR_USEPOLLING=true
     stdin_open: true
     tty: true
+    depends_on:
+      - backend
+
+  backend:
+    build:
+      context: ../backend
+      dockerfile: ../docker/Dockerfile.backend
+    container_name: court-reservation-backend
+    ports:
+      - "5001:5000"
+    volumes:
+      - ../backend:/app
+      - /app/node_modules
+    environment:
+      - PORT=5000
+      - MONGODB_URI=mongodb+srv://rbenedictmaagma_db_user:A1Lcgl7HQzN2MFTE@ccapdev-mp-cluster.lplsoas.mongodb.net/court_reservation?appName=ccapdev-mp-cluster
+    depends_on:
+      - mongo
+
+  mongo:
+    image: mongo:latest
+    container_name: court-reservation-mongo
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+
+  mongo-express:
+    image: mongo-express
+    container_name: court-reservation-mongo-express
+    ports:
+      - "8081:8081"
+    environment:
+      - ME_CONFIG_MONGODB_SERVER=mongo
+      - ME_CONFIG_MONGODB_PORT=27017
+    depends_on:
+      - mongo
+
+volumes:
+  mongo-data:

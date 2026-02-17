@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, Badge } from "../../components/ui";
 import { Search, UserX, UserCheck, Eye, X } from "lucide-react";
 
@@ -6,14 +6,35 @@ export function UserManagementPage() {
     const [searchTerm, setSearchTerm] = useState("");
     const [selectedUser, setSelectedUser] = useState(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
+    
+    const [users, setUsers] = useState([]);
+    const [loading, setLoading] = useState(true);
 
-    const [users, setUsers] = useState([
-        { id: "U-001", name: "John Doe", email: "john@example.com", bookings: 5, status: "active" },
-        { id: "U-002", name: "Jane Smith", email: "jane@example.com", bookings: 2, status: "inactive" },
-        { id: "U-003", name: "Mike Ross", email: "mike@example.com", bookings: 8, status: "active" },
-        { id: "U-004", name: "Harvey Specter", email: "Harvey@example.com", bookings: 7, status: "active" },
-        { id: "U-005", name: "Louis Litt", email: "littfire@example.com", bookings: 6, status: "active" },
-    ]);
+    useEffect(() => {
+        const fetchUsers = async () => {
+            try {
+                const response = await fetch('http://localhost:5001/api/users');
+                const data = await response.json();
+                
+                // Map backend data to frontend structure
+                const mappedUsers = data.map(user => ({
+                    id: user._id, // MongoDB ID
+                    name: user.full_name,
+                    email: user.email,
+                    bookings: 0, // Placeholder as per current schema limitation
+                    status: user.is_verified ? "active" : "inactive"
+                }));
+                
+                setUsers(mappedUsers);
+            } catch (error) {
+                console.error("Failed to fetch users:", error);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchUsers();
+    }, []);
 
     const toggleUserStatus = (id) => {
         setUsers(

@@ -392,6 +392,44 @@ export const Announcements = () => {
   );
 };
 
+// Backend Status Component
+const BackendStatus = () => {
+  const [status, setStatus] = useState('checking');
+  const [dbStatus, setDbStatus] = useState('unknown');
+
+  useEffect(() => {
+    const checkStatus = async () => {
+      try {
+        const response = await fetch('http://localhost:5001/api/health');
+        const data = await response.json();
+        setStatus('online');
+        setDbStatus(data.database);
+      } catch (error) {
+        setStatus('offline');
+        setDbStatus('disconnected');
+      }
+    };
+
+    checkStatus();
+    // Poll every 30 seconds
+    const interval = setInterval(checkStatus, 30000);
+    return () => clearInterval(interval);
+  }, []);
+
+  return (
+    <div className="flex items-center gap-4 text-xs">
+      <div className="flex items-center gap-2" title={`Backend: ${status}`}>
+        <div className={`w-2 h-2 rounded-full ${status === 'online' ? 'bg-green-500' : 'bg-red-500'} animate-pulse`}></div>
+        <span className="text-[var(--text-muted)]">System</span>
+      </div>
+      <div className="flex items-center gap-2" title={`Database: ${dbStatus}`}>
+        <div className={`w-2 h-2 rounded-full ${dbStatus === 'connected' ? 'bg-green-500' : 'bg-red-500'} ${dbStatus === 'connected' ? '' : 'animate-bounce'}`}></div>
+        <span className="text-[var(--text-muted)]">Database</span>
+      </div>
+    </div>
+  );
+};
+
 // Footer Component
 export const Footer = () => {
   return (
@@ -478,6 +516,10 @@ export const Footer = () => {
           <p className="text-[var(--text-muted)] text-xs">
             © 2026 SportsPlex. Best Group 67
           </p>
+          
+          {/* Backend Status Indicator */}
+          <BackendStatus />
+
           <div className="flex gap-6">
             <span className="text-[var(--text-muted)] text-xs font-medium tracking-widest">
               MAAGMA PALOMO DELA CRUZ ESCANDOR
