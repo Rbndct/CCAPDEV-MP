@@ -21,17 +21,19 @@ services:
 
   backend:
     build:
-      context: ../server
+      context: ../backend
       dockerfile: ../docker/Dockerfile.backend
     container_name: court-reservation-backend
     ports:
       - "5001:5000"
     volumes:
-      - ../server:/app
+      - ../backend:/app
       - /app/node_modules
     environment:
       - PORT=5000
       - MONGODB_URI=mongodb+srv://rbenedictmaagma_db_user:A1Lcgl7HQzN2MFTE@ccapdev-mp-cluster.lplsoas.mongodb.net/court_reservation?appName=ccapdev-mp-cluster
+    dns:
+      - 8.8.8.8
     depends_on:
       - mongo
 
