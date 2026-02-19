@@ -26,6 +26,15 @@ Open **http://localhost:5173** in your browser.
 If you prefer to run without Docker:
 
 ```bash
+cd client
+npm install
+npm run dev
+```
+
+### Backend (Local)
+
+```bash
+cd server
 npm install
 npm run dev
 ```

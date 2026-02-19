@@ -3,13 +3,13 @@ version: '3.8'
 services:
   frontend:
     build:
-      context: ..
-      dockerfile: docker/Dockerfile.dev
+      context: ../client
+      dockerfile: ../docker/Dockerfile.dev
     container_name: court-reservation-frontend
     ports:
       - "5173:5173"
     volumes:
-      - ..:/app
+      - ../client:/app
       - /app/node_modules
     environment:
       - NODE_ENV=development
@@ -21,13 +21,13 @@ services:
 
   backend:
     build:
-      context: ../backend
+      context: ../server
       dockerfile: ../docker/Dockerfile.backend
     container_name: court-reservation-backend
     ports:
       - "5001:5000"
     volumes:
-      - ../backend:/app
+      - ../server:/app
       - /app/node_modules
     environment:
       - PORT=5000
