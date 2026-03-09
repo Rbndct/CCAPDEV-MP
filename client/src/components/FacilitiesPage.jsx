@@ -4,113 +4,22 @@ import { Calendar, Clock, Star, Users, MapPin, Zap, ArrowRight, Filter, CheckCir
 import { Card, Button, Badge } from './ui';
 import { AvailabilityCalendar } from './AvailabilityCalendar';
 
-// Facilities data
-const facilitiesData = [
-  {
-    id: 1,
-    name: 'Court A - Premium Basketball',
-    type: 'Basketball',
-    icon: 'https://api.iconify.design/mdi/basketball.svg?color=%2300ff88',
-    price: 600,
-    rating: 4.9,
-    capacity: 10,
-    amenities: ['Air Conditioned', 'Professional Grade', 'Scoreboard'],
-    description: 'Premium indoor basketball court with professional-grade wooden flooring and equipment.',
-    availability: 'high'
-  },
-  {
-    id: 2,
-    name: 'Court B - Standard Basketball',
-    type: 'Basketball',
-    icon: 'https://api.iconify.design/mdi/basketball.svg?color=%2300ff88',
-    price: 500,
-    rating: 4.5,
-    capacity: 10,
-    amenities: ['Good Lighting', 'Standard Equipment'],
-    description: 'Standard indoor basketball court perfect for casual games and practice.',
-    availability: 'medium'
-  },
-  {
-    id: 3,
-    name: 'Court C - Tennis Court 1',
-    type: 'Tennis',
-    icon: 'https://api.iconify.design/mdi/tennis-ball.svg?color=%2300ff88',
-    price: 500,
-    rating: 4.8,
-    capacity: 4,
-    amenities: ['Hard Court', 'Professional Net', 'Ball Machine'],
-    description: 'Indoor hard surface tennis court with professional-grade equipment.',
-    availability: 'high'
-  },
-  {
-    id: 4,
-    name: 'Court D - Tennis Court 2',
-    type: 'Tennis',
-    icon: 'https://api.iconify.design/mdi/tennis-ball.svg?color=%2300ff88',
-    price: 500,
-    rating: 4.9,
-    capacity: 4,
-    amenities: ['Tournament Grade', 'Spectator Seating', 'Premium Surface'],
-    description: 'Tournament-grade tennis court suitable for competitive matches.',
-    availability: 'low'
-  },
-  {
-    id: 5,
-    name: 'Court E - Badminton Hall',
-    type: 'Badminton',
-    icon: 'https://api.iconify.design/mdi/badminton.svg?color=%2300ff88',
-    price: 500,
-    rating: 4.7,
-    capacity: 16,
-    amenities: ['4 Courts', 'High Ceiling', 'Quality Nets'],
-    description: 'Multi-court badminton facility with 4 courts and excellent lighting.',
-    availability: 'high'
-  },
-  {
-    id: 6,
-    name: 'Court F - Volleyball Arena',
-    type: 'Volleyball',
-    icon: 'https://api.iconify.design/mdi/volleyball.svg?color=%2300ff88',
-    price: 500,
-    rating: 4.8,
-    capacity: 12,
-    amenities: ['Professional Court', 'Sand Option', 'Scoreboards'],
-    description: 'Professional indoor volleyball court with regulation net and flooring.',
-    availability: 'medium'
-  },
-  {
-    id: 7,
-    name: 'Court G - Multi-Purpose',
-    type: 'Multi-Purpose',
-    icon: 'https://api.iconify.design/mdi/soccer.svg?color=%2300ff88',
-    price: 500,
-    rating: 4.6,
-    capacity: 20,
-    amenities: ['Convertible', 'Multiple Sports', 'Flexible Setup'],
-    description: 'Versatile court suitable for basketball, badminton, volleyball, and futsal.',
-    availability: 'high'
-  },
-  {
-    id: 8,
-    name: 'Court H - Pickleball Arena',
-    type: 'Pickleball',
-    icon: 'https://api.iconify.design/mdi/tennis.svg?color=%2300ff88',
-    price: 500,
-    rating: 4.9,
-    capacity: 8,
-    amenities: ['Professional Court', 'Paddle Rental', 'Good Lighting'],
-    description: 'Dedicated pickleball court with professional surface and equipment.',
-    availability: 'high'
-  }
-];
+import { useAuth, API_BASE_URL } from '../contexts/AuthContext';
 
-// Extract unique amenities
-const allAmenities = [...new Set(facilitiesData.flatMap(f => f.amenities))].sort();
+// Hardcoded comprehensive list of amenities for filtering since DB might not have all variations initially
+const allAmenities = [
+  'Air Conditioned', 'Professional Grade', 'Scoreboard', 'Good Lighting',
+  'Standard Equipment', 'Hard Court', 'Professional Net', 'Ball Machine',
+  'Tournament Grade', 'Spectator Seating', 'Premium Surface', '4 Courts',
+  'High Ceiling', 'Quality Nets', 'Professional Court', 'Sand Option',
+  'Scoreboards', 'Convertible', 'Multiple Sports', 'Flexible Setup',
+  'Paddle Rental', 'Locker Rooms', 'Showers', 'Free Parking', 'Water Fountains'
+].sort();
 
 // Helper: Get color style for amenities
 const getAmenityStyle = (amenity) => {
   const lower = amenity.toLowerCase();
-  
+
   if (lower.includes('professional') || lower.includes('grade') || lower.includes('surface') || lower.includes('court')) {
     return 'bg-blue-500/10 text-blue-500 border border-blue-500/20';
   }
@@ -120,7 +29,7 @@ const getAmenityStyle = (amenity) => {
   if (lower.includes('scoreboard') || lower.includes('machine') || lower.includes('net') || lower.includes('lighting') || lower.includes('equipment')) {
     return 'bg-orange-500/10 text-orange-500 border border-orange-500/20';
   }
-  
+
   return 'bg-[var(--bg-tertiary)] text-[var(--text-secondary)] border border-[var(--border-subtle)]';
 };
 
@@ -154,7 +63,7 @@ const AmenityMultiSelect = ({ options, selected, onChange }) => {
 
   return (
     <div className="relative" ref={dropdownRef}>
-      <div 
+      <div
         className="w-full min-h-[50px] bg-[var(--bg-tertiary)] border border-[var(--border-subtle)] rounded-[var(--radius-md)] px-3 py-2 text-[var(--text-primary)] cursor-pointer flex items-center justify-between hover:border-[var(--accent-green)] transition-all"
         onClick={() => setIsOpen(!isOpen)}
       >
@@ -163,14 +72,14 @@ const AmenityMultiSelect = ({ options, selected, onChange }) => {
             <span className="text-[var(--text-muted)] py-1">Select amenities...</span>
           ) : (
             selected.map(item => (
-              <span 
-                key={item} 
+              <span
+                key={item}
                 className={`text-xs px-2 py-0.5 rounded flex items-center gap-1 ${getAmenityStyle(item)}`}
                 onClick={(e) => e.stopPropagation()}
               >
                 {item}
-                <X 
-                  className="w-3 h-3 cursor-pointer hover:text-[var(--error)]" 
+                <X
+                  className="w-3 h-3 cursor-pointer hover:text-[var(--error)]"
                   onClick={(e) => removeOption(item, e)}
                 />
               </span>
@@ -183,7 +92,7 @@ const AmenityMultiSelect = ({ options, selected, onChange }) => {
       {isOpen && (
         <div className="absolute z-50 top-full left-0 right-0 mt-2 bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-[var(--radius-md)] shadow-xl max-h-60 overflow-y-auto p-2">
           {options.map(option => (
-            <div 
+            <div
               key={option}
               className={`flex items-center gap-3 p-2 rounded cursor-pointer transition-colors ${selected.includes(option) ? 'bg-[var(--bg-tertiary)]' : 'hover:bg-[var(--bg-tertiary)]'}`}
               onClick={() => toggleOption(option)}
@@ -232,7 +141,7 @@ const SportSelect = ({ value, onChange }) => {
 
   return (
     <div className="relative" ref={dropdownRef}>
-      <div 
+      <div
         className="w-full bg-[var(--bg-tertiary)] border border-[var(--border-subtle)] rounded-[var(--radius-md)] px-4 py-3 text-[var(--text-primary)] cursor-pointer flex items-center justify-between hover:border-[var(--accent-green)] transition-all"
         onClick={() => setIsOpen(!isOpen)}
       >
@@ -248,7 +157,7 @@ const SportSelect = ({ value, onChange }) => {
           {sports.map((sport) => {
             const Icon = sport.icon;
             return (
-              <div 
+              <div
                 key={sport.id}
                 className={`flex items-center gap-3 px-4 py-3 cursor-pointer transition-colors ${value === sport.id ? 'bg-[var(--accent-green)] text-black' : 'hover:bg-[var(--bg-tertiary)]'}`}
                 onClick={() => {
@@ -283,7 +192,7 @@ const FilterSection = ({ filters, setFilters, onApplyFilters, amenities }) => {
           <label className="text-sm font-medium text-[var(--text-secondary)]">
             Sport Type
           </label>
-          <SportSelect 
+          <SportSelect
             value={filters.sportType}
             onChange={(value) => setFilters({ ...filters, sportType: value })}
           />
@@ -294,7 +203,7 @@ const FilterSection = ({ filters, setFilters, onApplyFilters, amenities }) => {
           <label className="text-sm font-medium text-[var(--text-secondary)]">
             Amenities
           </label>
-          <AmenityMultiSelect 
+          <AmenityMultiSelect
             options={amenities}
             selected={filters.amenities}
             onChange={(newAmenities) => setFilters({ ...filters, amenities: newAmenities })}
@@ -356,31 +265,46 @@ const FilterSection = ({ filters, setFilters, onApplyFilters, amenities }) => {
 // Facility Card Component
 const FacilityCard = ({ facility, onViewSchedule }) => {
   const availabilityConfig = {
-    high: { 
-      text: 'High Availability', 
+    high: {
+      text: 'High Availability',
       color: 'success',
       icon: CheckCircle
     },
-    medium: { 
-      text: 'Limited Slots', 
+    medium: {
+      text: 'Limited Slots',
       color: 'warning',
-      icon: AlertTriangle 
+      icon: AlertTriangle
     },
-    low: { 
-      text: 'Few Slots Left', 
+    low: {
+      text: 'Few Slots Left',
       color: 'error',
       icon: Clock
     }
   };
 
-  const status = availabilityConfig[facility.availability];
+  const status = availabilityConfig['high']; // Default to high for now, could be dynamic
   const StatusIcon = status.icon;
+
+  // Map sport types to iconify URLs if not provided
+  const getIconForType = (type) => {
+    switch (type) {
+      case 'Basketball': return 'https://api.iconify.design/mdi/basketball.svg?color=%2300ff88';
+      case 'Tennis': return 'https://api.iconify.design/mdi/tennis-ball.svg?color=%2300ff88';
+      case 'Badminton': return 'https://api.iconify.design/mdi/badminton.svg?color=%2300ff88';
+      case 'Volleyball': return 'https://api.iconify.design/mdi/volleyball.svg?color=%2300ff88';
+      case 'Pickleball': return 'https://api.iconify.design/mdi/tennis.svg?color=%2300ff88';
+      case 'Multi-Purpose': return 'https://api.iconify.design/mdi/soccer.svg?color=%2300ff88';
+      default: return 'https://api.iconify.design/mdi/calendar.svg?color=%2300ff88';
+    }
+  };
+
+  const iconUrl = facility.icon || getIconForType(facility.type);
 
   return (
     <Card variant="elevated" hover="lift" className="overflow-hidden h-full flex flex-col">
       {/* Icon Header */}
       <div className="relative h-48 bg-gradient-to-br from-[var(--bg-secondary)] to-[var(--bg-tertiary)] flex items-center justify-center">
-        <img src={facility.icon} alt={facility.type} className="w-32 h-32" />
+        <img src={iconUrl} alt={facility.type} className="w-32 h-32" />
         <Badge
           variant={status.color}
           className="absolute top-4 right-4 flex items-center gap-1.5 shadow-lg backdrop-blur-md"
@@ -399,7 +323,7 @@ const FacilityCard = ({ facility, onViewSchedule }) => {
           </div>
           <div className="flex items-center gap-1">
             <Star className="w-4 h-4 text-[var(--warning)] fill-[var(--warning)]" />
-            <span className="font-bold">{facility.rating}</span>
+            <span className="font-bold">{facility.rating || 4.5}</span>
           </div>
         </div>
 
@@ -411,7 +335,7 @@ const FacilityCard = ({ facility, onViewSchedule }) => {
         <div className="grid grid-cols-2 gap-3 mb-4 mt-auto">
           <div className="flex items-center gap-2 text-sm">
             <span className="w-4 h-4 text-[var(--accent-green)] font-bold text-sm flex items-center justify-center">₱</span>
-            <span className="text-[var(--text-secondary)]">₱{facility.price}/hour</span>
+            <span className="text-[var(--text-secondary)]">₱{facility.hourly_rate || facility.price || 500}/hour</span>
           </div>
           <div className="flex items-center gap-2 text-sm">
             <Users className="w-4 h-4 text-[var(--accent-green)]" />
@@ -421,7 +345,7 @@ const FacilityCard = ({ facility, onViewSchedule }) => {
 
         {/* Amenities */}
         <div className="flex flex-wrap gap-2 mb-6">
-          {facility.amenities.slice(0, 3).map((amenity, index) => (
+          {(facility.amenities || []).slice(0, 3).map((amenity, index) => (
             <span
               key={index}
               className={`text-xs px-2.5 py-1 rounded-[var(--radius-sm)] font-medium transition-colors ${getAmenityStyle(amenity)}`}
@@ -429,15 +353,15 @@ const FacilityCard = ({ facility, onViewSchedule }) => {
               {amenity}
             </span>
           ))}
-          {facility.amenities.length > 3 && (
+          {(facility.amenities || []).length > 3 && (
             <span className="text-xs px-2.5 py-1 bg-[var(--bg-tertiary)] rounded-[var(--radius-sm)] text-[var(--text-muted)] border border-[var(--border-subtle)]">
-              +{facility.amenities.length - 3}
+              +{(facility.amenities || []).length - 3}
             </span>
           )}
         </div>
 
         {/* Action Button */}
-        <Link to={`/facilities/${facility.id}`} className="block">
+        <Link to={`/facilities/${facility._id || facility.id}`} className="block">
           <Button
             variant="outline"
             className="w-full !rounded-[var(--radius-md)] group-hover:bg-[var(--accent-green)] group-hover:text-[var(--bg-primary)] group-hover:border-[var(--accent-green)] transition-all"
@@ -461,8 +385,28 @@ export const FacilitiesPage = () => {
     maxPrice: '999'
   });
 
-  const [filteredFacilities, setFilteredFacilities] = useState(facilitiesData);
+  const [facilitiesData, setFacilitiesData] = useState([]);
+  const [filteredFacilities, setFilteredFacilities] = useState([]);
   const [selectedFacility, setSelectedFacility] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchFacilities = async () => {
+      try {
+        const response = await fetch(`${API_BASE_URL || 'http://localhost:5000/api'}/reservations/facilities`);
+        const data = await response.json();
+        if (response.ok) {
+          setFacilitiesData(data);
+          setFilteredFacilities(data);
+        }
+      } catch (err) {
+        console.error("Failed to fetch facilities:", err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchFacilities();
+  }, []);
 
   const applyFilters = () => {
     let filtered = facilitiesData;
@@ -474,13 +418,13 @@ export const FacilitiesPage = () => {
 
     // Filter by amenities (AND logic)
     if (filters.amenities.length > 0) {
-      filtered = filtered.filter(f => 
-        filters.amenities.every(selectedAmenity => f.amenities.includes(selectedAmenity))
+      filtered = filtered.filter(f =>
+        filters.amenities.every(selectedAmenity => (f.amenities || []).includes(selectedAmenity))
       );
     }
 
     // Filter by price
-    filtered = filtered.filter(f => f.price <= parseInt(filters.maxPrice));
+    filtered = filtered.filter(f => (f.hourly_rate || f.price || 500) <= parseInt(filters.maxPrice));
 
     setFilteredFacilities(filtered);
   };
@@ -518,18 +462,24 @@ export const FacilitiesPage = () => {
         </div>
 
         {/* Facility Cards Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {filteredFacilities.map((facility) => (
-            <FacilityCard
-              key={facility.id}
-              facility={facility}
-              onViewSchedule={handleViewSchedule}
-            />
-          ))}
-        </div>
+        {isLoading ? (
+          <div className="text-center py-16">
+            <p className="text-2xl text-[var(--text-muted)] mb-4">Loading facilities...</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {filteredFacilities.map((facility) => (
+              <FacilityCard
+                key={facility._id || facility.id}
+                facility={facility}
+                onViewSchedule={handleViewSchedule}
+              />
+            ))}
+          </div>
+        )}
 
         {/* No Results */}
-        {filteredFacilities.length === 0 && (
+        {!isLoading && filteredFacilities.length === 0 && (
           <div className="text-center py-16">
             <p className="text-2xl text-[var(--text-muted)] mb-4">No facilities found</p>
             <p className="text-[var(--text-secondary)]">Try adjusting your filters</p>

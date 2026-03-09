@@ -1,62 +1,112 @@
-import { createContext, useContext, useState } from 'react';
+import { createContext, useContext, useState, useEffect } from 'react';
 
 const AuthContext = createContext();
+export const API_BASE_URL = 'http://localhost:5000/api';
 
 export function AuthProvider({ children }) {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [user, setUser] = useState(null);
+  const [token, setToken] = useState(localStorage.getItem('token'));
+  const [isLoading, setIsLoading] = useState(true);
 
-  const mockUser = {
-    id: 1,
-    name: 'Demo User',
-    email: 'demo@sportsplex.com',
-    role: 'user'
-  };
+  useEffect(() => {
+    const validateSession = async () => {
+      if (!token) {
+        setIsLoading(false);
+        return;
+      }
 
-  const mockAdmin = {
-    id: 2,
-    name: 'Admin User',
-    email: 'admin@sportsplex.com',
-    role: 'admin'
-  };
+      try {
+        const response = await fetch(`${API_BASE_URL}/profiles/me`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
 
-  const toggleMockAuth = () => {
-    if (isLoggedIn) {
-      // Logout
-      setIsLoggedIn(false);
-      setUser(null);
-    } else {
-      // Login with mock user by default
+        if (response.ok) {
+          const userData = await response.json();
+          setUser(userData);
+          setIsLoggedIn(true);
+        } else {
+          // Token expired or invalid
+          logout();
+        }
+      } catch (error) {
+        console.error("Session validation failed:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    validateSession();
+  }, [token]);
+
+  const login = async (email, password, rememberMe = false) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password, rememberMe })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Login failed');
+      }
+
+      const newToken = data.token;
+      setToken(newToken);
+      setUser(data.user);
       setIsLoggedIn(true);
-      setUser(mockUser);
-    }
-  };
+      localStorage.setItem('token', newToken);
 
-  const login = (email, password) => {
-    // Mock login - simple check for admin email
-    if (email.includes('admin')) {
-      setIsLoggedIn(true);
-      setUser(mockAdmin);
-    } else {
-      setIsLoggedIn(true);
-      setUser(mockUser);
+      return { success: true, role: data.user.role };
+    } catch (error) {
+      console.error("Login error:", error);
+      return { success: false, message: error.message };
     }
   };
 
   const logout = () => {
-    setIsLoggedIn(false);
+    setToken(null);
     setUser(null);
+    setIsLoggedIn(false);
+    localStorage.removeItem('token');
+  };
+
+  const register = async (full_name, email, password, phone_number) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/auth/register`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ full_name, email, password, phone_number })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Registration failed');
+      }
+
+      return { success: true, message: data.message };
+    } catch (error) {
+      console.error("Registration error:", error);
+      return { success: false, message: error.message };
+    }
   };
 
   return (
     <AuthContext.Provider value={{
       isLoggedIn,
       user,
-      toggleMockAuth,
+      token,
+      isLoading,
       login,
-      logout
+      logout,
+      register
     }}>
-      {children}
+      {!isLoading && children}
     </AuthContext.Provider>
   );
 }

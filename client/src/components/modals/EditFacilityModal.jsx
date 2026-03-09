@@ -1,8 +1,11 @@
 import { useState, useEffect } from 'react';
 import { Modal } from '../Modal';
 import { Button, Input, Select, DatePicker, TimePicker } from '../ui';
+import { useAuth, API_BASE_URL } from '../../contexts/AuthContext';
 
-export const EditFacilityModal = ({ isOpen, onClose, facility }) => {
+export const EditFacilityModal = ({ isOpen, onClose, facility, onRefresh }) => {
+    const { token } = useAuth();
+    const [isSubmitting, setIsSubmitting] = useState(false);
     const [formData, setFormData] = useState({
         name: '',
         type: '',
@@ -50,12 +53,41 @@ export const EditFacilityModal = ({ isOpen, onClose, facility }) => {
         });
     };
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        // TODO: Add validation and API call
-        console.log('Updated facility:', formData);
-        alert('Facility updated successfully!');
-        onClose();
+        if (!facility) return;
+        setIsSubmitting(true);
+        try {
+            const response = await fetch(`${API_BASE_URL || 'http://localhost:5000/api'}/admin/facilities/${facility.id}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    name: formData.name,
+                    type: formData.type,
+                    capacity: parseInt(formData.capacity),
+                    hourly_rate: parseFloat(formData.hourlyRate),
+                    status: formData.status,
+                    description: formData.description
+                })
+            });
+
+            if (response.ok) {
+                alert('Facility updated successfully!');
+                onClose();
+                if (onRefresh) onRefresh();
+            } else {
+                const error = await response.json();
+                alert(`Error: ${error.message}`);
+            }
+        } catch (error) {
+            console.error('Error updating facility:', error);
+            alert('Failed to update facility.');
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     return (
@@ -69,8 +101,8 @@ export const EditFacilityModal = ({ isOpen, onClose, facility }) => {
                     <Button variant="outline" onClick={onClose}>
                         Cancel
                     </Button>
-                    <Button variant="primary" onClick={handleSubmit}>
-                        Save Changes
+                    <Button variant="primary" onClick={handleSubmit} disabled={isSubmitting}>
+                        {isSubmitting ? 'Saving...' : 'Save Changes'}
                     </Button>
                 </>
             }

@@ -1,9 +1,13 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Modal } from '../Modal';
 import { Button, Input, Select, DatePicker, TimePicker } from '../ui';
 import { User } from 'lucide-react';
+import { useAuth } from '../../contexts/AuthContext';
+
+const API_BASE_URL = 'http://localhost:5000/api';
 
 export const NewBookingModal = ({ isOpen, onClose }) => {
+    const { token } = useAuth();
     const [formData, setFormData] = useState({
         userName: '',
         userEmail: '',
@@ -29,16 +33,30 @@ export const NewBookingModal = ({ isOpen, onClose }) => {
         user.email.toLowerCase().includes(formData.userName.toLowerCase())
     );
 
-    const facilities = [
-        { value: '', label: 'Select a facility' },
-        { value: 'basketball-a', label: 'Basketball Court A' },
-        { value: 'basketball-b', label: 'Basketball Court B' },
-        { value: 'tennis-1', label: 'Tennis Court 1' },
-        { value: 'tennis-2', label: 'Tennis Court 2' },
-        { value: 'badminton', label: 'Badminton Hall' },
-        { value: 'volleyball', label: 'Volleyball Arena' },
-        { value: 'pickleball', label: 'Pickleball Arena' },
-    ];
+    const [facilities, setFacilities] = useState([{ value: '', label: 'Loading facilities...' }]);
+    const [isLoading, setIsLoading] = useState(false);
+
+    useEffect(() => {
+        const fetchFacilities = async () => {
+            try {
+                const response = await fetch(`${API_BASE_URL}/admin/facilities`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                const data = await response.json();
+                const options = [
+                    { value: '', label: 'Select a facility' },
+                    ...data.map(f => ({ value: f._id, label: f.name }))
+                ];
+                setFacilities(options);
+            } catch (error) {
+                console.error('Error fetching facilities:', error);
+                setFacilities([{ value: '', label: 'Error loading facilities' }]);
+            }
+        };
+        fetchFacilities();
+    }, []);
 
     const paymentOptions = [
         { value: 'unpaid', label: 'Unpaid' },
@@ -67,23 +85,51 @@ export const NewBookingModal = ({ isOpen, onClose }) => {
         setShowUserSuggestions(false);
     };
 
-    const handleSubmit = (e) => {
-        e.preventDefault();
-        // TODO: Add validation and API call
-        console.log('New booking:', formData);
-        // Show success message
-        alert('Booking created successfully!');
-        onClose();
-        // Reset form
-        setFormData({
-            userName: '',
-            userEmail: '',
-            facility: '',
-            date: '',
-            startTime: '',
-            endTime: '',
-            paymentStatus: 'unpaid'
-        });
+    const handleSubmit = async (e) => {
+        if (e) e.preventDefault();
+
+        setIsLoading(true);
+        try {
+            const response = await fetch(`${API_BASE_URL}/admin/reservations/walk-in`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    walk_in_name: formData.userName,
+                    facility: formData.facility,
+                    seat_number: 1, // Defaulting to 1 for sports courts
+                    date: formData.date,
+                    start_time: formData.startTime,
+                    end_time: formData.endTime,
+                    // reserved_by: user.id // In real app, get from AuthContext
+                }),
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.message || 'Failed to create booking');
+            }
+
+            alert('Booking created successfully!');
+            onClose();
+            // Reset form
+            setFormData({
+                userName: '',
+                userEmail: '',
+                facility: '',
+                date: '',
+                startTime: '',
+                endTime: '',
+                paymentStatus: 'unpaid'
+            });
+        } catch (error) {
+            console.error('Error creating booking:', error);
+            alert(`Error: ${error.message}`);
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     return (
@@ -97,8 +143,8 @@ export const NewBookingModal = ({ isOpen, onClose }) => {
                     <Button variant="outline" onClick={onClose}>
                         Cancel
                     </Button>
-                    <Button variant="primary" onClick={handleSubmit}>
-                        Create Booking
+                    <Button variant="primary" onClick={handleSubmit} disabled={isLoading}>
+                        {isLoading ? 'Creating...' : 'Create Booking'}
                     </Button>
                 </>
             }

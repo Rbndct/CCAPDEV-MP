@@ -1,21 +1,25 @@
 import { useState, useEffect } from "react";
 import { Card, Badge } from "../../components/ui";
 import { Search, UserX, UserCheck, Eye, X } from "lucide-react";
+import { useAuth, API_BASE_URL } from "../../contexts/AuthContext";
 
 export function UserManagementPage() {
+    const { token } = useAuth();
     const [searchTerm, setSearchTerm] = useState("");
     const [selectedUser, setSelectedUser] = useState(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
-    
+
     const [users, setUsers] = useState([]);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         const fetchUsers = async () => {
             try {
-                const response = await fetch('http://localhost:5001/api/users');
+                const response = await fetch(`${API_BASE_URL || 'http://localhost:5000/api'}/admin/users`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
                 const data = await response.json();
-                
+
                 // Map backend data to frontend structure
                 const mappedUsers = data.map(user => ({
                     id: user._id, // MongoDB ID
@@ -24,7 +28,7 @@ export function UserManagementPage() {
                     bookings: 0, // Placeholder as per current schema limitation
                     status: user.is_verified ? "active" : "inactive"
                 }));
-                
+
                 setUsers(mappedUsers);
             } catch (error) {
                 console.error("Failed to fetch users:", error);

@@ -23,18 +23,14 @@ const userSchema = new mongoose.Schema({
   },
   role: {
     type: String,
-    enum: ['user', 'admin'],
-    default: 'user'
+    enum: ['student', 'staff', 'admin'],
+    default: 'student'
   },
   avatar_url: {
     type: String,
     default: ''
   },
   bio: {
-    type: String,
-    default: ''
-  },
-  primary_sport: {
     type: String,
     default: ''
   },

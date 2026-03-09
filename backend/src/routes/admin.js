@@ -1,0 +1,171 @@
+const express = require('express');
+const router = express.Router();
+const Facility = require('../models/Facility');
+const Reservation = require('../models/Reservation');
+const User = require('../models/User');
+const { verifyToken, isAdminOrStaff } = require('../middleware/auth');
+
+// All routes below require a valid JWT and admin/staff role
+router.use(verifyToken, isAdminOrStaff);
+
+// ─── Facilities ─────────────────────────────────────────────────────────────
+
+// GET /api/admin/facilities
+router.get('/facilities', async (req, res) => {
+    try {
+        const facilities = await Facility.find().sort({ name: 1 });
+        res.json(facilities);
+    } catch (err) {
+        res.status(500).json({ message: 'Error fetching facilities.', error: err.message });
+    }
+});
+
+// POST /api/admin/facilities
+router.post('/facilities', async (req, res) => {
+    try {
+        const { name, type, capacity, hourly_rate, status, description } = req.body;
+        const facility = await Facility.create({
+            name, type, capacity, hourly_rate, status: status?.toLowerCase(), description
+        });
+        res.status(201).json(facility);
+    } catch (err) {
+        res.status(500).json({ message: 'Error creating facility.', error: err.message });
+    }
+});
+
+// PUT /api/admin/facilities/:id
+router.put('/facilities/:id', async (req, res) => {
+    try {
+        const { name, type, capacity, hourly_rate, status, description } = req.body;
+        const updated = await Facility.findByIdAndUpdate(req.params.id, {
+            name, type, capacity, hourly_rate, status: status?.toLowerCase(), description
+        }, { new: true });
+        if (!updated) return res.status(404).json({ message: 'Facility not found.' });
+        res.json(updated);
+    } catch (err) {
+        res.status(500).json({ message: 'Error updating facility.', error: err.message });
+    }
+});
+
+// DELETE /api/admin/facilities/:id
+router.delete('/facilities/:id', async (req, res) => {
+    try {
+        const deleted = await Facility.findByIdAndDelete(req.params.id);
+        if (!deleted) return res.status(404).json({ message: 'Facility not found.' });
+        res.json({ message: 'Facility deleted successfully.' });
+    } catch (err) {
+        res.status(500).json({ message: 'Error deleting facility.', error: err.message });
+    }
+});
+
+// ─── Reservations ────────────────────────────────────────────────────────────
+
+// GET /api/admin/reservations
+router.get('/reservations', async (req, res) => {
+    try {
+        const reservations = await Reservation.find()
+            .populate('facility', 'name type')
+            .populate('user', 'full_name email')
+            .populate('reserved_by', 'full_name email')
+            .sort({ date: 1, start_time: 1 });
+        res.json(reservations);
+    } catch (err) {
+        res.status(500).json({ message: 'Error fetching reservations.', error: err.message });
+    }
+});
+
+// POST /api/admin/reservations/walk-in
+router.post('/reservations/walk-in', async (req, res) => {
+    try {
+        const { walk_in_name, facility, seat_number, date, start_time, end_time } = req.body;
+
+        if (!walk_in_name || !facility || !date || !start_time || !end_time) {
+            return res.status(400).json({ message: 'Missing required fields.' });
+        }
+
+        // Overlap check
+        const conflict = await Reservation.findOne({
+            facility,
+            seat_number: seat_number || 1,
+            date: new Date(date),
+            start_time,
+            status: { $in: ['reserved', 'blocked'] },
+        });
+        if (conflict) {
+            return res.status(409).json({ message: 'This slot is already booked or blocked.' });
+        }
+
+        const reservation = await Reservation.create({
+            walk_in_name,
+            facility,
+            seat_number: seat_number || 1,
+            date: new Date(date),
+            start_time,
+            end_time,
+            reserved_by: req.userId,
+            status: 'reserved',
+        });
+
+        res.status(201).json(reservation);
+    } catch (err) {
+        res.status(500).json({ message: 'Error creating walk-in reservation.', error: err.message });
+    }
+});
+
+// POST /api/admin/facilities/block
+router.post('/facilities/block', async (req, res) => {
+    try {
+        const { facility, seat_number, date, start_time, end_time, reason } = req.body;
+
+        const block = await Reservation.create({
+            walk_in_name: `BLOCKED: ${reason || 'Maintenance'}`,
+            facility,
+            seat_number: seat_number || 1,
+            date: new Date(date),
+            start_time,
+            end_time,
+            reserved_by: req.userId,
+            status: 'blocked',
+        });
+
+        res.status(201).json(block);
+    } catch (err) {
+        res.status(500).json({ message: 'Error blocking slot.', error: err.message });
+    }
+});
+
+// PUT /api/admin/reservations/:id
+router.put('/reservations/:id', async (req, res) => {
+    try {
+        const updated = await Reservation.findByIdAndUpdate(req.params.id, req.body, { new: true });
+        if (!updated) return res.status(404).json({ message: 'Reservation not found.' });
+        res.json(updated);
+    } catch (err) {
+        res.status(500).json({ message: 'Error updating reservation.', error: err.message });
+    }
+});
+
+// DELETE /api/admin/reservations/:id
+router.delete('/reservations/:id', async (req, res) => {
+    try {
+        const deleted = await Reservation.findByIdAndDelete(req.params.id);
+        if (!deleted) return res.status(404).json({ message: 'Reservation not found.' });
+        res.json({ message: 'Reservation deleted successfully.' });
+    } catch (err) {
+        res.status(500).json({ message: 'Error deleting reservation.', error: err.message });
+    }
+});
+
+// ─── Users ───────────────────────────────────────────────────────────────────
+
+// GET /api/admin/users
+router.get('/users', async (req, res) => {
+    try {
+        const users = await User.find().select('-password_hash').sort({ created_at: -1 });
+        res.json(users);
+    } catch (err) {
+        res.status(500).json({ message: 'Error fetching users.', error: err.message });
+    }
+});
+
+module.exports = router;

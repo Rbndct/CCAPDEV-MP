@@ -1,0 +1,60 @@
+const mongoose = require('mongoose');
+
+const reservationSchema = new mongoose.Schema({
+    user: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+        required: function () { return !this.walk_in_name; }
+    },
+    walk_in_name: {
+        type: String,
+        required: function () { return !this.user; }
+    },
+    facility: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Facility',
+        required: true
+    },
+    seat_number: {
+        type: Number, // In sports context, this could be "Slot Number" or "Seat Number"
+        required: true
+    },
+    date: {
+        type: Date,
+        required: true
+    },
+    start_time: {
+        type: String, // e.g., "09:00"
+        required: true
+    },
+    end_time: {
+        type: String, // e.g., "09:30"
+        required: true
+    },
+    is_anonymous: {
+        type: Boolean,
+        default: false
+    },
+    status: {
+        type: String,
+        enum: ['reserved', 'blocked', 'cancelled', 'no-show'],
+        default: 'reserved'
+    },
+    reserved_by: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User' // Technically the Lab Technician
+    },
+    request_date: {
+        type: Date,
+        default: Date.now
+    }
+}, {
+    timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' }
+});
+
+// Compound index to prevent double booking of the same slot at the same time
+reservationSchema.index({ facility: 1, seat_number: 1, date: 1, start_time: 1 }, { unique: true });
+
+const Reservation = mongoose.model('Reservation', reservationSchema);
+
+module.exports = Reservation;

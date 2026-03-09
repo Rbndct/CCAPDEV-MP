@@ -1,27 +1,74 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Modal } from '../Modal';
 import { Badge, Button } from '../ui';
 import { Search, Calendar, Clock, Check, X } from 'lucide-react';
+import { useAuth } from '../../contexts/AuthContext';
+
+const API_BASE_URL = 'http://localhost:5000/api';
 
 export const ViewAllReservationsModal = ({ isOpen, onClose }) => {
+    const { token } = useAuth();
     const [searchTerm, setSearchTerm] = useState('');
     const [filterStatus, setFilterStatus] = useState('all');
 
-    // Mock data - in real app, this would come from props or API
-    const [reservations, setReservations] = useState([
-        { id: 'R-1001', user: 'John Doe', facility: 'Basketball Court A', date: '2026-02-12', time: '14:00 - 16:00', status: 'confirmed', payment: 'paid' },
-        { id: 'R-1002', user: 'Jane Smith', facility: 'Tennis Court 1', date: '2026-02-15', time: '10:00 - 11:00', status: 'pending', payment: 'unpaid' },
-        { id: 'R-1003', user: 'Mike Ross', facility: 'Badminton Hall', date: '2026-02-10', time: '09:00 - 10:00', status: 'no-show', payment: 'paid' },
-        { id: 'R-1004', user: 'Sarah Cole', facility: 'Volleyball Arena', date: '2026-02-14', time: '18:00 - 20:00', status: 'confirmed', payment: 'paid' },
-        { id: 'R-1005', user: 'Tom Hardy', facility: 'Basketball Court B', date: '2026-02-11', time: '16:00 - 17:00', status: 'cancelled', payment: 'refunded' },
-        { id: 'R-1006', user: 'Emma Watson', facility: 'Tennis Court 2', date: '2026-02-13', time: '15:00 - 16:00', status: 'pending', payment: 'unpaid' },
-        { id: 'R-1007', user: 'Chris Evans', facility: 'Basketball Court A', date: '2026-02-16', time: '10:00 - 12:00', status: 'confirmed', payment: 'paid' },
-    ]);
+    const [reservations, setReservations] = useState([]);
+    const [isLoading, setIsLoading] = useState(false);
 
-    const handleStatusChange = (id, newStatus) => {
-        setReservations(reservations.map(res =>
-            res.id === id ? { ...res, status: newStatus } : res
-        ));
+    useEffect(() => {
+        if (isOpen) {
+            fetchReservations();
+        }
+    }, [isOpen]);
+
+    const fetchReservations = async () => {
+        setIsLoading(true);
+        try {
+            const response = await fetch(`${API_BASE_URL}/admin/reservations`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+            const data = await response.json();
+            setReservations(data.map(res => ({
+                id: res._id,
+                user: res.walk_in_name || (res.user ? res.user.full_name : 'N/A'),
+                facility: res.facility ? res.facility.name : 'N/A',
+                date: res.date ? new Date(res.date).toISOString().split('T')[0] : 'N/A',
+                time: `${res.start_time} - ${res.end_time}`,
+                status: res.status,
+                payment: 'paid' // Defaulting for simple demo
+            })));
+        } catch (error) {
+            console.error('Error fetching reservations:', error);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const handleStatusChange = async (id, newStatus) => {
+        try {
+            if (newStatus === 'cancelled') {
+                const response = await fetch(`${API_BASE_URL}/admin/reservations/${id}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                if (response.ok) fetchReservations();
+            } else {
+                const response = await fetch(`${API_BASE_URL}/admin/reservations/${id}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ status: newStatus })
+                });
+                if (response.ok) fetchReservations();
+            }
+        } catch (error) {
+            console.error('Error updating reservation:', error);
+        }
     };
 
     const filteredReservations = reservations.filter(res => {

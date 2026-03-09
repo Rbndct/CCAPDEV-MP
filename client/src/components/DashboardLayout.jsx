@@ -1,11 +1,11 @@
 import { Outlet, Link, useLocation } from 'react-router-dom';
-import { 
-  LayoutDashboard, 
-  Calendar, 
-  Clock, 
-  Heart, 
-  CreditCard, 
-  User, 
+import {
+  LayoutDashboard,
+  Calendar,
+  Clock,
+  Heart,
+  CreditCard,
+  User,
   Settings,
   Menu,
   X
@@ -22,8 +22,8 @@ const NavItem = ({ icon: Icon, to, children, badge }) => {
       to={to}
       className={`
         flex items-center gap-3 px-4 py-3 rounded-lg transition-all
-        ${isActive 
-          ? 'bg-[rgba(0,255,136,0.1)] text-[var(--accent-green)] font-medium' 
+        ${isActive
+          ? 'bg-[rgba(0,255,136,0.1)] text-[var(--accent-green)] font-medium'
           : 'text-[var(--text-secondary)] hover:bg-[var(--bg-tertiary)] hover:text-[var(--text-primary)]'
         }
       `}
@@ -45,7 +45,7 @@ export const DashboardLayout = () => {
   return (
     <>
       <Navbar />
-      
+
       <div className="min-h-screen bg-[var(--bg-primary)] pt-18">
         {/* Centered Container */}
         <div className="max-w-7xl mx-auto px-6">
@@ -74,7 +74,7 @@ export const DashboardLayout = () => {
                 <NavItem icon={Calendar} to="/dashboard/book">
                   Book a Court
                 </NavItem>
-                <NavItem icon={Clock} to="/dashboard/bookings" badge="3">
+                <NavItem icon={Clock} to="/dashboard/bookings">
                   My Bookings
                 </NavItem>
                 <NavItem icon={Heart} to="/dashboard/favorites">

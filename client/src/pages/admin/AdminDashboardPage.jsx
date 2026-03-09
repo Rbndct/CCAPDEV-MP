@@ -6,35 +6,67 @@ import { ViewAllReservationsModal } from '../../components/modals/ViewAllReserva
 import { ViewNoShowsModal } from '../../components/modals/ViewNoShowsModal';
 import { NewBookingModal } from '../../components/modals/NewBookingModal';
 import { BlockSlotModal } from '../../components/modals/BlockSlotModal';
+import { useAuth, API_BASE_URL } from '../../contexts/AuthContext';
 
 export function AdminDashboardPage() {
+    const { token } = useAuth();
     const [isViewAllModalOpen, setIsViewAllModalOpen] = useState(false);
     const [isNoShowsModalOpen, setIsNoShowsModalOpen] = useState(false);
     const [isNewBookingModalOpen, setIsNewBookingModalOpen] = useState(false);
     const [isBlockSlotModalOpen, setIsBlockSlotModalOpen] = useState(false);
-    
+
     const [recentUsers, setRecentUsers] = useState([]);
+    const [statsData, setStatsData] = useState({
+        revenue: 0,
+        activeBookings: 0,
+        noShows: 0
+    });
+    const [noShowAlerts, setNoShowAlerts] = useState([]);
 
     useEffect(() => {
-        const fetchRecentUsers = async () => {
+        const fetchDashboardData = async () => {
             try {
-                const response = await fetch('http://localhost:5001/api/users');
-                const data = await response.json();
-                // Take top 3 (API already sorts by created_at DESC)
-                setRecentUsers(data.slice(0, 3));
+                // Fetch Users
+                const userRes = await fetch(`${API_BASE_URL || 'http://localhost:5000/api'}/admin/users`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const userData = await userRes.json();
+                if (userRes.ok) {
+                    setRecentUsers(userData.slice(0, 3));
+                }
+
+                // Fetch Reservations
+                const resResponse = await fetch(`${API_BASE_URL || 'http://localhost:5000/api'}/admin/reservations`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const resData = await resResponse.json();
+
+                if (resResponse.ok) {
+                    const noShows = resData.filter(r => r.status === 'no-show');
+                    const active = resData.filter(r => ['pending', 'confirmed'].includes(r.status));
+                    const revenue = resData.filter(r => r.status === 'completed' || r.status === 'confirmed').reduce((sum, r) => sum + (r.total_price || 500), 0); // fallback price
+
+                    setStatsData({
+                        revenue,
+                        activeBookings: active.length,
+                        noShows: noShows.length
+                    });
+
+                    setNoShowAlerts(noShows.slice(0, 3)); // Top 3 no-show alerts
+                }
             } catch (error) {
-                console.error("Failed to fetch recent users:", error);
+                console.error("Failed to fetch dashboard data:", error);
             }
         };
 
-        fetchRecentUsers();
-    }, []);
+        if (token) fetchDashboardData();
+    }, [token]);
 
     const stats = [
-        { label: 'Total Revenue', value: '₱124,500', change: '+12%', icon: DollarSign, color: 'text-green-500' },
-        { label: 'Occupancy Rate', value: '85%', change: '+5%', icon: TrendingUp, color: 'text-blue-500' },
-        { label: 'Active Bookings', value: '45', change: '+18%', icon: Calendar, color: 'text-purple-500' },
-        { label: 'No-Shows', value: '3', change: '-2%', icon: AlertTriangle, color: 'text-orange-500' },
+        { label: 'Total Revenue', value: `₱${statsData.revenue.toLocaleString()}`, change: '+12%', icon: DollarSign, color: 'text-green-500' },
+        { label: 'Occupancy Rate', value: '85%', change: '+5%', icon: TrendingUp, color: 'text-blue-500' }, // Kept static for now
+        { label: 'Active Bookings', value: statsData.activeBookings.toString(), change: '+18%', icon: Calendar, color: 'text-purple-500' },
+        { label: 'No-Shows', value: statsData.noShows.toString(), change: '-2%', icon: AlertTriangle, color: 'text-orange-500' },
     ];
 
     return (
@@ -113,18 +145,21 @@ export function AdminDashboardPage() {
                         </Button>
                     </div>
                     <div className="space-y-4">
-                        {[1, 2].map((i) => (
-                            <div key={i} className="p-3 rounded-lg bg-red-500/10 border border-red-500/20">
-                                <div className="flex items-start justify-between mb-1">
-                                    <p className="font-medium text-red-400">Court reservation missed</p>
-                                    <Badge variant="error" size="sm">No-Show</Badge>
+                        {noShowAlerts.length > 0 ? (
+                            noShowAlerts.map((alert) => (
+                                <div key={alert._id} className="p-3 rounded-lg bg-red-500/10 border border-red-500/20">
+                                    <div className="flex items-start justify-between mb-1">
+                                        <p className="font-medium text-red-400">Court reservation missed</p>
+                                        <Badge variant="error" size="sm">No-Show</Badge>
+                                    </div>
+                                    <p className="text-xs text-[var(--text-muted)]">User: {alert.user?.full_name || 'Guest'} • {alert.start_time}</p>
                                 </div>
-                                <p className="text-xs text-[var(--text-muted)]">User: John Doe • 10:00 AM</p>
+                            ))
+                        ) : (
+                            <div className="p-3 rounded-lg bg-[var(--bg-secondary)] border border-[var(--border-subtle)] text-center text-sm text-[var(--text-secondary)]">
+                                No new no-show alerts
                             </div>
-                        ))}
-                        <div className="p-3 rounded-lg bg-[var(--bg-secondary)] border border-[var(--border-subtle)] text-center text-sm text-[var(--text-secondary)]">
-                            No other alerts for today
-                        </div>
+                        )}
                     </div>
                 </Card>
             </div>

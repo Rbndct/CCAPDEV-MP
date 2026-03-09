@@ -1,8 +1,11 @@
 import { useState } from 'react';
 import { Modal } from '../Modal';
 import { Button, Input, Select, TextArea } from '../ui';
+import { useAuth, API_BASE_URL } from '../../contexts/AuthContext';
 
-export const AddFacilityModal = ({ isOpen, onClose }) => {
+export const AddFacilityModal = ({ isOpen, onClose, onRefresh }) => {
+    const { token } = useAuth();
+    const [isSubmitting, setIsSubmitting] = useState(false);
     const [formData, setFormData] = useState({
         name: '',
         type: '',
@@ -36,21 +39,49 @@ export const AddFacilityModal = ({ isOpen, onClose }) => {
         });
     };
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        // TODO: Add validation and API call
-        console.log('New facility:', formData);
-        alert('Facility added successfully!');
-        onClose();
-        // Reset form
-        setFormData({
-            name: '',
-            type: '',
-            hourlyRate: '',
-            capacity: '',
-            description: '',
-            status: 'Available'
-        });
+        setIsSubmitting(true);
+        try {
+            const response = await fetch(`${API_BASE_URL || 'http://localhost:5000/api'}/admin/facilities`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    name: formData.name,
+                    type: formData.type,
+                    capacity: parseInt(formData.capacity),
+                    hourly_rate: parseFloat(formData.hourlyRate),
+                    status: formData.status,
+                    description: formData.description
+                })
+            });
+
+            if (response.ok) {
+                alert('Facility added successfully!');
+                onClose();
+                if (onRefresh) onRefresh();
+                // Reset form
+                setFormData({
+                    name: '',
+                    type: '',
+                    hourlyRate: '',
+                    capacity: '',
+                    description: '',
+                    status: 'Available'
+                });
+            } else {
+                const error = await response.json();
+                alert(`Error: ${error.message}`);
+            }
+        } catch (error) {
+            console.error('Error adding facility:', error);
+            alert('Failed to add facility.');
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     return (
@@ -64,8 +95,8 @@ export const AddFacilityModal = ({ isOpen, onClose }) => {
                     <Button variant="outline" onClick={onClose}>
                         Cancel
                     </Button>
-                    <Button variant="primary" onClick={handleSubmit}>
-                        Add Facility
+                    <Button variant="primary" onClick={handleSubmit} disabled={isSubmitting}>
+                        {isSubmitting ? 'Adding...' : 'Add Facility'}
                     </Button>
                 </>
             }

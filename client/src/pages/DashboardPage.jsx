@@ -1,62 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Navbar, Footer } from '../components/LandingPage';
-import { Card, Badge } from '../components/ui';
+import { Card, Badge, Button } from '../components/ui';
 import { Calendar, Clock, TrendingUp, Bell, Pencil, X, Search, Users } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth, API_BASE_URL } from '../contexts/AuthContext';
 import { EditReservationModal } from '../components/modals/EditReservationModal';
-
-// Mock booking data
-const mockUpcomingBookings = [
-  {
-    id: 1,
-    court: 'Court A - Premium Basketball',
-    date: '2026-02-12',
-    time: '14:00 - 16:00',
-    status: 'confirmed',
-    price: 600
-  },
-  {
-    id: 2,
-    court: 'Court C - Tennis Court 1',
-    date: '2026-02-15',
-    time: '10:00 - 11:00',
-    status: 'confirmed',
-    price: 500
-  },
-  {
-    id: 3,
-    court: 'Court E - Badminton Hall',
-    date: '2026-02-18',
-    time: '18:00 - 19:00',
-    status: 'pending',
-    price: 500
-  }
-];
-
-const mockBookingHistory = [
-  {
-    id: 4,
-    court: 'Court B - Standard Basketball',
-    date: '2026-02-05',
-    time: '16:00 - 18:00',
-    status: 'completed'
-  },
-  {
-    id: 5,
-    court: 'Court D - Tennis Court 2',
-    date: '2026-01-28',
-    time: '09:00 - 10:00',
-    status: 'completed'
-  },
-  {
-    id: 6,
-    court: 'Court F - Volleyball Arena',
-    date: '2026-01-20',
-    time: '19:00 - 21:00',
-    status: 'completed'
-  }
-];
 
 const mockAnnouncements = [
   {
@@ -82,13 +30,6 @@ const mockAnnouncements = [
   }
 ];
 
-const mockPlayers = [
-  { id: 1, name: 'Pogi 1', sport: 'Basketball', avatar: 'J' },
-  { id: 2, name: 'Pogi 2', sport: 'Tennis', avatar: 'M' },
-  { id: 3, name: 'Ganda 3', sport: 'Badminton', avatar: 'C' },
-
-];
-
 const statusConfig = {
   confirmed: { variant: 'success', label: 'Confirmed' },
   pending: { variant: 'warning', label: 'Pending' },
@@ -97,14 +38,67 @@ const statusConfig = {
 };
 
 export const DashboardPage = () => {
-  const { user } = useAuth();
-  const [upcomingBookings, setUpcomingBookings] = useState(mockUpcomingBookings);
+  const { user, token } = useAuth();
+
+  const [upcomingBookings, setUpcomingBookings] = useState([]);
+  const [bookingHistory, setBookingHistory] = useState([]);
+  const [allPlayers, setAllPlayers] = useState([]);
+
   const [editingBooking, setEditingBooking] = useState(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [playerSearch, setPlayerSearch] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
+
+  const fetchDashboardData = async () => {
+    try {
+      // Fetch user's reservations
+      const resResponse = await fetch(`${API_BASE_URL || 'http://localhost:5000/api'}/reservations/my`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const resData = await resResponse.json();
+
+      if (resResponse.ok) {
+        const formatted = resData.data.map(r => ({
+          id: r._id,
+          court: r.facility?.name || 'Unknown Facility',
+          date: r.date,
+          time: `${r.start_time} - ${r.end_time}`,
+          status: r.status,
+          price: r.total_price || 0
+        }));
+
+        setUpcomingBookings(formatted.filter(b => ['pending', 'confirmed'].includes(b.status)));
+        setBookingHistory(formatted.filter(b => ['completed', 'cancelled'].includes(b.status)).slice(0, 3)); // Only show top 3 history
+      }
+
+      // Fetch all public profiles for search
+      const profilesResponse = await fetch(`${API_BASE_URL || 'http://localhost:5000/api'}/profiles/`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const profilesData = await profilesResponse.json();
+
+      if (profilesResponse.ok) {
+        setAllPlayers(profilesData.data.map(p => ({
+          id: p._id,
+          name: p.full_name,
+          sport: 'Member',
+          avatar: p.full_name.charAt(0)
+        })));
+      }
+
+    } catch (error) {
+      console.error('Failed to load dashboard data:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (token) fetchDashboardData();
+  }, [token]);
 
   const filteredPlayers = playerSearch.trim()
-    ? mockPlayers.filter(p => p.name.toLowerCase().includes(playerSearch.toLowerCase()) || p.sport.toLowerCase().includes(playerSearch.toLowerCase()))
+    ? allPlayers.filter(p => p.name.toLowerCase().includes(playerSearch.toLowerCase()) || p.sport.toLowerCase().includes(playerSearch.toLowerCase()))
     : [];
 
   const handleEditClick = (booking) => {
@@ -113,16 +107,28 @@ export const DashboardPage = () => {
   };
 
   const handleSaveEdit = (updatedBooking) => {
+    // Optimistic UI update
     setUpcomingBookings(prev =>
       prev.map(b => b.id === updatedBooking.id ? updatedBooking : b)
     );
   };
 
-  const handleCancelBooking = (bookingId) => {
+  const handleCancelBooking = async (bookingId) => {
     if (window.confirm('Are you sure you want to cancel this reservation?')) {
-      setUpcomingBookings(prev =>
-        prev.map(b => b.id === bookingId ? { ...b, status: 'cancelled' } : b)
-      );
+      try {
+        const response = await fetch(`${API_BASE_URL || 'http://localhost:5000/api'}/reservations/${bookingId}`, {
+          method: 'DELETE',
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (response.ok) {
+          setUpcomingBookings(prev =>
+            prev.map(b => b.id === bookingId ? { ...b, status: 'cancelled' } : b)
+              .filter(b => b.status !== 'cancelled') // Remove it from upcoming entirely
+          );
+        }
+      } catch (error) {
+        console.log("Error cancelling booking");
+      }
     }
   };
 
@@ -130,12 +136,12 @@ export const DashboardPage = () => {
     <>
       <Navbar />
 
-      <div className="min-h-screen bg-[var(--bg-primary)] py-24 px-6">
+      <div className="min-h-screen bg-[var(--bg-primary)] py-24 px-6 opacity-100 transition-opacity">
         <div className="max-w-7xl mx-auto">
           {/* Hero Section */}
           <div className="mb-12">
             <h1 className="text-4xl md:text-5xl font-bold mb-4">
-              Welcome back, <span className="text-gradient-green">{user?.name}</span>
+              Welcome back, <span className="text-gradient-green">{user?.full_name || user?.name || 'User'}</span>
             </h1>
             <p className="text-xl text-[var(--text-secondary)]">
               Manage your bookings and explore new facilities
@@ -159,6 +165,11 @@ export const DashboardPage = () => {
                 </div>
 
                 <div className="space-y-4">
+                  {upcomingBookings.length === 0 && !isLoading && (
+                    <div className="text-center p-6 text-[var(--text-secondary)]">
+                      <p>You have no upcoming reservations.</p>
+                    </div>
+                  )}
                   {upcomingBookings.map((booking) => (
                     <Card key={booking.id} variant="glass" className="p-4 hover:border-[var(--accent-green)] transition-all">
                       <div className="flex items-start justify-between">
@@ -223,7 +234,12 @@ export const DashboardPage = () => {
                 </div>
 
                 <div className="space-y-3">
-                  {mockBookingHistory.map((booking) => (
+                  {bookingHistory.length === 0 && !isLoading && (
+                    <div className="text-center p-4 text-[var(--text-secondary)]">
+                      <p>No past bookings found.</p>
+                    </div>
+                  )}
+                  {bookingHistory.map((booking) => (
                     <div key={booking.id} className="flex items-center justify-between p-3 rounded-lg bg-[var(--bg-secondary)] border border-[var(--border-subtle)]">
                       <div>
                         <p className="font-medium">{booking.court}</p>
@@ -231,8 +247,8 @@ export const DashboardPage = () => {
                           {new Date(booking.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} • {booking.time}
                         </p>
                       </div>
-                      <Badge variant={statusConfig[booking.status].variant}>
-                        {statusConfig[booking.status].label}
+                      <Badge variant={statusConfig[booking.status]?.variant || 'info'}>
+                        {statusConfig[booking.status]?.label || booking.status}
                       </Badge>
                     </div>
                   ))}

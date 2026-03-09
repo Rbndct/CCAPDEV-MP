@@ -1,32 +1,69 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, Button, Badge, Select, DatePicker } from '../../components/ui';
-import { Filter, Calendar as CalendarIcon, ChevronLeft, ChevronRight, Grid, List } from 'lucide-react';
+import { Filter, Calendar as CalendarIcon, ChevronLeft, ChevronRight, Grid, List, Loader } from 'lucide-react';
+import { useAuth, API_BASE_URL } from '../../contexts/AuthContext';
 
 export function BookingsPage() {
+    const { token } = useAuth();
     const [viewMode, setViewMode] = useState('calendar'); // 'calendar' or 'list'
     const [selectedDate, setSelectedDate] = useState(new Date());
     const [filterFacility, setFilterFacility] = useState('all');
     const [filterStatus, setFilterStatus] = useState('all');
     const [showFilters, setShowFilters] = useState(false);
 
-    // Mock bookings data
-    const bookings = [
-        { id: 1, facility: 'Basketball Court A', user: 'John Doe', date: '2026-02-12', startTime: '14:00', endTime: '16:00', status: 'confirmed' },
-        { id: 2, facility: 'Tennis Court 1', user: 'Jane Smith', date: '2026-02-12', startTime: '10:00', endTime: '11:00', status: 'pending' },
-        { id: 3, facility: 'Badminton Hall', user: 'Mike Ross', date: '2026-02-13', startTime: '09:00', endTime: '10:00', status: 'confirmed' },
-        { id: 4, facility: 'Basketball Court A', user: 'Sarah Cole', date: '2026-02-14', startTime: '18:00', endTime: '20:00', status: 'confirmed' },
-        { id: 5, facility: 'Tennis Court 2', user: 'Tom Hardy', date: '2026-02-15', startTime: '16:00', endTime: '17:00', status: 'pending' },
-        { id: 6, facility: 'Volleyball Arena', user: 'Emma Watson', date: '2026-02-16', startTime: '15:00', endTime: '17:00', status: 'confirmed' },
-    ];
+    // DB Data
+    const [bookings, setBookings] = useState([]);
+    const [isLoading, setIsLoading] = useState(true);
 
-    const facilities = [
-        { value: 'all', label: 'All Facilities' },
-        { value: 'Basketball Court A', label: 'Basketball Court A' },
-        { value: 'Tennis Court 1', label: 'Tennis Court 1' },
-        { value: 'Badminton Hall', label: 'Badminton Hall' },
-        { value: 'Volleyball Arena', label: 'Volleyball Arena' },
-        { value: 'Pickleball Arena', label: 'Pickleball Arena' },
-    ];
+    useEffect(() => {
+        const fetchBookings = async () => {
+            try {
+                const response = await fetch(`${API_BASE_URL || 'http://localhost:5000/api'}/admin/reservations`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const data = await response.json();
+                if (response.ok) {
+                    const mapped = data.map(r => ({
+                        id: r._id,
+                        facility: r.facility?.name || 'Unknown',
+                        user: r.user?.full_name || r.walk_in_name || 'Guest',
+                        date: new Date(r.date).toISOString().split('T')[0],
+                        startTime: r.start_time,
+                        endTime: r.end_time,
+                        status: r.status
+                    }));
+                    setBookings(mapped);
+                }
+            } catch (err) {
+                console.error("Failed to fetch bookings for calendar", err);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+        if (token) fetchBookings();
+    }, [token]);
+
+    const [facilities, setFacilities] = useState([
+        { value: 'all', label: 'All Facilities' }
+    ]);
+
+    useEffect(() => {
+        const loadFacilities = async () => {
+            try {
+                const res = await fetch(`${API_BASE_URL || 'http://localhost:5000/api'}/reservations/facilities`);
+                const data = await res.json();
+                if (res.ok) {
+                    setFacilities([
+                        { value: 'all', label: 'All Facilities' },
+                        ...data.map(f => ({ value: f.name, label: f.name }))
+                    ]);
+                }
+            } catch (e) {
+                console.error("Failed to load facilities", e);
+            }
+        };
+        loadFacilities();
+    }, []);
 
     const statuses = [
         { value: 'all', label: 'All Statuses' },
@@ -186,57 +223,63 @@ export function BookingsPage() {
                     </div>
 
                     {/* Calendar Grid */}
-                    <div className="grid grid-cols-7 gap-2">
-                        {/* Day headers */}
-                        {dayNames.map(day => (
-                            <div key={day} className="text-center font-medium text-sm text-[var(--text-secondary)] py-2">
-                                {day}
-                            </div>
-                        ))}
+                    {isLoading ? (
+                        <div className="flex justify-center items-center h-64">
+                            <Loader className="w-8 h-8 animate-spin text-[var(--accent-green)]" />
+                        </div>
+                    ) : (
+                        <div className="grid grid-cols-7 gap-2">
+                            {/* Day headers */}
+                            {dayNames.map(day => (
+                                <div key={day} className="text-center font-medium text-sm text-[var(--text-secondary)] py-2">
+                                    {day}
+                                </div>
+                            ))}
 
-                        {/* Calendar days */}
-                        {generateCalendarDays().map((day, index) => {
-                            const dayBookings = getBookingsForDay(day);
-                            const isToday = day &&
-                                day === new Date().getDate() &&
-                                selectedDate.getMonth() === new Date().getMonth() &&
-                                selectedDate.getFullYear() === new Date().getFullYear();
+                            {/* Calendar days */}
+                            {generateCalendarDays().map((day, index) => {
+                                const dayBookings = getBookingsForDay(day);
+                                const isToday = day &&
+                                    day === new Date().getDate() &&
+                                    selectedDate.getMonth() === new Date().getMonth() &&
+                                    selectedDate.getFullYear() === new Date().getFullYear();
 
-                            return (
-                                <div
-                                    key={index}
-                                    className={`min-h-[100px] p-2 rounded-lg border transition-colors ${day
+                                return (
+                                    <div
+                                        key={index}
+                                        className={`min-h-[100px] p-2 rounded-lg border transition-colors ${day
                                             ? 'bg-[var(--bg-secondary)] border-[var(--border-subtle)] hover:border-[var(--accent-green)] cursor-pointer'
                                             : 'bg-transparent border-transparent'
-                                        } ${isToday ? 'ring-2 ring-[var(--accent-green)]' : ''}`}
-                                >
-                                    {day && (
-                                        <>
-                                            <div className={`text-sm font-medium mb-1 ${isToday ? 'text-[var(--accent-green)]' : ''}`}>
-                                                {day}
-                                            </div>
-                                            <div className="space-y-1">
-                                                {dayBookings.slice(0, 3).map(booking => (
-                                                    <div
-                                                        key={booking.id}
-                                                        className={`text-xs p-1 rounded ${getStatusColor(booking.status)} text-white truncate`}
-                                                        title={`${booking.facility} - ${booking.user} (${booking.startTime}-${booking.endTime})`}
-                                                    >
-                                                        {booking.startTime} {booking.facility.split(' ')[0]}
-                                                    </div>
-                                                ))}
-                                                {dayBookings.length > 3 && (
-                                                    <div className="text-xs text-[var(--text-muted)] pl-1">
-                                                        +{dayBookings.length - 3} more
-                                                    </div>
-                                                )}
-                                            </div>
-                                        </>
-                                    )}
-                                </div>
-                            );
-                        })}
-                    </div>
+                                            } ${isToday ? 'ring-2 ring-[var(--accent-green)]' : ''}`}
+                                    >
+                                        {day && (
+                                            <>
+                                                <div className={`text-sm font-medium mb-1 ${isToday ? 'text-[var(--accent-green)]' : ''}`}>
+                                                    {day}
+                                                </div>
+                                                <div className="space-y-1">
+                                                    {dayBookings.slice(0, 3).map(booking => (
+                                                        <div
+                                                            key={booking.id}
+                                                            className={`text-xs p-1 rounded ${getStatusColor(booking.status)} text-white truncate`}
+                                                            title={`${booking.facility} - ${booking.user} (${booking.startTime}-${booking.endTime})`}
+                                                        >
+                                                            {booking.startTime} {booking.facility.split(' ')[0]}
+                                                        </div>
+                                                    ))}
+                                                    {dayBookings.length > 3 && (
+                                                        <div className="text-xs text-[var(--text-muted)] pl-1">
+                                                            +{dayBookings.length - 3} more
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </>
+                                        )}
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    )}
 
                     {/* Legend */}
                     <div className="flex items-center gap-6 mt-6 pt-6 border-t border-[var(--border-subtle)]">
@@ -260,37 +303,43 @@ export function BookingsPage() {
             {/* List View */}
             {viewMode === 'list' && (
                 <Card variant="elevated" className="overflow-hidden">
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-left">
-                            <thead className="bg-[var(--bg-secondary)] text-[var(--text-secondary)] text-sm">
-                                <tr>
-                                    <th className="p-4 font-medium">Booking ID</th>
-                                    <th className="p-4 font-medium">Facility</th>
-                                    <th className="p-4 font-medium">User</th>
-                                    <th className="p-4 font-medium">Date</th>
-                                    <th className="p-4 font-medium">Time</th>
-                                    <th className="p-4 font-medium">Status</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-[var(--border-subtle)]">
-                                {filteredBookings.map((booking) => (
-                                    <tr key={booking.id} className="hover:bg-[var(--bg-secondary)]/50 transition-colors">
-                                        <td className="p-4 font-medium">#{booking.id}</td>
-                                        <td className="p-4">{booking.facility}</td>
-                                        <td className="p-4 text-[var(--text-secondary)]">{booking.user}</td>
-                                        <td className="p-4">{booking.date}</td>
-                                        <td className="p-4 text-sm">{booking.startTime} - {booking.endTime}</td>
-                                        <td className="p-4">
-                                            <Badge variant={getStatusVariant(booking.status)}>
-                                                {booking.status}
-                                            </Badge>
-                                        </td>
+                    {isLoading ? (
+                        <div className="p-12 flex justify-center items-center h-48">
+                            <Loader className="w-8 h-8 animate-spin text-[var(--accent-green)]" />
+                        </div>
+                    ) : (
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-left">
+                                <thead className="bg-[var(--bg-secondary)] text-[var(--text-secondary)] text-sm">
+                                    <tr>
+                                        <th className="p-4 font-medium">Booking ID</th>
+                                        <th className="p-4 font-medium">Facility</th>
+                                        <th className="p-4 font-medium">User</th>
+                                        <th className="p-4 font-medium">Date</th>
+                                        <th className="p-4 font-medium">Time</th>
+                                        <th className="p-4 font-medium">Status</th>
                                     </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
-                    {filteredBookings.length === 0 && (
+                                </thead>
+                                <tbody className="divide-y divide-[var(--border-subtle)]">
+                                    {filteredBookings.map((booking) => (
+                                        <tr key={booking.id} className="hover:bg-[var(--bg-secondary)]/50 transition-colors">
+                                            <td className="p-4 font-medium">#{booking.id}</td>
+                                            <td className="p-4">{booking.facility}</td>
+                                            <td className="p-4 text-[var(--text-secondary)]">{booking.user}</td>
+                                            <td className="p-4">{booking.date}</td>
+                                            <td className="p-4 text-sm">{booking.startTime} - {booking.endTime}</td>
+                                            <td className="p-4">
+                                                <Badge variant={getStatusVariant(booking.status)}>
+                                                    {booking.status}
+                                                </Badge>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    )}
+                    {!isLoading && filteredBookings.length === 0 && (
                         <div className="text-center py-12 text-[var(--text-secondary)]">
                             No bookings found matching your criteria.
                         </div>

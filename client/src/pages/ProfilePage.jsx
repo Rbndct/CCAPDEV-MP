@@ -1,25 +1,89 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { User, Mail, Phone, Calendar, Shield, LogOut, Edit2, Check, X as XIcon, Camera } from 'lucide-react';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth, API_BASE_URL } from '../contexts/AuthContext';
 import { Card, Button, Badge } from '../components/ui';
 
 export const ProfilePage = () => {
-  const { user, logout } = useAuth();
+  const { user, token } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [saveStatus, setSaveStatus] = useState(null);
+
   const [userInfo, setUserInfo] = useState({
-    name: user?.name || 'Aaron Escandor',
-    email: user?.email || 'aaron@example.com',
-    phone: '+63 912 345 6789',
-    bio: 'Sports enthusiast and weekend warrior. Love playing basketball and badminton.',
+    name: '',
+    email: '',
+    phone: '',
+    bio: '',
     notifications: true,
     twoFactor: false
   });
 
-  const handleSave = (e) => {
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const response = await fetch(`${API_BASE_URL || 'http://localhost:5000/api'}/profiles/me`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        const data = await response.json();
+
+        if (response.ok) {
+          setUserInfo({
+            name: data.user?.full_name || '',
+            email: data.user?.email || '',
+            phone: data.user?.phone_number || '',
+            bio: data.user?.bio || '',
+            notifications: true,
+            twoFactor: false
+          });
+        }
+      } catch (error) {
+        console.error('Error fetching profile:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    if (token) {
+      fetchProfile();
+    }
+  }, [token]);
+
+  const handleSave = async (e) => {
     e.preventDefault();
-    setIsEditing(false);
-    // Here you would typically save to backend
+    setSaveStatus('saving');
+
+    try {
+      const response = await fetch(`${API_BASE_URL || 'http://localhost:5000/api'}/profiles/me`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          full_name: userInfo.name,
+          phone_number: userInfo.phone,
+          bio: userInfo.bio
+        })
+      });
+
+      if (response.ok) {
+        setSaveStatus('success');
+        setIsEditing(false);
+        setTimeout(() => setSaveStatus(null), 3000);
+      } else {
+        setSaveStatus('error');
+      }
+    } catch (error) {
+      console.error('Error saving profile:', error);
+      setSaveStatus('error');
+    }
   };
+
+  if (isLoading) {
+    return <div className="p-8 text-center text-[var(--text-secondary)]">Loading profile...</div>;
+  }
 
   return (
     <div className="max-w-4xl mx-auto">
@@ -161,10 +225,18 @@ export const ProfilePage = () => {
               </div>
 
               {isEditing && (
-                <div className="flex justify-end pt-4">
-                  <Button variant="primary" type="submit" icon={<Check className="w-4 h-4" />}>
-                    Save Changes
+                <div className="flex justify-end items-center gap-4 pt-4">
+                  {saveStatus === 'error' && <span className="text-red-500 text-sm">Failed to save profile.</span>}
+                  <Button variant="primary" type="submit" icon={<Check className="w-4 h-4" />} disabled={saveStatus === 'saving'}>
+                    {saveStatus === 'saving' ? 'Saving...' : 'Save Changes'}
                   </Button>
+                </div>
+              )}
+              {!isEditing && saveStatus === 'success' && (
+                <div className="flex justify-end pt-4">
+                  <span className="text-[#00ff88] text-sm flex items-center gap-2">
+                    <Check className="w-4 h-4" /> Profile updated successfully!
+                  </span>
                 </div>
               )}
             </form>

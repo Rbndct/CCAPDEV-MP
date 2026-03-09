@@ -49,7 +49,7 @@ function App() {
             }>
               <Route index element={<DashboardPage />} />
               <Route path="book" element={<FacilitiesPage />} />
-              <Route path="bookings" element={<BookingsPage />} />
+              <Route path="bookings" element={<UserBookingsPage />} />
               <Route path="favorites" element={<FavoritesPage />} />
               <Route path="payments" element={<PaymentPage />} />
               <Route path="profile" element={<ProfilePage />} />

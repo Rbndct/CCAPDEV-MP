@@ -13,49 +13,84 @@ export const AuthPage = () => {
     useEffect(() => {
         setActiveTab(isRegister ? 'register' : 'login');
     }, [location.pathname]);
-    const [userType, setUserType] = useState('user'); // 'user' or 'admin'
+
+    const [userType, setUserType] = useState('user');
     const [showPassword, setShowPassword] = useState(false);
     const [otpSent, setOtpSent] = useState(false);
 
+    // Controlled form state
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
+    const [loginError, setLoginError] = useState('');
+    const [isSubmitting, setIsSubmitting] = useState(false);
+
     const toggleTab = (tab) => {
         setActiveTab(tab);
-        setOtpSent(false); // Reset OTP state when switching tabs
+        setOtpSent(false);
+        setLoginError('');
+        setRegError('');
+        setRegSuccess('');
     };
 
-    const { login } = useAuth(); // Get login from context
+    const { login, register } = useAuth();
     const navigate = useNavigate();
 
-    const handleLogin = (e) => {
+    // Registration state
+    const [regName, setRegName] = useState('');
+    const [regEmail, setRegEmail] = useState('');
+    const [regPassword, setRegPassword] = useState('');
+    const [regConfirmPassword, setRegConfirmPassword] = useState('');
+    const [regError, setRegError] = useState('');
+    const [regSuccess, setRegSuccess] = useState('');
+    const [isRegistering, setIsRegistering] = useState(false);
+
+    const handleLogin = async (e) => {
         e.preventDefault();
+        setLoginError('');
+        setIsSubmitting(true);
 
-        // Get values from inputs (or use state if we were using state for inputs)
-        const emailInput = document.querySelector('input[placeholder="Enter your email or phone number"]');
-        const passwordInput = document.querySelector('input[type="password"]');
+        const result = await login(email, password);
 
-        const email = emailInput?.value || '';
-        const password = passwordInput?.value || '';
+        setIsSubmitting(false);
 
-        console.log(`Logging in...`);
+        if (!result || !result.success) {
+            setLoginError(result?.message || 'Login failed. Please check your credentials.');
+            return;
+        }
 
-        // Use the context login function
-        login(email, password);
-
-        // Redirect based on role (this logic might be better placed in a useEffect or inside login if it returned a promise)
-        // For now, we'll manually check the email to decide where to go, mirroring the context logic
-        if (email.includes('admin')) {
+        // Redirect based on the actual role returned from the server
+        const role = result.role;
+        if (role === 'admin' || role === 'staff') {
             navigate('/admin/dashboard');
         } else {
             navigate('/dashboard');
         }
     };
 
-    const handleRegister = (e) => {
+    const handleRegister = async (e) => {
         e.preventDefault();
-        if (!otpSent) {
-            setOtpSent(true); // Simulate sending OTP
+        setRegError('');
+        setRegSuccess('');
+
+        if (regPassword !== regConfirmPassword) {
+            setRegError('Passwords do not match');
+            return;
+        }
+
+        setIsRegistering(true);
+        const result = await register(regName, regEmail, regPassword, '');
+        setIsRegistering(false);
+
+        if (!result.success) {
+            setRegError(result.message);
         } else {
-            console.log('Verifying OTP and registering...');
-            // Mock registration verification here
+            setRegSuccess('Registration successful! You can now log in.');
+            // Switch to login tab after brief delay
+            setTimeout(() => {
+                toggleTab('login');
+                setEmail(regEmail);
+                setPassword('');
+            }, 2000);
         }
     };
 
@@ -132,9 +167,13 @@ export const AuthPage = () => {
                             </div>
 
                             <Input
-                                label="Email or Phone"
-                                placeholder="Enter your email or phone number"
+                                label="Email"
+                                type="email"
+                                placeholder="Enter your email (e.g. you@gmail.com)"
                                 icon={<Mail className="w-5 h-5" />}
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
+                                required
                             />
 
                             <div className="flex flex-col gap-2">
@@ -147,6 +186,9 @@ export const AuthPage = () => {
                                         type={showPassword ? "text" : "password"}
                                         className="w-full bg-[var(--bg-tertiary)] border border-[var(--border-subtle)] rounded-[var(--radius-md)] px-4 py-3 pl-11 pr-10 text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:border-[var(--accent-green)] focus:ring-2 focus:ring-[rgba(0,255,136,0.2)] transition-all"
                                         placeholder="Enter your password"
+                                        value={password}
+                                        onChange={(e) => setPassword(e.target.value)}
+                                        required
                                     />
                                     <button
                                         type="button"
@@ -168,8 +210,12 @@ export const AuthPage = () => {
                                 <a href="#" className="text-sm text-[var(--accent-green)] hover:underline">Forgot password?</a>
                             </div>
 
-                            <Button variant="primary" size="lg" className="w-full" icon={<ArrowRight className="w-5 h-5" />}>
-                                Log In
+                            {loginError && (
+                                <p className="text-red-500 text-sm text-center">{loginError}</p>
+                            )}
+
+                            <Button variant="primary" size="lg" className="w-full" icon={<ArrowRight className="w-5 h-5" />} disabled={isSubmitting}>
+                                {isSubmitting ? 'Logging in...' : 'Log In'}
                             </Button>
 
                             <div className="text-center">
@@ -177,16 +223,8 @@ export const AuthPage = () => {
                                 <button
                                     type="button"
                                     onClick={() => {
-                                        // Mock admin login
-                                        const emailInput = document.querySelector('input[placeholder="Enter your email or phone number"]');
-                                        const passwordInput = document.querySelector('input[type="password"]');
-                                        if (emailInput) emailInput.value = 'admin@sportsplex.com';
-                                        if (passwordInput) passwordInput.value = 'password';
-                                        handleLogin({ preventDefault: () => { } });
-                                        // Since handleLogin is a mock in this component and doesn't explicitly call auth context, 
-                                        // and the actual auth context usage is likely wrapped or handled differently in the full implementation,
-                                        // we might need to simulate the user typing or direct the user to use the specific credentials.
-                                        // For now, let's just pre-fill.
+                                        setEmail('admin@sportsplex.com');
+                                        setPassword('password123');
                                     }}
                                     className="text-sm text-[var(--accent-green)] hover:underline font-medium"
                                 >
@@ -205,12 +243,18 @@ export const AuthPage = () => {
                                         label="Full Name"
                                         placeholder="John Doe"
                                         icon={<User className="w-5 h-5" />}
+                                        value={regName}
+                                        onChange={(e) => setRegName(e.target.value)}
+                                        required
                                     />
                                     <Input
                                         label="Email Address"
                                         type="email"
                                         placeholder="john@example.com"
                                         icon={<Mail className="w-5 h-5" />}
+                                        value={regEmail}
+                                        onChange={(e) => setRegEmail(e.target.value)}
+                                        required
                                     />
                                     <div className="grid grid-cols-2 gap-4">
                                         <Input
@@ -218,17 +262,28 @@ export const AuthPage = () => {
                                             type="password"
                                             placeholder="••••••••"
                                             icon={<Lock className="w-5 h-5" />}
+                                            value={regPassword}
+                                            onChange={(e) => setRegPassword(e.target.value)}
+                                            required
+                                            minLength={6}
                                         />
                                         <Input
                                             label="Confirm"
                                             type="password"
                                             placeholder="••••••••"
                                             icon={<Lock className="w-5 h-5" />}
+                                            value={regConfirmPassword}
+                                            onChange={(e) => setRegConfirmPassword(e.target.value)}
+                                            required
+                                            minLength={6}
                                         />
                                     </div>
 
-                                    <Button variant="primary" size="lg" className="w-full">
-                                        Verify Email
+                                    {regError && <p className="text-red-500 text-sm text-center">{regError}</p>}
+                                    {regSuccess && <p className="text-[#00ff88] text-sm text-center">{regSuccess}</p>}
+
+                                    <Button variant="primary" size="lg" className="w-full" disabled={isRegistering}>
+                                        {isRegistering ? 'Creating Account...' : 'Create Account'}
                                     </Button>
 
                                     <div className="relative flex items-center gap-4 my-6">

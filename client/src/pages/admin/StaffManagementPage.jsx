@@ -1,22 +1,46 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, Button, Badge } from '../../components/ui';
 import { Plus, Edit2, Trash2 } from 'lucide-react';
 import { AddStaffModal } from '../../components/modals/AddStaffModal';
 import { EditStaffModal } from '../../components/modals/EditStaffModal';
+import { useAuth, API_BASE_URL } from '../../contexts/AuthContext';
 
 export function StaffManagementPage() {
+    const { token } = useAuth();
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [selectedStaff, setSelectedStaff] = useState(null);
+    const [staff, setStaff] = useState([]);
+    const [isLoading, setIsLoading] = useState(true);
 
-    const staff = [
-        { id: 1, name: 'John Doe', email: 'john@sportsplex.com', phone: '+63 912 345 6789', role: 'Trainer', status: 'Active' },
-        { id: 2, name: 'Jane Smith', email: 'jane@sportsplex.com', phone: '+63 923 456 7890', role: 'Receptionist', status: 'On Leave' },
-        { id: 3, name: 'Mike Johnson', email: 'mike@sportsplex.com', phone: '+63 934 567 8901', role: 'Maintenance', status: 'Active' },
-        { id: 4, name: 'Mike Kingston', email: 'mike2@sportsplex.com', phone: '+63 934 667 8601', role: 'Trainer', status: 'Active' },
-        { id: 5, name: 'Justine Bieber', email: 'BABYBABYOHHHH@sportsplex.com', phone: '+63 934 667 6701', role: 'Receptionist', status: 'Active' },
+    const fetchStaff = async () => {
+        try {
+            const response = await fetch(`${API_BASE_URL || 'http://localhost:5000/api'}/admin/users`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const data = await response.json();
+            if (response.ok) {
+                const staffUsers = data.filter(u => ['admin', 'staff'].includes(u.role));
+                const mapped = staffUsers.map(u => ({
+                    id: u._id,
+                    name: u.full_name,
+                    email: u.email,
+                    phone: u.phone_number || 'N/A',
+                    role: u.role.charAt(0).toUpperCase() + u.role.slice(1),
+                    status: u.is_verified ? 'Active' : 'Inactive'
+                }));
+                setStaff(mapped);
+            }
+        } catch (error) {
+            console.error("Failed to fetch staff:", error);
+        } finally {
+            setIsLoading(false);
+        }
+    };
 
-    ];
+    useEffect(() => {
+        if (token) fetchStaff();
+    }, [token]);
 
     const handleEdit = (staffMember) => {
         setSelectedStaff(staffMember);
@@ -44,30 +68,39 @@ export function StaffManagementPage() {
                             </tr>
                         </thead>
                         <tbody>
-                            {staff.map((member) => (
-                                <tr key={member.id} className="border-b border-[var(--border-subtle)] last:border-0 hover:bg-[var(--bg-secondary)]/50 transition-colors">
-                                    <td className="p-4 font-medium">{member.name}</td>
-                                    <td className="p-4 text-[var(--text-secondary)]">{member.role}</td>
-                                    <td className="p-4">
-                                        <Badge variant={member.status === 'Active' ? 'success' : 'warning'}>
-                                            {member.status}
-                                        </Badge>
-                                    </td>
-                                    <td className="p-4 text-right">
-                                        <div className="flex items-center justify-end gap-2">
-                                            <button
-                                                className="p-2 hover:bg-[var(--accent-green)]/10 text-[var(--accent-green)] rounded-lg transition-colors"
-                                                onClick={() => handleEdit(member)}
-                                            >
-                                                <Edit2 size={16} />
-                                            </button>
-                                            <button className="p-2 hover:bg-red-500/10 text-red-500 rounded-lg transition-colors">
-                                                <Trash2 size={16} />
-                                            </button>
-                                        </div>
-                                    </td>
+                            {isLoading ? (
+                                <tr>
+                                    <td colSpan="4" className="p-4 text-center text-[var(--text-secondary)]">Loading staff...</td>
                                 </tr>
-                            ))}
+                            ) : staff.length === 0 ? (
+                                <tr>
+                                    <td colSpan="4" className="p-4 text-center text-[var(--text-secondary)]">No staff members found.</td>
+                                </tr>
+                            ) : (
+                                staff.map((member) => (
+                                    <tr key={member.id} className="border-b border-[var(--border-subtle)] last:border-0 hover:bg-[var(--bg-secondary)]/50 transition-colors">
+                                        <td className="p-4 font-medium">{member.name}</td>
+                                        <td className="p-4 text-[var(--text-secondary)]">{member.role}</td>
+                                        <td className="p-4">
+                                            <Badge variant={member.status === 'Active' ? 'success' : 'warning'}>
+                                                {member.status}
+                                            </Badge>
+                                        </td>
+                                        <td className="p-4 text-right">
+                                            <div className="flex items-center justify-end gap-2">
+                                                <button
+                                                    className="p-2 hover:bg-[var(--accent-green)]/10 text-[var(--accent-green)] rounded-lg transition-colors"
+                                                    onClick={() => handleEdit(member)}
+                                                >
+                                                    <Edit2 size={16} />
+                                                </button>
+                                                <button className="p-2 hover:bg-red-500/10 text-red-500 rounded-lg transition-colors">
+                                                    <Trash2 size={16} />
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                )))}
                         </tbody>
                     </table>
                 </div>

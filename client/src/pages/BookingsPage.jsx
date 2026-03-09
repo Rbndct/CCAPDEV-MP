@@ -4,71 +4,7 @@ import { Card, Badge, Button } from '../components/ui';
 import { Modal } from '../components/Modal';
 import { Calendar, Clock, TrendingUp, Filter, ArrowRight, XCircle, CheckCircle, AlertTriangle } from 'lucide-react';
 
-// Mock booking data
-const mockUpcomingBookings = [
-  {
-    id: 1,
-    court: 'Court A - Premium Basketball',
-    date: '2026-02-12',
-    time: '14:00 - 16:00',
-    status: 'confirmed',
-    price: 600
-  },
-  {
-    id: 2,
-    court: 'Court C - Tennis Court 1',
-    date: '2026-02-15',
-    time: '10:00 - 11:00',
-    status: 'confirmed',
-    price: 500
-  },
-  {
-    id: 3,
-    court: 'Court E - Badminton Hall',
-    date: '2026-02-18',
-    time: '18:00 - 19:00',
-    status: 'pending',
-    price: 500
-  }
-];
-
-const mockBookingHistory = [
-  {
-    id: 4,
-    court: 'Court B - Standard Basketball',
-    date: '2026-02-05',
-    time: '16:00 - 18:00',
-    status: 'completed',
-    price: 500
-  },
-  {
-    id: 5,
-    court: 'Court D - Tennis Court 2',
-    date: '2026-01-28',
-    time: '09:00 - 10:00',
-    status: 'completed',
-    price: 500
-  },
-  {
-    id: 6,
-    court: 'Court F - Volleyball Arena',
-    date: '2026-01-20',
-    time: '19:00 - 21:00',
-    status: 'completed',
-    price: 500
-  },
-  {
-    id: 7,
-    court: 'Court G - Multi-Purpose',
-    date: '2026-01-15',
-    time: '14:00 - 16:00',
-    status: 'cancelled',
-    price: 500
-  }
-];
-
-// Combined bookings for easier filtering
-const allBookings = [...mockUpcomingBookings, ...mockBookingHistory];
+import { useAuth, API_BASE_URL } from '../contexts/AuthContext';
 
 const statusConfig = {
   confirmed: { variant: 'success', label: 'Confirmed' },
@@ -81,10 +17,46 @@ export const BookingsPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const location = useLocation();
   const [currentTab, setCurrentTab] = useState('upcoming');
-  
+
   // Modal State
   const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
   const [bookingToCancel, setBookingToCancel] = useState(null);
+
+  const { token } = useAuth();
+  const [allBookings, setAllBookings] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isCancelling, setIsCancelling] = useState(false);
+
+  const fetchBookings = async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL || 'http://localhost:5000/api'}/reservations/my`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const data = await response.json();
+      if (response.ok) {
+        // Map the backend data to match the expected format in the table
+        // The backend returns an array directly
+        const formatted = data.map(r => ({
+          id: r._id,
+          court: r.facility?.name || 'Unknown Facility',
+          date: r.date,
+          time: `${r.start_time} - ${r.end_time}`,
+          status: r.status === 'reserved' ? 'confirmed' : r.status, // Map 'reserved' to 'confirmed' for student view
+          price: r.total_price || 500
+        }));
+        setAllBookings(formatted);
+      }
+    } catch (error) {
+      console.error('Failed to fetch bookings', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Fetch true bookings on mount
+  useEffect(() => {
+    if (token) fetchBookings();
+  }, [token]);
 
   // Sync state with URL query params
   useEffect(() => {
@@ -106,13 +78,31 @@ export const BookingsPage = () => {
     setIsCancelModalOpen(true);
   };
 
-  const confirmCancel = () => {
-    // In a real app, you would make an API call here
-    console.log('Cancelling booking:', bookingToCancel?.id);
-    // Remove from UI or update status (mock implementation)
-    // alert(`Booking for ${bookingToCancel?.court} cancelled!`); 
-    setIsCancelModalOpen(false);
-    setBookingToCancel(null);
+  const confirmCancel = async () => {
+    if (!bookingToCancel) return;
+    setIsCancelling(true);
+
+    try {
+      const response = await fetch(`${API_BASE_URL || 'http://localhost:5000/api'}/reservations/${bookingToCancel.id}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (response.ok) {
+        // Refresh bookings after cancellation
+        fetchBookings();
+      } else {
+        console.error('Failed to cancel booking');
+      }
+    } catch (error) {
+      console.error('Error cancelling booking:', error);
+    } finally {
+      setIsCancelling(false);
+      setIsCancelModalOpen(false);
+      setBookingToCancel(null);
+    }
   };
 
   // Filter bookings based on current tab
@@ -146,11 +136,10 @@ export const BookingsPage = () => {
         <div className="flex gap-8">
           <button
             onClick={() => handleTabChange('upcoming')}
-            className={`pb-4 px-2 font-medium text-sm transition-all relative ${
-              currentTab === 'upcoming'
-                ? 'text-[var(--accent-green)]'
-                : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
-            }`}
+            className={`pb-4 px-2 font-medium text-sm transition-all relative ${currentTab === 'upcoming'
+              ? 'text-[var(--accent-green)]'
+              : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+              }`}
           >
             Upcoming
             {currentTab === 'upcoming' && (
@@ -159,11 +148,10 @@ export const BookingsPage = () => {
           </button>
           <button
             onClick={() => handleTabChange('history')}
-            className={`pb-4 px-2 font-medium text-sm transition-all relative ${
-              currentTab === 'history'
-                ? 'text-[var(--accent-green)]'
-                : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
-            }`}
+            className={`pb-4 px-2 font-medium text-sm transition-all relative ${currentTab === 'history'
+              ? 'text-[var(--accent-green)]'
+              : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+              }`}
           >
             History
             {currentTab === 'history' && (
@@ -172,11 +160,10 @@ export const BookingsPage = () => {
           </button>
           <button
             onClick={() => handleTabChange('cancelled')}
-            className={`pb-4 px-2 font-medium text-sm transition-all relative ${
-              currentTab === 'cancelled'
-                ? 'text-[var(--accent-green)]'
-                : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
-            }`}
+            className={`pb-4 px-2 font-medium text-sm transition-all relative ${currentTab === 'cancelled'
+              ? 'text-[var(--accent-green)]'
+              : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+              }`}
           >
             Cancelled
             {currentTab === 'cancelled' && (
@@ -219,19 +206,19 @@ export const BookingsPage = () => {
                     </td>
                     {currentTab === 'upcoming' && (
                       <td className="p-4 text-right">
-                         <div className="flex items-center justify-end gap-2">
-                            <Button variant="outline" size="sm" className="!px-2 !py-1 !text-xs h-8">
-                              Modify
-                            </Button>
-                            <Button 
-                              variant="outline" 
-                              size="sm" 
-                              className="!px-2 !py-1 !text-xs h-8 text-red-500 border-red-500/20 hover:bg-red-500/10 hover:text-red-500 hover:border-red-500"
-                              onClick={() => handleCancelClick(booking)}
-                            >
-                              Cancel
-                            </Button>
-                         </div>
+                        <div className="flex items-center justify-end gap-2">
+                          <Button variant="outline" size="sm" className="!px-2 !py-1 !text-xs h-8">
+                            Modify
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="!px-2 !py-1 !text-xs h-8 text-red-500 border-red-500/20 hover:bg-red-500/10 hover:text-red-500 hover:border-red-500"
+                            onClick={() => handleCancelClick(booking)}
+                          >
+                            Cancel
+                          </Button>
+                        </div>
                       </td>
                     )}
                   </tr>
@@ -246,8 +233,8 @@ export const BookingsPage = () => {
             </div>
             <p className="text-lg font-medium text-[var(--text-primary)]">No bookings found</p>
             <p className="text-[var(--text-secondary)] mb-4">
-              {currentTab === 'upcoming' 
-                ? "You don't have any upcoming reservations." 
+              {currentTab === 'upcoming'
+                ? "You don't have any upcoming reservations."
                 : `No ${currentTab} bookings to display.`}
             </p>
             {currentTab === 'upcoming' && (
@@ -272,12 +259,13 @@ export const BookingsPage = () => {
             <Button variant="ghost" onClick={() => setIsCancelModalOpen(false)}>
               Keep Reservation
             </Button>
-            <Button 
-              variant="primary" 
+            <Button
+              variant="primary"
               className="bg-red-500 hover:bg-red-600 hover:shadow-red-500/20 text-white"
               onClick={confirmCancel}
+              disabled={isCancelling}
             >
-              Confirm Cancellation
+              {isCancelling ? 'Cancelling...' : 'Confirm Cancellation'}
             </Button>
           </>
         }

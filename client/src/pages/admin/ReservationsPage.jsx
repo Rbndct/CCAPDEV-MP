@@ -1,14 +1,17 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, Button, Badge } from '../../components/ui';
 import { Search, Filter, Calendar, Clock, MapPin, MoreVertical, X, Check, Archive, Pencil, AlertTriangle } from 'lucide-react';
 import { EditReservationModal } from '../../components/modals/EditReservationModal';
+import { useAuth, API_BASE_URL } from '../../contexts/AuthContext';
 
 export function ReservationsPage() {
+    const { token } = useAuth();
     const [filterStatus, setFilterStatus] = useState('all');
     const [searchTerm, setSearchTerm] = useState('');
     const [showArchived, setShowArchived] = useState(false);
     const [editingReservation, setEditingReservation] = useState(null);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+    const [isLoading, setIsLoading] = useState(true);
 
     // Helper function to check if booking is older than 2 days
     const isOlderThanTwoDays = (dateString) => {
@@ -19,19 +22,58 @@ export function ReservationsPage() {
     };
 
     // Mock Reservations Data
-    const [reservations, setReservations] = useState([
-        { id: 'R-1001', user: 'John Doe', facility: 'Basketball Court A', date: '2026-02-12', time: '14:00 - 16:00', status: 'confirmed', payment: 'paid', archived: false },
-        { id: 'R-1002', user: 'Jane Smith', facility: 'Tennis Court 1', date: '2026-02-15', time: '10:00 - 11:00', status: 'pending', payment: 'unpaid', archived: false },
-        { id: 'R-1003', user: 'Mike Ross', facility: 'Badminton Hall', date: '2026-02-07', time: '09:00 - 10:00', status: 'no-show', payment: 'paid', archived: false },
-        { id: 'R-1004', user: 'Sarah Cole', facility: 'Volleyball Arena', date: '2026-02-14', time: '18:00 - 20:00', status: 'confirmed', payment: 'paid', archived: false },
-        { id: 'R-1005', user: 'Tom Hardy', facility: 'Basketball Court B', date: '2026-02-06', time: '16:00 - 17:00', status: 'cancelled', payment: 'refunded', archived: false },
-        { id: 'R-1006', user: 'Emma Watson', facility: 'Tennis Court 2', date: '2026-02-08', time: '13:00 - 14:30', status: 'confirmed', payment: 'paid', archived: false },
-    ]);
+    const [reservations, setReservations] = useState([]);
 
-    const handleStatusChange = (id, newStatus) => {
+    const fetchReservations = async () => {
+        try {
+            const response = await fetch(`${API_BASE_URL || 'http://localhost:5000/api'}/admin/reservations`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const data = await response.json();
+            if (response.ok) {
+                // Map to frontend expected format
+                const mapped = data.map(r => ({
+                    id: r._id,
+                    user: r.user?.full_name || r.walk_in_name || 'Guest',
+                    facility: r.facility?.name || 'Unknown',
+                    date: new Date(r.date).toISOString().split('T')[0],
+                    time: `${r.start_time} - ${r.end_time}`,
+                    status: r.status,
+                    payment: r.payment_status || 'paid', // Default to paid if not set
+                    archived: false // Default to unarchived
+                }));
+                setReservations(mapped);
+            }
+        } catch (error) {
+            console.error("Failed to fetch reservations:", error);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        if (token) fetchReservations();
+    }, [token]);
+
+    const handleStatusChange = async (id, newStatus) => {
+        // Optimistic update
         setReservations(reservations.map(res =>
             res.id === id ? { ...res, status: newStatus } : res
         ));
+
+        try {
+            await fetch(`${API_BASE_URL || 'http://localhost:5000/api'}/admin/reservations/${id}`, {
+                method: 'PUT',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ status: newStatus })
+            });
+        } catch (error) {
+            console.error("Failed to update status:", error);
+            // Revert back on error (omitted for brevity)
+        }
     };
 
     const handleArchive = (id) => {
@@ -57,15 +99,8 @@ export function ReservationsPage() {
     };
 
     const handleSaveEdit = (updatedBooking) => {
-        setReservations(reservations.map(res =>
-            res.id === updatedBooking.id ? {
-                ...res,
-                facility: updatedBooking.court, // Map back 'court' to 'facility'
-                date: updatedBooking.date,
-                time: updatedBooking.time,
-                status: updatedBooking.status
-            } : res
-        ));
+        // Will refresh the list after edit via the modal's save mechanism
+        fetchReservations();
     };
 
     const handleBulkArchive = () => {
@@ -171,97 +206,107 @@ export function ReservationsPage() {
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-[var(--border-subtle)]">
-                            {filteredReservations.map((res) => (
-                                <tr key={res.id} className="hover:bg-[var(--bg-secondary)]/50 transition-colors">
-                                    <td className="p-4 font-medium text-[var(--text-primary)]">{res.id}</td>
-                                    <td className="p-4">
-                                        <div className="flex items-center gap-2">
-                                            <div className="w-6 h-6 rounded-full bg-[var(--accent-green)] text-black flex items-center justify-center text-xs font-bold">
-                                                {res.user.charAt(0)}
+                            {isLoading ? (
+                                <tr>
+                                    <td colSpan="7" className="p-4 text-center text-[var(--text-secondary)]">Loading reservations...</td>
+                                </tr>
+                            ) : filteredReservations.length === 0 ? (
+                                <tr>
+                                    <td colSpan="7" className="p-4 text-center text-[var(--text-secondary)]">No reservations found.</td>
+                                </tr>
+                            ) : (
+                                filteredReservations.map((res) => (
+                                    <tr key={res.id} className="hover:bg-[var(--bg-secondary)]/50 transition-colors">
+                                        <td className="p-4 font-medium text-[var(--text-primary)]">{res.id}</td>
+                                        <td className="p-4">
+                                            <div className="flex items-center gap-2">
+                                                <div className="w-6 h-6 rounded-full bg-[var(--accent-green)] text-black flex items-center justify-center text-xs font-bold">
+                                                    {res.user.charAt(0)}
+                                                </div>
+                                                {res.user}
                                             </div>
-                                            {res.user}
-                                        </div>
-                                    </td>
-                                    <td className="p-4 text-[var(--text-secondary)]">{res.facility}</td>
-                                    <td className="p-4 text-sm">
-                                        <div className="flex flex-col">
-                                            <span className="flex items-center gap-1"><Calendar className="w-3 h-3" /> {res.date}</span>
-                                            <span className="flex items-center gap-1 text-[var(--text-muted)]"><Clock className="w-3 h-3" /> {res.time}</span>
-                                        </div>
-                                    </td>
-                                    <td className="p-4">
-                                        <Badge variant={getStatusVariant(res.status)}>
-                                            {res.status.charAt(0).toUpperCase() + res.status.slice(1)}
-                                        </Badge>
-                                    </td>
-                                    <td className="p-4">
-                                        <span className={`text-sm font-medium ${res.payment === 'paid' ? 'text-green-500' : 'text-orange-500'}`}>
-                                            {res.payment.toUpperCase()}
-                                        </span>
-                                    </td>
-                                    <td className="p-4 text-right">
-                                        <div className="flex justify-end gap-2">
-                                            {!showArchived && (
-                                                <>
+                                        </td>
+                                        <td className="p-4 text-[var(--text-secondary)]">{res.facility}</td>
+                                        <td className="p-4 text-sm">
+                                            <div className="flex flex-col">
+                                                <span className="flex items-center gap-1"><Calendar className="w-3 h-3" /> {res.date}</span>
+                                                <span className="flex items-center gap-1 text-[var(--text-muted)]"><Clock className="w-3 h-3" /> {res.time}</span>
+                                            </div>
+                                        </td>
+                                        <td className="p-4">
+                                            <Badge variant={getStatusVariant(res.status)}>
+                                                {res.status.charAt(0).toUpperCase() + res.status.slice(1)}
+                                            </Badge>
+                                        </td>
+                                        <td className="p-4">
+                                            <span className={`text-sm font-medium ${res.payment === 'paid' ? 'text-green-500' : 'text-orange-500'}`}>
+                                                {res.payment.toUpperCase()}
+                                            </span>
+                                        </td>
+                                        <td className="p-4 text-right">
+                                            <div className="flex justify-end gap-2">
+                                                {!showArchived && (
+                                                    <>
+                                                        <button
+                                                            title="Edit Reservation"
+                                                            onClick={() => handleEdit(res)}
+                                                            className="p-1 hover:bg-[var(--accent-green)]/10 text-[var(--accent-green)] rounded transition-colors"
+                                                        >
+                                                            <Pencil size={18} />
+                                                        </button>
+                                                        <button
+                                                            title="Confirm Reservation"
+                                                            onClick={() => handleStatusChange(res.id, 'confirmed')}
+                                                            className={`p-1 rounded transition-colors ${res.status === 'confirmed'
+                                                                ? 'bg-green-500/20 text-green-500 ring-1 ring-green-500/30'
+                                                                : 'hover:bg-green-500/10 text-green-500'
+                                                                }`}
+                                                        >
+                                                            <Check size={18} />
+                                                        </button>
+                                                        <button
+                                                            title="Mark No-Show"
+                                                            onClick={() => handleStatusChange(res.id, 'no-show')}
+                                                            className={`p-1 rounded transition-colors ${res.status === 'no-show'
+                                                                ? 'bg-orange-500/20 text-orange-500 ring-1 ring-orange-500/30'
+                                                                : 'hover:bg-orange-500/10 text-orange-500'
+                                                                }`}
+                                                        >
+                                                            <AlertTriangle size={18} />
+                                                        </button>
+                                                        <button
+                                                            title="Cancel Reservation"
+                                                            onClick={() => handleStatusChange(res.id, 'cancelled')}
+                                                            className={`p-1 rounded transition-colors ${res.status === 'cancelled'
+                                                                ? 'bg-red-500/20 text-red-500 ring-1 ring-red-500/30'
+                                                                : 'hover:bg-red-500/10 text-red-500'
+                                                                }`}
+                                                        >
+                                                            <X size={18} />
+                                                        </button>
+                                                        <button
+                                                            title="Archive booking"
+                                                            onClick={() => handleArchive(res.id)}
+                                                            className="p-1 hover:bg-blue-500/10 text-blue-500 rounded transition-colors"
+                                                        >
+                                                            <Archive size={18} />
+                                                        </button>
+                                                    </>
+                                                )}
+                                                {showArchived && (
                                                     <button
-                                                        title="Edit Reservation"
-                                                        onClick={() => handleEdit(res)}
+                                                        title="Unarchive booking"
+                                                        onClick={() => handleUnarchive(res.id)}
                                                         className="p-1 hover:bg-[var(--accent-green)]/10 text-[var(--accent-green)] rounded transition-colors"
-                                                    >
-                                                        <Pencil size={18} />
-                                                    </button>
-                                                    <button
-                                                        title="Confirm Reservation"
-                                                        onClick={() => handleStatusChange(res.id, 'confirmed')}
-                                                        className={`p-1 rounded transition-colors ${res.status === 'confirmed'
-                                                            ? 'bg-green-500/20 text-green-500 ring-1 ring-green-500/30'
-                                                            : 'hover:bg-green-500/10 text-green-500'
-                                                            }`}
-                                                    >
-                                                        <Check size={18} />
-                                                    </button>
-                                                    <button
-                                                        title="Mark No-Show"
-                                                        onClick={() => handleStatusChange(res.id, 'no-show')}
-                                                        className={`p-1 rounded transition-colors ${res.status === 'no-show'
-                                                            ? 'bg-orange-500/20 text-orange-500 ring-1 ring-orange-500/30'
-                                                            : 'hover:bg-orange-500/10 text-orange-500'
-                                                            }`}
-                                                    >
-                                                        <AlertTriangle size={18} />
-                                                    </button>
-                                                    <button
-                                                        title="Cancel Reservation"
-                                                        onClick={() => handleStatusChange(res.id, 'cancelled')}
-                                                        className={`p-1 rounded transition-colors ${res.status === 'cancelled'
-                                                            ? 'bg-red-500/20 text-red-500 ring-1 ring-red-500/30'
-                                                            : 'hover:bg-red-500/10 text-red-500'
-                                                            }`}
-                                                    >
-                                                        <X size={18} />
-                                                    </button>
-                                                    <button
-                                                        title="Archive booking"
-                                                        onClick={() => handleArchive(res.id)}
-                                                        className="p-1 hover:bg-blue-500/10 text-blue-500 rounded transition-colors"
                                                     >
                                                         <Archive size={18} />
                                                     </button>
-                                                </>
-                                            )}
-                                            {showArchived && (
-                                                <button
-                                                    title="Unarchive booking"
-                                                    onClick={() => handleUnarchive(res.id)}
-                                                    className="p-1 hover:bg-[var(--accent-green)]/10 text-[var(--accent-green)] rounded transition-colors"
-                                                >
-                                                    <Archive size={18} />
-                                                </button>
-                                            )}
-                                        </div>
-                                    </td>
-                                </tr>
-                            ))}
+                                                )}
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ))
+                            )}
                         </tbody>
                     </table>
                 </div>

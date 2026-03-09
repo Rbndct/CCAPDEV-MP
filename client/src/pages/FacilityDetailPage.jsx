@@ -1,215 +1,65 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { ArrowLeft, Calendar, Clock, Star, Users, MapPin, Check, Zap, Trophy } from 'lucide-react';
+import { ArrowLeft, Calendar, Clock, Star, Users, MapPin, Check, Zap, Trophy, Loader } from 'lucide-react';
 import { Navbar, Footer } from '../components/LandingPage';
 import { Card, Button, Badge } from '../components/ui';
 import { AuthModal } from '../components/AuthModal';
 import { BookingSuccessModal, generateConfirmationCode } from '../components/BookingSuccessModal';
 import { PublicAvailabilityCalendar } from '../components/PublicAvailabilityCalendar';
 import { LocationSection } from '../components/LocationSection';
-
-// Mock facility data (in real app, this would come from API/database)
-const facilitiesData = {
-  1: {
-    id: 1,
-    name: 'Court A - Premium Basketball',
-    type: 'Basketball',
-    icon: '🏀',
-    price: 600,
-    rating: 4.9,
-    reviews: 127,
-    capacity: 10,
-    size: '28m x 15m',
-    surface: 'Professional Hardwood',
-    amenities: [
-      'Air Conditioned',
-      'Professional Grade Flooring',
-      'Electronic Scoreboard',
-      'Sound System',
-      'Locker Rooms',
-      'Showers',
-      'Free Parking',
-      'Equipment Rental',
-      'Water Fountains',
-      'Spectator Seating'
-    ],
-    description: 'Our premium indoor basketball court features professional-grade wooden flooring, state-of-the-art lighting, and climate control for optimal playing conditions. Perfect for competitive games, team practices, or casual pickup games.',
-    images: ['🏀', '🎯', '🏆'],
-    location: 'De La Salle University, 2401 Taft Ave, Malate, Manila',
-    availability: 'high'
-  },
-  2: {
-    id: 2,
-    name: 'Court B - Standard Basketball',
-    type: 'Basketball',
-    icon: '🏀',
-    price: 500,
-    rating: 4.5,
-    reviews: 89,
-    capacity: 10,
-    size: '28m x 15m',
-    surface: 'Standard Hardwood',
-    amenities: [
-      'Good Lighting',
-      'Standard Equipment',
-      'Locker Rooms',
-      'Free Parking',
-      'Water Fountains'
-    ],
-    description: 'Standard indoor basketball court perfect for casual games and practice sessions. Well-maintained with good lighting and standard equipment.',
-    images: ['🏀', '⛹️', '🎯'],
-    location: 'Makati Sports Club, L.P. Leviste Street, Makati, Metro Manila',
-    availability: 'medium'
-  },
-  3: {
-    id: 3,
-    name: 'Court C - Tennis Court 1',
-    type: 'Tennis',
-    icon: '🎾',
-    price: 500,
-    rating: 4.8,
-    reviews: 95,
-    capacity: 4,
-    size: '23.77m x 10.97m',
-    surface: 'Hard Court',
-    amenities: [
-      'Professional Net',
-      'Ball Machine Available',
-      'Lighting for Night Play',
-      'Locker Rooms',
-      'Equipment Rental',
-      'Free Parking'
-    ],
-    description: 'Indoor hard surface tennis court with professional-grade equipment. Suitable for singles and doubles matches with excellent lighting.',
-    images: ['🎾', '🏆', '⭐'],
-    location: 'Quezon City Memorial Circle, Elliptical Road, Diliman, Quezon City',
-    availability: 'high'
-  },
-  4: {
-    id: 4,
-    name: 'Court D - Tennis Court 2',
-    type: 'Tennis',
-    icon: '🎾',
-    price: 500,
-    rating: 4.9,
-    reviews: 82,
-    capacity: 4,
-    size: '23.77m x 10.97m',
-    surface: 'Clay Court',
-    amenities: [
-      'Tournament Grade',
-      'Spectator Seating',
-      'Premium Surface',
-      'Locker Rooms',
-      'Equipment Shop'
-    ],
-    description: 'Tournament-grade clay tennis court suitable for competitive matches. Features spectator seating and premium surface maintenance.',
-    images: ['🎾', '🏟️', '👟'],
-    location: 'Rizal Memorial Sports Complex, M. Adriatico St, Malate, Manila',
-    availability: 'low'
-  },
-  5: {
-    id: 5,
-    name: 'Court E - Badminton Hall',
-    type: 'Badminton',
-    icon: '🏸',
-    price: 500,
-    rating: 4.7,
-    reviews: 156,
-    capacity: 16,
-    size: '13.4m x 6.1m (per court)',
-    surface: 'Synthetic Mat',
-    amenities: [
-      '4 Courts',
-      'High Ceiling',
-      'Quality Nets',
-      'Non-slip Flooring',
-      'Air Conditioned'
-    ],
-    description: 'Spacious multi-court badminton facility featuring 4 professional courts with high ceilings and excellent anti-glare lighting.',
-    images: ['🏸', '👟', '🏆'],
-    location: '123 Sports Ave, Metro Manila',
-    availability: 'high'
-  },
-  6: {
-    id: 6,
-    name: 'Court F - Volleyball Arena',
-    type: 'Volleyball',
-    icon: '🏐',
-    price: 500,
-    rating: 4.8,
-    reviews: 112,
-    capacity: 12,
-    size: '18m x 9m',
-    surface: 'Taraflex',
-    amenities: [
-      'Professional Court',
-      'Adjustable Net',
-      'Scoreboards',
-      'Referee Stand',
-      'Team Benches'
-    ],
-    description: 'Professional indoor volleyball court with regulation net and Taraflex flooring. ideal for team training and league matches.',
-    images: ['🏐', '🥇', '🎽'],
-    location: '123 Sports Ave, Metro Manila',
-    availability: 'medium'
-  },
-  7: {
-    id: 7,
-    name: 'Court G - Multi-Purpose',
-    type: 'Multi-Purpose',
-    icon: '⚽',
-    price: 500,
-    rating: 4.6,
-    reviews: 78,
-    capacity: 20,
-    size: '40m x 20m',
-    surface: 'Polished Concrete',
-    amenities: [
-      'Convertible Setup',
-      'Futsal Goals',
-      'Basketball Hoops',
-      'Sound System',
-      'Bleachers'
-    ],
-    description: 'Versatile multi-purpose court suitable for futsal, basketball, volleyball, and large group activities. Flexible configuration options available.',
-    images: ['⚽', '🥅', '📢'],
-    location: '123 Sports Ave, Metro Manila',
-    availability: 'high'
-  },
-  8: {
-    id: 8,
-    name: 'Court H - Pickleball Arena',
-    type: 'Pickleball',
-    icon: '🏓',
-    price: 500,
-    rating: 4.9,
-    reviews: 45,
-    capacity: 8,
-    size: '13.4m x 6.1m',
-    surface: 'Hard Court',
-    amenities: [
-      'Professional Court',
-      'Paddle Rental',
-      'Good Lighting',
-      'Lounge Area',
-      'Pro Shop'
-    ],
-    description: 'Dedicated pickleball facility with professional surfacing and acoustically treated walls. Perfect for the growing community of pickleball enthusiasts.',
-    images: ['🏓', '🤝', '🥤'],
-    location: '123 Sports Ave, Metro Manila',
-    availability: 'high'
-  }
-};
+import { useAuth, API_BASE_URL } from '../contexts/AuthContext';
 
 export const FacilityDetailPage = () => {
   const { facilityId } = useParams();
   const navigate = useNavigate();
+  const { token, isLoggedIn } = useAuth();
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [bookingData, setBookingData] = useState(null);
+  const [isBooking, setIsBooking] = useState(false);
+  const [facility, setFacility] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const facility = facilitiesData[facilityId];
+  useEffect(() => {
+    const fetchFacility = async () => {
+      try {
+        const response = await fetch(`${API_BASE_URL || 'http://localhost:5000/api'}/reservations/facilities`);
+        const data = await response.json();
+        if (response.ok) {
+          const found = data.find(f => (f._id || f.id).toString() === facilityId);
+          if (found) {
+            // Add fallback properties for the UI if DB is minimal
+            found.images = found.images || ['📸', '🏟️', '⚡'];
+            found.rating = found.rating || 4.5;
+            found.reviews = found.reviews || 89;
+            found.size = found.size || 'Standard Size';
+            found.surface = found.surface || 'Standard Surface';
+            found.amenities = found.amenities || ['Professional Court', 'Lighting', 'Parking'];
+            found.price = found.hourly_rate || found.price || 500;
+            found.icon = found.type === 'Basketball' ? '🏀' : found.type === 'Tennis' ? '🎾' : found.type === 'Badminton' ? '🏸' : '🏟️';
+            setFacility(found);
+          }
+        }
+      } catch (err) {
+        console.error("Failed to fetch facility", err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchFacility();
+  }, [facilityId]);
+
+  if (isLoading) {
+    return (
+      <>
+        <Navbar />
+        <div className="min-h-screen bg-[var(--bg-primary)] flex items-center justify-center">
+          <Loader className="w-12 h-12 animate-spin text-[var(--accent-green)]" />
+        </div>
+        <Footer />
+      </>
+    );
+  }
 
   if (!facility) {
     return (
@@ -229,24 +79,56 @@ export const FacilityDetailPage = () => {
     );
   }
 
-  const handleSlotSelect = ({ date, startTime, endTime, duration }) => {
-    const booking = {
-      courtName: facility.name,
-      courtId: facility.id,
-      date,
-      startTime,
-      endTime,
-      duration,
-      totalPrice: duration * facility.price,
-      confirmationCode: generateConfirmationCode({
-        date,
-        courtId: facility.id.toString(),
-        startTime
-      })
-    };
+  const handleSlotSelect = async ({ date, startTime, endTime, duration }) => {
+    if (!isLoggedIn) {
+      setShowAuthModal(true);
+      return;
+    }
 
-    setBookingData(booking);
-    setShowSuccessModal(true);
+    setIsBooking(true);
+    try {
+      const response = await fetch(`${API_BASE_URL || 'http://localhost:5000/api'}/reservations`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          facility: facility._id,
+          date,
+          start_time: startTime,
+          end_time: endTime,
+          is_anonymous: false
+        })
+      });
+
+      const result = await response.json();
+      if (!response.ok) {
+        alert(`Booking failed: ${result.message}`);
+        setIsBooking(false);
+        return;
+      }
+
+      // Success! Set the modal data
+      const booking = {
+        courtName: facility.name,
+        courtId: facility._id,
+        date,
+        startTime,
+        endTime,
+        duration,
+        totalPrice: duration * facility.price,
+        confirmationCode: result._id // Use database ID as confirmation code, or generate one
+      };
+
+      setBookingData(booking);
+      setShowSuccessModal(true);
+    } catch (error) {
+      console.error("Booking error:", error);
+      alert("Failed to book court. Please check your connection.");
+    } finally {
+      setIsBooking(false);
+    }
   };
 
   return (
@@ -338,11 +220,11 @@ export const FacilityDetailPage = () => {
                 </div>
               </Card>
 
-              {/* Availability Calendar */}
               <div id="availability-calendar">
                 <PublicAvailabilityCalendar
                   facility={facility}
                   onSlotSelect={handleSlotSelect}
+                  isBooking={isBooking}
                 />
               </div>
 

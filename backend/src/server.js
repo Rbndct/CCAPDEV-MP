@@ -1,45 +1,49 @@
+require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
-require('dotenv').config();
+const cookieParser = require('cookie-parser');
+
+// Routes
+const authRoutes = require('./routes/auth');
+const adminRoutes = require('./routes/admin');
+const reservationRoutes = require('./routes/reservations');
+const profileRoutes = require('./routes/profiles');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
 
 // Middleware
-app.use(cors());
+app.use(cors({
+  origin: ['http://localhost:5173', 'http://127.0.0.1:5173', 'http://localhost:5174', 'http://127.0.0.1:5174'],
+  credentials: true
+}));
 app.use(express.json());
+app.use(cookieParser());
 
-// Database Connection
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://mongo:27017/court_reservation';
+// Database connection
+mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/sportsplex', {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+})
+  .then(() => console.log('Connected to MongoDB (SportsPlex)'))
+  .catch(err => console.error('Could not connect to MongoDB', err));
 
-mongoose.connect(MONGODB_URI)
-  .then(() => console.log('MongoDB connected successfully'))
-  .catch(err => console.error('MongoDB connection error:', err));
+// Route Registration
+app.use('/api/auth', authRoutes);
+app.use('/api/admin', adminRoutes);
+app.use('/api/reservations', reservationRoutes);
+app.use('/api/profiles', profileRoutes);
 
-const User = require('./models/User');
-
-// Routes
+// Shared/Utility Routes
 app.get('/api/health', (req, res) => {
-  const dbStatus = mongoose.connection.readyState === 1 ? 'connected' : 'disconnected';
   res.json({
     status: 'ok',
-    message: 'Backend is running',
-    database: dbStatus,
-    timestamp: new Date().toISOString()
+    system: 'SportsPlex Backend',
+    database: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected'
   });
 });
 
-app.get('/api/users', async (req, res) => {
-  try {
-    const users = await User.find().select('-password_hash').sort({ created_at: -1 });
-    res.json(users);
-  } catch (error) {
-    res.status(500).json({ message: 'Error fetching users', error: error.message });
-  }
-});
-
-// Start Server
 app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
+  console.log(`SportsPlex Server running on port ${PORT}`);
 });

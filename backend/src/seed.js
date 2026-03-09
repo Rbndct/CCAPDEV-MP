@@ -1,64 +1,93 @@
-const mongoose = require('mongoose');
-const User = require('./models/User');
 require('dotenv').config();
+const mongoose = require('mongoose');
+const bcrypt = require('bcryptjs');
 
-const seedUsers = async () => {
+const User = require('./models/User');
+const Facility = require('./models/Facility');
+const Reservation = require('./models/Reservation');
+
+const seedData = async () => {
   try {
-    const MONGODB_URI = process.env.MONGODB_URI;
-    if (!MONGODB_URI) {
-      throw new Error('MONGODB_URI is not defined in environment variables');
-    }
-
+    const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/sportsplex';
     await mongoose.connect(MONGODB_URI);
     console.log('Connected to MongoDB for seeding...');
 
-    // Sample Data
-    const users = [
+    // Hash a common password for all demo accounts
+    const hashedPass = await bcrypt.hash('password123', 10);
+
+    // Clear all existing data
+    await User.deleteMany({});
+    await Facility.deleteMany({});
+    await Reservation.deleteMany({});
+    console.log('Cleared existing data.');
+
+    // Seed Facilities
+    const facilities = await Facility.insertMany([
+      { name: 'Main Basketball Court', type: 'Basketball', capacity: 30, hourly_rate: 600, status: 'available', description: 'Standard indoor basketball court' },
+      { name: 'North Tennis Court', type: 'Tennis', capacity: 4, hourly_rate: 500, status: 'available', description: 'Outdoor clay tennis court' },
+      { name: 'Badminton Hall A', type: 'Badminton', capacity: 12, hourly_rate: 400, status: 'available', description: 'Indoor badminton hall with 3 courts' },
+    ]);
+    console.log(`Seeded ${facilities.length} facilities.`);
+
+    // Seed Users
+    const users = await User.insertMany([
       {
-        full_name: 'John Doe',
-        email: 'john@example.com',
-        password_hash: '$2b$10$EpIxNwllqgT61.y.W6.y.O1.y.W6.y.O1.y.W6.y.O1.y.W6.y.O', // Mock hash
-        phone_number: '09171234567',
-        role: 'user',
-        avatar_url: 'https://i.pravatar.cc/150?u=john',
-        bio: 'Avid basketball player.',
-        primary_sport: 'Basketball',
-        is_verified: true
+        full_name: 'Admin SportsPlex',
+        email: 'admin@sportsplex.com',
+        password_hash: hashedPass,
+        role: 'admin',
+        avatar_url: 'https://i.pravatar.cc/150?u=admin',
+        bio: 'System Administrator',
+        is_verified: true,
       },
       {
-        full_name: 'Jane Smith',
-        email: 'jane@example.com',
-        password_hash: '$2b$10$EpIxNwllqgT61.y.W6.y.O1.y.W6.y.O1.y.W6.y.O1.y.W6.y.O', // Mock hash
-        phone_number: '09187654321',
-        role: 'admin',
-        avatar_url: 'https://i.pravatar.cc/150?u=jane',
-        bio: 'Gym manager and tennis enthusiast.',
-        primary_sport: 'Tennis',
-        is_verified: true
-      }
-    ];
+        full_name: 'Staff Member',
+        email: 'staff@sportsplex.com',
+        password_hash: hashedPass,
+        role: 'staff',
+        avatar_url: 'https://i.pravatar.cc/150?u=staff',
+        bio: 'Facility Coordinator',
+        is_verified: true,
+      },
+      {
+        full_name: 'Student Athlete',
+        email: 'student@sportsplex.com',
+        password_hash: hashedPass,
+        role: 'student',
+        avatar_url: 'https://i.pravatar.cc/150?u=student',
+        bio: 'Regular student',
+        is_verified: true,
+      },
+    ]);
+    console.log(`Seeded ${users.length} users.`);
 
-    // Clear existing users? Maybe check if they exist first.
-    // For this task, we'll try to insert. If email unique constraint fails, we'll catch it.
-    
-    for (const user of users) {
-      const exists = await User.findOne({ email: user.email });
-      if (exists) {
-        console.log(`User ${user.email} already exists. Skipping.`);
-      } else {
-        await User.create(user);
-        console.log(`User ${user.email} created.`);
-      }
-    }
+    // Seed sample reservations for student athlete
+    const studentUser = users.find(u => u.email === 'student@sportsplex.com');
+    const bballCourt = facilities.find(f => f.name === 'Main Basketball Court');
 
-    console.log('Seeding completed.');
+    await Reservation.create({
+      user: studentUser._id,
+      facility: bballCourt._id,
+      seat_number: 1,
+      date: new Date(),
+      start_time: '14:00',
+      end_time: '15:00',
+      status: 'reserved'
+    });
+    console.log('Seeded sample reservation.');
+
+    console.log('\n=== Demo Credentials (password: password123) ===');
+    console.log('Admin  : admin@sportsplex.com');
+    console.log('Staff  : staff@sportsplex.com');
+    console.log('Student: student@sportsplex.com');
+
     await mongoose.disconnect();
     process.exit(0);
-
-  } catch (error) {
-    console.error('Seeding failed:', error);
+  } catch (err) {
+    console.error('Seeding failed:', err);
+    await mongoose.disconnect();
     process.exit(1);
   }
 };
 
-seedUsers();
+seedData();

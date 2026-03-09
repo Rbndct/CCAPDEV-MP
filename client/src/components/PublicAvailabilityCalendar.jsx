@@ -29,7 +29,7 @@ const getMockAvailability = (date, time) => {
 // Get the index of a time slot in the full list
 const getSlotIndex = (time, allSlots) => allSlots.indexOf(time);
 
-export const PublicAvailabilityCalendar = ({ facility, onSlotSelect }) => {
+export const PublicAvailabilityCalendar = ({ facility, onSlotSelect, isBooking }) => {
   const { isLoggedIn } = useAuth();
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [selectedDate, setSelectedDate] = useState(new Date());
@@ -344,8 +344,13 @@ export const PublicAvailabilityCalendar = ({ facility, onSlotSelect }) => {
               <X className="w-5 h-5" />
             </button>
             {selectionEnd && (
-              <Button variant="primary" size="sm" onClick={handleConfirmBooking}>
-                Confirm Booking
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={handleConfirmBooking}
+                disabled={isBooking}
+              >
+                {isBooking ? 'Confirming...' : 'Confirm Booking'}
               </Button>
             )}
           </div>

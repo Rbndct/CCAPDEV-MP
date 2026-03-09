@@ -1,20 +1,46 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, Button } from '../../components/ui';
 import { Plus, Edit2, Lock, Unlock, Archive } from 'lucide-react';
 import { AddFacilityModal } from '../../components/modals/AddFacilityModal';
 import { EditFacilityModal } from '../../components/modals/EditFacilityModal';
+import { useAuth, API_BASE_URL } from '../../contexts/AuthContext';
 
 export function FacilitiesManagementPage() {
+    const { token } = useAuth();
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [selectedFacility, setSelectedFacility] = useState(null);
+    const [facilities, setFacilities] = useState([]);
+    const [isLoading, setIsLoading] = useState(true);
 
-    const facilities = [
-        { id: 1, name: 'Basketball Court A', type: 'Basketball', status: 'Available', rate: '₱600/hr', capacity: 10 },
-        { id: 2, name: 'Tennis Court 1', type: 'Tennis', status: 'Available', rate: '₱500/hr', capacity: 4 },
-        { id: 3, name: 'Badminton Hall', type: 'Badminton', status: 'Maintenance', rate: '₱500/hr', capacity: 8 },
-        { id: 4, name: 'Pickleball Court', type: 'Pickleball', status: 'Available', rate: '₱500/hr', capacity: 8 },
-    ];
+    const fetchFacilities = async () => {
+        try {
+            const response = await fetch(`${API_BASE_URL || 'http://localhost:5000/api'}/admin/facilities`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const data = await response.json();
+            if (response.ok) {
+                // Map to what table expects
+                const mapped = data.map(f => ({
+                    id: f._id,
+                    name: f.name,
+                    type: f.type,
+                    status: f.status || 'available',
+                    rate: `₱${f.hourly_rate || 500}/hr`,
+                    capacity: f.capacity
+                }));
+                setFacilities(mapped);
+            }
+        } catch (error) {
+            console.error("Failed to fetch facilities:", error);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        if (token) fetchFacilities();
+    }, [token]);
 
     const handleEdit = (facility) => {
         setSelectedFacility(facility);
@@ -46,46 +72,67 @@ export function FacilitiesManagementPage() {
                             </tr>
                         </thead>
                         <tbody>
-                            {facilities.map((facility) => (
-                                <tr key={facility.id} className="border-b border-[var(--border-subtle)] last:border-0 hover:bg-[var(--bg-secondary)]/50 transition-colors">
-                                    <td className="p-4 font-medium">{facility.name}</td>
-                                    <td className="p-4 text-[var(--text-secondary)]">{facility.type}</td>
-                                    <td className="p-4">
-                                        <span className={`px-2 py-1 rounded text-xs font-medium ${facility.status === 'Available'
-                                            ? 'bg-green-500/10 text-green-500'
-                                            : 'bg-orange-500/10 text-orange-500'
-                                            }`}>
-                                            {facility.status}
-                                        </span>
-                                    </td>
-                                    <td className="p-4 text-[var(--text-secondary)]">{facility.rate}</td>
-                                    <td className="p-4 text-right">
-                                        <div className="flex items-center justify-end gap-2">
-                                            <button
-                                                className="p-2 hover:bg-[var(--accent-green)]/10 text-[var(--accent-green)] rounded-lg transition-colors"
-                                                onClick={() => handleEdit(facility)}
-                                                title="Edit facility"
-                                            >
-                                                <Edit2 size={16} />
-                                            </button>
-                                            <button
-                                                className="p-2 hover:bg-orange-500/10 text-orange-500 rounded-lg transition-colors"
-                                                title="Block facility"
-                                            >
-                                                <Lock size={16} />
-                                            </button>
-                                        </div>
-                                    </td>
+                            {isLoading ? (
+                                <tr>
+                                    <td colSpan="5" className="p-4 text-center text-[var(--text-secondary)]">Loading facilities...</td>
                                 </tr>
-                            ))}
+                            ) : facilities.length === 0 ? (
+                                <tr>
+                                    <td colSpan="5" className="p-4 text-center text-[var(--text-secondary)]">No facilities found.</td>
+                                </tr>
+                            ) : (
+                                facilities.map((facility) => (
+                                    <tr key={facility.id} className="border-b border-[var(--border-subtle)] last:border-0 hover:bg-[var(--bg-secondary)]/50 transition-colors">
+                                        <td className="p-4 font-medium">{facility.name}</td>
+                                        <td className="p-4 text-[var(--text-secondary)]">{facility.type}</td>
+                                        <td className="p-4">
+                                            <span className={`px-2 py-1 rounded text-xs font-medium ${facility.status === 'available'
+                                                ? 'bg-green-500/10 text-green-500'
+                                                : facility.status === 'maintenance'
+                                                    ? 'bg-orange-500/10 text-orange-500'
+                                                    : 'bg-red-500/10 text-red-500'
+                                                }`}>
+                                                {facility.status.charAt(0).toUpperCase() + facility.status.slice(1)}
+                                            </span>
+                                        </td>
+                                        <td className="p-4 text-[var(--text-secondary)]">{facility.rate}</td>
+                                        <td className="p-4 text-right">
+                                            <div className="flex items-center justify-end gap-2">
+                                                <button
+                                                    className="p-2 hover:bg-[var(--accent-green)]/10 text-[var(--accent-green)] rounded-lg transition-colors"
+                                                    onClick={() => handleEdit(facility)}
+                                                    title="Edit facility"
+                                                >
+                                                    <Edit2 size={16} />
+                                                </button>
+                                                <button
+                                                    className="p-2 hover:bg-orange-500/10 text-orange-500 rounded-lg transition-colors"
+                                                    title="Block facility"
+                                                >
+                                                    <Lock size={16} />
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ))
+                            )}
                         </tbody>
                     </table>
                 </div>
             </Card>
 
             {/* Modals */}
-            <AddFacilityModal isOpen={isAddModalOpen} onClose={() => setIsAddModalOpen(false)} />
-            <EditFacilityModal isOpen={isEditModalOpen} onClose={() => setIsEditModalOpen(false)} facility={selectedFacility} />
+            <AddFacilityModal
+                isOpen={isAddModalOpen}
+                onClose={() => setIsAddModalOpen(false)}
+                onRefresh={fetchFacilities}
+            />
+            <EditFacilityModal
+                isOpen={isEditModalOpen}
+                onClose={() => setIsEditModalOpen(false)}
+                facility={selectedFacility}
+                onRefresh={fetchFacilities}
+            />
         </div>
     );
 }
