@@ -2,7 +2,21 @@ import { useState, useEffect } from 'react';
 import { Modal } from '../Modal';
 import { Button, Select, DatePicker, TimePicker } from '../ui';
 
-export const EditReservationModal = ({ isOpen, onClose, booking, onSave }) => {
+export const EditReservationModal = ({ isOpen, onClose, booking, onSave, mode = 'admin' }) => {
+    const normalizeDateValue = (value) => {
+        if (!value) return '';
+        if (typeof value === 'string' && value.includes('T')) {
+            return value.split('T')[0];
+        }
+
+        const parsed = new Date(value);
+        if (Number.isNaN(parsed.getTime())) {
+            return value;
+        }
+
+        return parsed.toISOString().split('T')[0];
+    };
+
     const facilities = [
         { value: 'Court A - Premium Basketball', label: 'Court A - Premium Basketball' },
         { value: 'Court B - Standard Basketball', label: 'Court B - Standard Basketball' },
@@ -27,6 +41,8 @@ export const EditReservationModal = ({ isOpen, onClose, booking, onSave }) => {
         endTime: '',
         status: '',
     });
+    const [isSaving, setIsSaving] = useState(false);
+    const [errorMessage, setErrorMessage] = useState('');
 
     // Pre-populate form when booking changes
     useEffect(() => {
@@ -34,13 +50,19 @@ export const EditReservationModal = ({ isOpen, onClose, booking, onSave }) => {
             const [startTime, endTime] = (booking.time || '').split(' - ');
             setFormData({
                 court: booking.court || booking.facility || '',
-                date: booking.date || '',
+                date: normalizeDateValue(booking.date),
                 startTime: startTime || '',
                 endTime: endTime || '',
                 status: booking.status || 'pending',
             });
         }
     }, [booking]);
+
+    useEffect(() => {
+        if (isOpen) {
+            setErrorMessage('');
+        }
+    }, [isOpen]);
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -50,20 +72,33 @@ export const EditReservationModal = ({ isOpen, onClose, booking, onSave }) => {
         }));
     };
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e?.preventDefault();
         if (!formData.court || !formData.date || !formData.startTime || !formData.endTime) {
-            alert('Please fill in all fields.');
+            setErrorMessage('Please fill in all required fields.');
             return;
         }
-        onSave({
-            ...booking,
-            court: formData.court,
-            date: formData.date,
-            time: `${formData.startTime} - ${formData.endTime}`,
-            status: formData.status,
-        });
-        onClose();
+
+        try {
+            setIsSaving(true);
+            setErrorMessage('');
+
+            await onSave({
+                ...booking,
+                court: formData.court,
+                date: formData.date,
+                time: `${formData.startTime} - ${formData.endTime}`,
+                start_time: formData.startTime,
+                end_time: formData.endTime,
+                status: formData.status,
+            });
+
+            onClose();
+        } catch (error) {
+            setErrorMessage(error.message || 'Failed to save reservation changes.');
+        } finally {
+            setIsSaving(false);
+        }
     };
 
     if (!booking) return null;
@@ -76,34 +111,51 @@ export const EditReservationModal = ({ isOpen, onClose, booking, onSave }) => {
             size="medium"
             footer={
                 <>
-                    <Button variant="outline" onClick={onClose}>
+                    <Button variant="outline" onClick={onClose} disabled={isSaving}>
                         Cancel
                     </Button>
-                    <Button variant="primary" onClick={handleSubmit}>
-                        Save Changes
+                    <Button variant="primary" onClick={handleSubmit} disabled={isSaving}>
+                        {isSaving ? 'Saving...' : 'Save Changes'}
                     </Button>
                 </>
             }
         >
             <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <Select
-                        label="Facility / Court"
-                        name="court"
-                        value={formData.court}
-                        onChange={handleChange}
-                        options={facilities}
-                        required
-                    />
-                    <Select
-                        label="Status"
-                        name="status"
-                        value={formData.status}
-                        onChange={handleChange}
-                        options={statuses}
-                        required
-                    />
-                </div>
+                {mode === 'admin' ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <Select
+                            label="Facility / Court"
+                            name="court"
+                            value={formData.court}
+                            onChange={handleChange}
+                            options={facilities}
+                            required
+                        />
+                        <Select
+                            label="Status"
+                            name="status"
+                            value={formData.status}
+                            onChange={handleChange}
+                            options={statuses}
+                            required
+                        />
+                    </div>
+                ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="flex flex-col gap-2">
+                            <label className="text-sm font-medium text-[var(--text-secondary)]">Facility / Court</label>
+                            <div className="w-full bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-[var(--radius-md)] px-4 py-3 text-[var(--text-primary)]">
+                                {formData.court || 'N/A'}
+                            </div>
+                        </div>
+                        <div className="flex flex-col gap-2">
+                            <label className="text-sm font-medium text-[var(--text-secondary)]">Status</label>
+                            <div className="w-full bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-[var(--radius-md)] px-4 py-3 text-[var(--text-primary)] capitalize">
+                                {formData.status || 'N/A'}
+                            </div>
+                        </div>
+                    </div>
+                )}
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <DatePicker
@@ -128,6 +180,12 @@ export const EditReservationModal = ({ isOpen, onClose, booking, onSave }) => {
                         required
                     />
                 </div>
+
+                {errorMessage && (
+                    <div className="rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-400">
+                        {errorMessage}
+                    </div>
+                )}
 
                 <div className="p-4 bg-[var(--bg-secondary)] rounded-lg border border-[var(--border-subtle)]">
                     <h4 className="font-medium mb-2 text-sm">Updated Summary</h4>

@@ -2,6 +2,7 @@ import { useLocation, useSearchParams, Link } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { Card, Badge, Button } from '../components/ui';
 import { Modal } from '../components/Modal';
+import { EditReservationModal } from '../components/modals/EditReservationModal';
 import { Calendar, Clock, TrendingUp, Filter, ArrowRight, XCircle, CheckCircle, AlertTriangle } from 'lucide-react';
 
 import { useAuth, API_BASE_URL } from '../contexts/AuthContext';
@@ -21,6 +22,8 @@ export const BookingsPage = () => {
   // Modal State
   const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
   const [bookingToCancel, setBookingToCancel] = useState(null);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [bookingToEdit, setBookingToEdit] = useState(null);
 
   const { token } = useAuth();
   const [allBookings, setAllBookings] = useState([]);
@@ -51,6 +54,7 @@ export const BookingsPage = () => {
           return {
             id: r._id,
             court: r.facility?.facility_name || r.facility?.name || 'Unknown Facility',
+            facilityId: r.facility?._id,
             date: r.date,
             time: `${r.start_time} - ${r.end_time}`,
             status: r.status === 'reserved' ? 'confirmed' : r.status, // Map 'reserved' to 'confirmed' for student view
@@ -89,6 +93,34 @@ export const BookingsPage = () => {
   const handleCancelClick = (booking) => {
     setBookingToCancel(booking);
     setIsCancelModalOpen(true);
+  };
+
+  const handleEditClick = (booking) => {
+    setBookingToEdit(booking);
+    setIsEditModalOpen(true);
+  };
+
+  const handleSaveEdit = async (updatedBooking) => {
+    const response = await fetch(`${API_BASE_URL || 'http://localhost:5000/api'}/reservations/${updatedBooking.id}`, {
+      method: 'PATCH',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        date: updatedBooking.date,
+        start_time: updatedBooking.start_time,
+        end_time: updatedBooking.end_time
+      })
+    });
+
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      throw new Error(data.message || 'Failed to update reservation.');
+    }
+
+    await fetchBookings();
+    setBookingToEdit(null);
   };
 
   const confirmCancel = async () => {
@@ -229,7 +261,12 @@ export const BookingsPage = () => {
                               Pay Now
                             </Link>
                           )}
-                          <Button variant="outline" size="sm" className="!px-2 !py-1 !text-xs h-8">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="!px-2 !py-1 !text-xs h-8"
+                            onClick={() => handleEditClick(booking)}
+                          >
                             Modify
                           </Button>
                           <Button
@@ -305,6 +342,17 @@ export const BookingsPage = () => {
           </p>
         </div>
       </Modal>
+
+      <EditReservationModal
+        isOpen={isEditModalOpen}
+        onClose={() => {
+          setIsEditModalOpen(false);
+          setBookingToEdit(null);
+        }}
+        booking={bookingToEdit}
+        onSave={handleSaveEdit}
+        mode="student"
+      />
     </div>
   );
 };

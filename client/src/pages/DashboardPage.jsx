@@ -74,6 +74,7 @@ export const DashboardPage = () => {
           return {
             id: r._id,
             court: r.facility?.facility_name || r.facility?.name || 'Unknown Facility',
+            facilityId: r.facility?._id,
             date: r.date,
             time: `${r.start_time} - ${r.end_time}`,
             status: r.status === 'reserved' ? 'confirmed' : r.status,
@@ -120,11 +121,26 @@ export const DashboardPage = () => {
     setIsEditModalOpen(true);
   };
 
-  const handleSaveEdit = (updatedBooking) => {
-    // Optimistic UI update
-    setUpcomingBookings(prev =>
-      prev.map(b => b.id === updatedBooking.id ? updatedBooking : b)
-    );
+  const handleSaveEdit = async (updatedBooking) => {
+    const response = await fetch(`${API_BASE_URL || 'http://localhost:5000/api'}/reservations/${updatedBooking.id}`, {
+      method: 'PATCH',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        date: updatedBooking.date,
+        start_time: updatedBooking.start_time,
+        end_time: updatedBooking.end_time
+      })
+    });
+
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      throw new Error(data.message || 'Failed to update reservation.');
+    }
+
+    await fetchDashboardData();
   };
 
   const handleCancelBooking = async (bookingId) => {
@@ -362,6 +378,7 @@ export const DashboardPage = () => {
         onClose={() => { setIsEditModalOpen(false); setEditingBooking(null); }}
         booking={editingBooking}
         onSave={handleSaveEdit}
+        mode="student"
       />
     </>
   );

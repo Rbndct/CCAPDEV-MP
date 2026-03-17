@@ -200,6 +200,55 @@ router.get('/my', verifyToken, async (req, res) => {
     }
 });
 
+// PATCH /api/reservations/:id  — update own upcoming reservation
+router.patch('/:id', verifyToken, async (req, res) => {
+    try {
+        const { date, start_time, end_time } = req.body;
+
+        if (!date || !start_time || !end_time) {
+            return res.status(400).json({ message: 'Date, start time, and end time are required.' });
+        }
+
+        const reservation = await Reservation.findOne({ _id: req.params.id, user: req.userId });
+        if (!reservation) {
+            return res.status(404).json({ message: 'Reservation not found or you do not own it.' });
+        }
+
+        if (['cancelled', 'completed', 'blocked'].includes(reservation.status)) {
+            return res.status(400).json({ message: 'This reservation can no longer be modified.' });
+        }
+
+        const updatedDate = new Date(date);
+        if (Number.isNaN(updatedDate.getTime())) {
+            return res.status(400).json({ message: 'Invalid reservation date.' });
+        }
+
+        const conflict = await Reservation.findOne({
+            _id: { $ne: reservation._id },
+            facility: reservation.facility,
+            seat_number: reservation.seat_number,
+            date: updatedDate,
+            start_time,
+            status: { $in: ['reserved', 'blocked'] },
+        });
+
+        if (conflict) {
+            return res.status(409).json({ message: 'This slot is already taken.' });
+        }
+
+        reservation.date = updatedDate;
+        reservation.start_time = start_time;
+        reservation.end_time = end_time;
+
+        await reservation.save();
+        await reservation.populate('facility', 'facility_name facility_type hourly_rate_php');
+
+        res.json(reservation);
+    } catch (err) {
+        res.status(500).json({ message: 'Reservation update failed.', error: err.message });
+    }
+});
+
 // PATCH /api/reservations/:id/cancel  — cancel own reservation (marks as cancelled, does not delete)
 router.patch('/:id/cancel', verifyToken, async (req, res) => {
     try {
