@@ -1,13 +1,38 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { ArrowLeft, Calendar, Clock, Star, Users, MapPin, Check, Zap, Trophy, Loader } from 'lucide-react';
+import { ArrowLeft, Calendar, Clock, Star, Users, MapPin, Check, Zap, Trophy, Loader, Heart } from 'lucide-react';
 import { Navbar, Footer } from '../components/LandingPage';
 import { Card, Button, Badge } from '../components/ui';
 import { AuthModal } from '../components/AuthModal';
-import { BookingSuccessModal, generateConfirmationCode } from '../components/BookingSuccessModal';
+import { BookingSuccessModal } from '../components/BookingSuccessModal';
 import { PublicAvailabilityCalendar } from '../components/PublicAvailabilityCalendar';
 import { LocationSection } from '../components/LocationSection';
 import { useAuth, API_BASE_URL } from '../contexts/AuthContext';
+import React from 'react';
+
+class ErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+  static getDerivedStateFromError(error) {
+    return { hasError: true, error };
+  }
+  componentDidCatch(error, errorInfo) {
+    console.error("ErrorBoundary caught error:", error, errorInfo);
+  }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="p-4 border border-red-500 bg-red-100 text-red-700 rounded-lg">
+          <h2 className="font-bold">Something went wrong in this component: {this.props.name}</h2>
+          <pre className="text-sm mt-2">{this.state.error?.toString()}</pre>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
 
 export const FacilityDetailPage = () => {
   const { facilityId } = useParams();
@@ -18,26 +43,69 @@ export const FacilityDetailPage = () => {
   const [bookingData, setBookingData] = useState(null);
   const [isBooking, setIsBooking] = useState(false);
   const [facility, setFacility] = useState(null);
+  const [schedule, setSchedule] = useState([]);
+  const [reviews, setReviews] = useState([]);
+  const [isFavorite, setIsFavorite] = useState(false);
+  const [canReview, setCanReview] = useState(false);
+  const [reviewForm, setReviewForm] = useState({ rating: 5, title: '', body: '', isAnonymous: false });
+  const [isSubmittingReview, setIsSubmittingReview] = useState(false);
+  const [reviewError, setReviewError] = useState('');
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const fetchFacility = async () => {
       try {
-        const response = await fetch(`${API_BASE_URL || 'http://localhost:5000/api'}/reservations/facilities`);
-        const data = await response.json();
+        const response = await fetch(`${API_BASE_URL}/reservations/facilities/${facilityId}`);
         if (response.ok) {
-          const found = data.find(f => (f._id || f.id).toString() === facilityId);
+          const found = await response.json();
           if (found) {
-            // Add fallback properties for the UI if DB is minimal
-            found.images = found.images || ['📸', '🏟️', '⚡'];
-            found.rating = found.rating || 4.5;
-            found.reviews = found.reviews || 89;
-            found.size = found.size || 'Standard Size';
-            found.surface = found.surface || 'Standard Surface';
-            found.amenities = found.amenities || ['Professional Court', 'Lighting', 'Parking'];
-            found.price = found.hourly_rate || found.price || 500;
-            found.icon = found.type === 'Basketball' ? '🏀' : found.type === 'Tennis' ? '🎾' : found.type === 'Badminton' ? '🏸' : '🏟️';
-            setFacility(found);
+            // Normalize MongoDB field names to what the UI expects
+            const normalized = {
+              ...found,
+              name: found.facility_name,
+              type: found.facility_type,
+              description: found.facility_description,
+              capacity: found.total_capacity,
+              price: found.hourly_rate_php,
+              amenities: found.facility_amenities || [],
+              surface: found.facility_surface || 'Standard Surface',
+              size: found.facility_size || 'Standard Size',
+              images: found.facility_images?.length ? found.facility_images : ['📸', '🏟️', '⚡'],
+              rating: 'New', // will be computed from real reviews
+              reviews: 0,
+              icon: found.facility_type === 'Basketball' ? '🏀'
+                  : found.facility_type === 'Tennis' ? '🎾'
+                  : found.facility_type === 'Badminton' ? '🏸'
+                  : found.facility_type === 'Volleyball' ? '🏐'
+                  : found.facility_type === 'Swimming' ? '🏊'
+                  : found.facility_type === 'Gym' ? '🏋️'
+                  : '🏟️',
+            };
+            setFacility(normalized);
+            
+            try {
+              const schedRes = await fetch(`${API_BASE_URL}/reservations/facilities/${facilityId}/schedule`);
+              if (schedRes.ok) {
+                const schedData = await schedRes.json();
+                setSchedule(schedData);
+              }
+            } catch (err) {
+              console.error("Failed to fetch schedule", err);
+            }
+            try {
+              const reviewsRes = await fetch(`${API_BASE_URL}/reservations/facilities/${facilityId}/reviews`);
+              if (reviewsRes.ok) {
+                const reviewsData = await reviewsRes.json();
+                setReviews(reviewsData);
+                if (reviewsData.length > 0) {
+                   const avg = reviewsData.reduce((acc, curr) => acc + curr.rating, 0) / reviewsData.length;
+                   normalized.rating = avg.toFixed(1);
+                   normalized.reviews = reviewsData.length;
+                }
+              }
+            } catch (err) { console.error("Failed to fetch reviews", err); }
+            
+            setFacility(normalized);
           }
         }
       } catch (err) {
@@ -48,6 +116,45 @@ export const FacilityDetailPage = () => {
     };
     fetchFacility();
   }, [facilityId]);
+
+  useEffect(() => {
+    if (isLoggedIn && token && facilityId) {
+      const checkCanReview = async () => {
+        try {
+          const myRes = await fetch(`${API_BASE_URL}/reservations/my`, {
+             headers: { 'Authorization': `Bearer ${token}` }
+          });
+          if (myRes.ok) {
+             const myData = await myRes.json();
+             const hasPast = myData.some(r => {
+               const fid = (r.facility && r.facility._id) ? r.facility._id : r.facility;
+               return fid === facilityId && new Date(r.date) < new Date() && ['reserved', 'completed'].includes(r.status);
+             });
+             setCanReview(hasPast);
+          }
+        } catch (err) { console.error(err); }
+      };
+      checkCanReview();
+
+      // Check if favorited
+      const checkFavorite = async () => {
+        try {
+          const res = await fetch(`${API_BASE_URL}/profiles/me/favorites`, {
+             headers: { 'Authorization': `Bearer ${token}` }
+          });
+          if (res.ok) {
+             const favs = await res.json();
+             setIsFavorite(favs.some(f => (f._id || f) === facilityId));
+          }
+        } catch (err) { console.error(err); }
+      };
+      checkFavorite();
+
+    } else {
+      setCanReview(false);
+      setIsFavorite(false);
+    }
+  }, [isLoggedIn, token, facilityId]);
 
   if (isLoading) {
     return (
@@ -117,8 +224,8 @@ export const FacilityDetailPage = () => {
         startTime,
         endTime,
         duration,
-        totalPrice: duration * facility.price,
-        confirmationCode: result._id // Use database ID as confirmation code, or generate one
+        totalPrice: duration * (facility.price || 0),
+        confirmationCode: result._id
       };
 
       setBookingData(booking);
@@ -128,6 +235,66 @@ export const FacilityDetailPage = () => {
       alert("Failed to book court. Please check your connection.");
     } finally {
       setIsBooking(false);
+    }
+  };
+
+
+  const handleReviewSubmit = async (e) => {
+    e.preventDefault();
+    setIsSubmittingReview(true);
+    setReviewError('');
+    try {
+      const res = await fetch(`${API_BASE_URL}/reservations/facilities/${facilityId}/reviews`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          rating: reviewForm.rating,
+          title: reviewForm.title,
+          body: reviewForm.body,
+          is_anonymous: reviewForm.isAnonymous
+        })
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setReviewError(data.message || 'Failed to submit review');
+      } else {
+        setReviews([data, ...reviews]);
+        setReviewForm({ rating: 5, title: '', body: '', isAnonymous: false });
+        setCanReview(false);
+        setFacility(prev => {
+           const newTotal = prev.reviews + 1;
+           const newRating = prev.rating === 'New' 
+               ? data.rating 
+               : ((parseFloat(prev.rating) * prev.reviews + data.rating) / newTotal).toFixed(1);
+           return { ...prev, reviews: newTotal, rating: newRating };
+        });
+      }
+    } catch (err) {
+      setReviewError('An error occurred. Please try again.');
+    } finally {
+      setIsSubmittingReview(false);
+    }
+  };
+
+  const handleToggleFavorite = async () => {
+    if (!isLoggedIn) {
+      setShowAuthModal(true);
+      return;
+    }
+    
+    try {
+      const res = await fetch(`${API_BASE_URL}/profiles/me/favorites/${facilityId}`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (res.ok) {
+        setIsFavorite(!isFavorite);
+      }
+    } catch (err) {
+      console.error('Failed to toggle favorite', err);
     }
   };
 
@@ -166,9 +333,24 @@ export const FacilityDetailPage = () => {
               {/* Facility Info */}
               <div>
                 <div className="flex items-start justify-between mb-4">
-                  <div>
-                    <h1 className="text-4xl font-bold mb-2">{facility.name}</h1>
-                    <p className="text-xl text-[var(--text-secondary)]">{facility.type}</p>
+                  <div className="flex items-center gap-4">
+                    <div>
+                      <h1 className="text-4xl font-bold mb-2">{facility.name}</h1>
+                      <p className="text-xl text-[var(--text-secondary)]">{facility.type}</p>
+                    </div>
+                    {isLoggedIn && (
+                        <button
+                          onClick={handleToggleFavorite}
+                          className={`p-3 rounded-full border transition-all ${
+                            isFavorite 
+                              ? 'border-[var(--accent-green)] text-[var(--accent-green)] bg-[rgba(0,255,136,0.1)] hover:bg-[rgba(0,255,136,0.2)]' 
+                              : 'border-[var(--border-subtle)] text-[var(--text-secondary)] hover:text-[var(--accent-green)] hover:border-[var(--accent-green)]'
+                          }`}
+                          title={isFavorite ? "Remove from Favorites" : "Add to Favorites"}
+                        >
+                          <Heart className={`w-6 h-6 ${isFavorite ? 'fill-current' : ''}`} />
+                        </button>
+                    )}
                   </div>
                   <div className="flex items-center gap-2">
                     <Star className="w-6 h-6 text-[var(--warning)] fill-[var(--warning)]" />
@@ -220,16 +402,142 @@ export const FacilityDetailPage = () => {
                 </div>
               </Card>
 
-              <div id="availability-calendar">
-                <PublicAvailabilityCalendar
-                  facility={facility}
-                  onSlotSelect={handleSlotSelect}
-                  isBooking={isBooking}
-                />
-              </div>
+              {/* Operating Hours */}
+              {schedule && schedule.length > 0 && (
+                <Card variant="outlined" className="p-6">
+                  <div className="flex items-center gap-2 mb-4">
+                    <Clock className="w-5 h-5 text-[var(--accent-green)]" />
+                    <h3 className="text-xl font-bold">Operating Hours</h3>
+                  </div>
+                  <div className="space-y-3">
+                    {schedule.map((day, idx) => (
+                      <div key={idx} className="flex items-center justify-between pb-2 border-b border-[var(--border-subtle)] last:border-0 last:pb-0">
+                        <span className="capitalize font-medium text-[var(--text-secondary)]">{day.day_of_week}</span>
+                        <div className="text-right">
+                          {day.is_maintenance ? (
+                            <div className="flex flex-col items-end">
+                              <Badge variant="warning">Maintenance</Badge>
+                              {day.maintenance_note && <span className="text-xs text-[var(--text-muted)] mt-1">{day.maintenance_note}</span>}
+                            </div>
+                          ) : day.is_closed ? (
+                            <Badge variant="error" className="bg-red-500/10 text-red-500 border-red-500">Closed</Badge>
+                          ) : (
+                            <span className="font-semibold">{day.open_time} - {day.close_time}</span>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </Card>
+              )}
+
+              <ErrorBoundary name="PublicAvailabilityCalendar">
+                <div id="availability-calendar">
+                  <PublicAvailabilityCalendar
+                    facility={facility}
+                    onSlotSelect={handleSlotSelect}
+                    isBooking={isBooking}
+                  />
+                </div>
+              </ErrorBoundary>
 
               {/* Location */}
-              <LocationSection facility={facility} />
+              <ErrorBoundary name="LocationSection">
+                <LocationSection facility={facility} />
+              </ErrorBoundary>
+
+              {/* Reviews Section */}
+              <ErrorBoundary name="ReviewsSection">
+              <div className="mt-12 space-y-6">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-2xl font-bold">Reviews</h3>
+                  <div className="flex items-center gap-2 bg-[var(--bg-secondary)] px-4 py-2 rounded-full border border-[var(--border-subtle)]">
+                     <Star className="w-5 h-5 text-[var(--warning)] fill-[var(--warning)]" />
+                     <span className="font-bold">{facility.rating}</span>
+                     <span className="text-[var(--text-muted)] text-sm">({facility.reviews} reviews)</span>
+                  </div>
+                </div>
+
+                {canReview && (
+                  <Card variant="outlined" className="p-6 bg-[var(--bg-secondary)] border-[var(--accent-green)] border-opacity-50">
+                    <h4 className="font-bold mb-4">Leave a Review</h4>
+                    {reviewError && (
+                      <div className="mb-4 p-3 bg-red-500/10 border border-red-500 rounded text-red-500 text-sm">
+                        {reviewError}
+                      </div>
+                    )}
+                    <form onSubmit={handleReviewSubmit} className="space-y-4">
+                      <div>
+                        <label className="block text-sm font-medium mb-1">Rating</label>
+                        <div className="flex gap-2">
+                           {[1,2,3,4,5].map(star => (
+                             <button type="button" key={star} onClick={() => setReviewForm(prev => ({ ...prev, rating: star }))} className="focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-green)] rounded">
+                               <Star className={`w-8 h-8 transition-colors ${reviewForm.rating >= star ? 'text-[var(--warning)] fill-[var(--warning)]' : 'text-[var(--text-muted)] opacity-50'}`} />
+                             </button>
+                           ))}
+                        </div>
+                      </div>
+                      <div>
+                         <label className="block text-sm font-medium mb-1">Title</label>
+                         <input type="text" className="w-full bg-[var(--bg-primary)] border border-[var(--border-subtle)] focus:border-[var(--accent-green)] focus:ring-1 focus:ring-[var(--accent-green)] rounded-lg p-3 text-sm outline-none transition-colors" placeholder="Summarize your experience" value={reviewForm.title} onChange={e => setReviewForm(prev => ({...prev, title: e.target.value}))} required />
+                      </div>
+                      <div>
+                         <label className="block text-sm font-medium mb-1">Review</label>
+                         <textarea className="w-full bg-[var(--bg-primary)] border border-[var(--border-subtle)] focus:border-[var(--accent-green)] focus:ring-1 focus:ring-[var(--accent-green)] rounded-lg p-3 text-sm h-24 resize-none outline-none transition-colors" placeholder="What did you like or dislike?" value={reviewForm.body} onChange={e => setReviewForm(prev => ({...prev, body: e.target.value}))}></textarea>
+                      </div>
+                      <div className="flex items-center justify-between">
+                         <label className="flex items-center gap-2 cursor-pointer group">
+                           <input type="checkbox" className="w-4 h-4 rounded border-[var(--border-subtle)] bg-[var(--bg-primary)] text-[var(--accent-green)] focus:ring-[var(--accent-green)]" checked={reviewForm.isAnonymous} onChange={e => setReviewForm(prev => ({...prev, isAnonymous: e.target.checked}))} />
+                           <span className="text-sm text-[var(--text-muted)] group-hover:text-[var(--text-primary)] transition-colors">Post anonymously</span>
+                         </label>
+                         <Button type="submit" variant="primary" disabled={isSubmittingReview}>
+                           {isSubmittingReview ? 'Submitting...' : 'Submit Review'}
+                         </Button>
+                      </div>
+                    </form>
+                  </Card>
+                )}
+
+                <div className="space-y-4">
+                   {reviews.length === 0 ? (
+                     <div className="text-center py-10 text-[var(--text-muted)] bg-[var(--bg-secondary)] rounded-xl border border-[var(--border-subtle)]">
+                       <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-[var(--bg-tertiary)] mb-3">
+                         <Star className="w-5 h-5 opacity-50" />
+                       </div>
+                       <p className="font-medium text-[var(--text-secondary)]">No reviews yet.</p>
+                       <p className="text-sm">Be the first to leave a review for this facility.</p>
+                     </div>
+                   ) : (
+                     reviews.map(review => (
+                       <Card key={review._id} variant="outlined" className="p-6 transition-all hover:border-[var(--border-hover)]">
+                         <div className="flex justify-between items-start mb-3">
+                           <div>
+                             <div className="flex items-center gap-1 mb-2">
+                               {[...Array(5)].map((_, i) => (
+                                 <Star key={i} className={`w-4 h-4 ${i < review.rating ? 'text-[var(--warning)] fill-[var(--warning)]' : 'text-[var(--text-muted)] opacity-30'}`} />
+                               ))}
+                             </div>
+                             <h5 className="font-bold text-lg text-[var(--text-primary)]">{review.title}</h5>
+                           </div>
+                           <span className="text-xs font-medium text-[var(--text-muted)] bg-[var(--bg-secondary)] px-2 py-1 rounded-md">
+                             {new Date(review.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                           </span>
+                         </div>
+                         <p className="text-[var(--text-secondary)] text-sm mb-4 leading-relaxed">{review.body}</p>
+                         <div className="flex items-center gap-2">
+                           <div className="w-6 h-6 rounded-full bg-[var(--bg-tertiary)] flex items-center justify-center text-[var(--text-muted)] text-xs font-bold border border-[var(--border-subtle)]">
+                             {review.reviewerName.charAt(0).toUpperCase()}
+                           </div>
+                           <div className="text-xs font-medium text-[var(--text-secondary)]">
+                             By <span className="text-[var(--text-primary)]">{review.reviewerName}</span>
+                           </div>
+                         </div>
+                       </Card>
+                     ))
+                   )}
+                </div>
+              </div>
+              </ErrorBoundary>
             </div>
 
             {/* Booking Sidebar */}

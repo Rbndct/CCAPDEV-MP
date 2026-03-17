@@ -18,35 +18,63 @@ export const ProfilePage = () => {
     twoFactor: false
   });
 
-  useEffect(() => {
-    const fetchProfile = async () => {
-      try {
-        const response = await fetch(`${API_BASE_URL || 'http://localhost:5000/api'}/profiles/me`, {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        });
-        const data = await response.json();
+  const [userStats, setUserStats] = useState({
+    bookings: 0,
+    hours: 0
+  });
 
-        if (response.ok) {
+  useEffect(() => {
+    const fetchProfileData = async () => {
+      try {
+        const [profileResponse, resResponse] = await Promise.all([
+          fetch(`${API_BASE_URL || 'http://localhost:5000/api'}/profiles/me`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+          }),
+          fetch(`${API_BASE_URL || 'http://localhost:5000/api'}/reservations/my`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+          })
+        ]);
+
+        if (profileResponse.ok) {
+          const data = await profileResponse.json();
           setUserInfo({
-            name: data.user?.full_name || '',
-            email: data.user?.email || '',
-            phone: data.user?.phone_number || '',
-            bio: data.user?.bio || '',
+            name: data.full_name || '',
+            email: data.email || '',
+            phone: data.phone_number || '',
+            bio: data.bio || '',
             notifications: true,
             twoFactor: false
           });
         }
+
+        if (resResponse.ok) {
+          const resData = await resResponse.json();
+          
+          let totalBookings = resData.length;
+          let totalHours = 0;
+
+          resData.forEach(r => {
+             // Calculate roughly based on start and end string times (e.g. HH:MM)
+             if (r.start_time && r.end_time) {
+                 const [startH] = r.start_time.split(':').map(Number);
+                 const [endH] = r.end_time.split(':').map(Number);
+                 if (!isNaN(startH) && !isNaN(endH) && endH > startH) {
+                     totalHours += (endH - startH);
+                 }
+             }
+          });
+
+          setUserStats({ bookings: totalBookings, hours: totalHours });
+        }
       } catch (error) {
-        console.error('Error fetching profile:', error);
+        console.error('Error fetching profile data:', error);
       } finally {
         setIsLoading(false);
       }
     };
 
     if (token) {
-      fetchProfile();
+      fetchProfileData();
     }
   }, [token]);
 
@@ -111,11 +139,11 @@ export const ProfilePage = () => {
 
             <div className="mt-8 grid grid-cols-2 gap-4 text-center border-t border-[var(--border-subtle)] pt-6">
               <div>
-                <div className="text-2xl font-bold text-[var(--accent-green)]">12</div>
+                <div className="text-2xl font-bold text-[var(--accent-green)]">{userStats.bookings}</div>
                 <div className="text-xs text-[var(--text-muted)]">Bookings</div>
               </div>
               <div>
-                <div className="text-2xl font-bold text-[var(--accent-green)]">48</div>
+                <div className="text-2xl font-bold text-[var(--accent-green)]">{userStats.hours}</div>
                 <div className="text-xs text-[var(--text-muted)]">Hours Played</div>
               </div>
             </div>

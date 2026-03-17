@@ -1,7 +1,7 @@
-import { useState } from 'react';
-import { Calendar, ChevronLeft, ChevronRight, Clock, X, Check, Lightbulb } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Calendar, ChevronLeft, ChevronRight, Clock, X, Check, Lightbulb, Loader } from 'lucide-react';
 import { Card, Button, Badge } from './ui';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth, API_BASE_URL } from '../contexts/AuthContext';
 import { AuthModal } from './AuthModal';
 
 // Generate time slots for a day (30-minute intervals)
@@ -16,15 +16,7 @@ const generateTimeSlots = () => {
   return slots;
 };
 
-// Mock availability data
-const getMockAvailability = (date, time) => {
-  const hash = (date + time).split('').reduce((a, b) => ((a << 5) - a) + b.charCodeAt(0), 0);
-  const random = Math.abs(hash % 100);
-
-  if (random < 30) return 'booked';
-  if (random < 35) return 'blocked';
-  return 'available';
-};
+const ALL_TIME_SLOTS = generateTimeSlots();
 
 // Get the index of a time slot in the full list
 const getSlotIndex = (time, allSlots) => allSlots.indexOf(time);
@@ -35,11 +27,57 @@ export const PublicAvailabilityCalendar = ({ facility, onSlotSelect, isBooking }
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [timeFilter, setTimeFilter] = useState('all');
 
-  // Multi-slot selection state
   const [selectionStart, setSelectionStart] = useState(null); // { dateStr, dayIdx, time }
   const [selectionEnd, setSelectionEnd] = useState(null);     // { dateStr, dayIdx, time }
 
-  const timeSlots = generateTimeSlots();
+  const [slotStatusMap, setSlotStatusMap] = useState(new Map());
+  const [isLoadingAvailability, setIsLoadingAvailability] = useState(true);
+
+  const timeSlots = ALL_TIME_SLOTS;
+
+  useEffect(() => {
+    if (!facility?._id) return;
+    
+    let isMounted = true;
+    const fetchAvailability = async () => {
+      setIsLoadingAvailability(true);
+      try {
+        const baseUrl = API_BASE_URL || 'http://localhost:5001/api';
+        const res = await fetch(`${baseUrl}/reservations/facilities/${facility._id}/availability`);
+        if (res.ok) {
+          const data = await res.json();
+          const statuses = new Map();
+          
+          data.forEach(booking => {
+            const dateStr = booking.date.split('T')[0];
+            const startIdx = ALL_TIME_SLOTS.indexOf(booking.start_time);
+            const endIdx = ALL_TIME_SLOTS.indexOf(booking.end_time);
+            
+            if (startIdx !== -1 && endIdx !== -1) {
+              for (let i = startIdx; i < endIdx; i++) {
+                statuses.set(`${dateStr}|${ALL_TIME_SLOTS[i]}`, booking.status);
+              }
+            } else if (startIdx !== -1) {
+               statuses.set(`${dateStr}|${booking.start_time}`, booking.status);
+            }
+          });
+          
+          if (isMounted) setSlotStatusMap(statuses);
+        }
+      } catch (err) {
+        console.error("Failed to fetch availability", err);
+      } finally {
+        if (isMounted) setIsLoadingAvailability(false);
+      }
+    };
+    
+    fetchAvailability();
+    return () => { isMounted = false; };
+  }, [facility]);
+
+  const getAvailability = (dateStr, time) => {
+    return slotStatusMap.get(`${dateStr}|${time}`) || 'available';
+  };
 
   const getWeekDates = (date) => {
     const week = [];
@@ -75,7 +113,7 @@ export const PublicAvailabilityCalendar = ({ facility, onSlotSelect, isBooking }
 
   const handleSlotClick = (date, time, dayIdx) => {
     const dateStr = date.toISOString().split('T')[0];
-    const status = getMockAvailability(dateStr, time);
+    const status = getAvailability(dateStr, time);
     if (status !== 'available') return;
 
     if (!isLoggedIn) {
@@ -108,7 +146,7 @@ export const PublicAvailabilityCalendar = ({ facility, onSlotSelect, isBooking }
 
       // Check all slots in range are available
       const allAvailable = timeSlots.slice(startIdx, endIdx + 1).every(
-        t => getMockAvailability(dateStr, t) === 'available'
+        t => getAvailability(dateStr, t) === 'available'
       );
 
       if (!allAvailable) return;
@@ -245,7 +283,13 @@ export const PublicAvailabilityCalendar = ({ facility, onSlotSelect, isBooking }
       </div>
 
       {/* Calendar Grid */}
-      <div className="overflow-x-auto">
+      <div className="overflow-x-auto relative">
+        {isLoadingAvailability && (
+          <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-[var(--bg-primary)]/50 backdrop-blur-sm rounded-lg min-h-[300px]">
+            <Loader className="w-8 h-8 animate-spin text-[var(--accent-green)] mb-2" />
+            <p className="font-medium">Loading availability...</p>
+          </div>
+        )}
         <div className="min-w-[600px]">
           {/* Day Headers */}
           <div className="grid grid-cols-8 gap-2 mb-2">
@@ -268,7 +312,7 @@ export const PublicAvailabilityCalendar = ({ facility, onSlotSelect, isBooking }
                 </div>
                 {weekDates.map((date, dayIdx) => {
                   const dateStr = date.toISOString().split('T')[0];
-                  const status = getMockAvailability(dateStr, time);
+                  const status = getAvailability(dateStr, time);
                   const isPast = date < new Date() || (date.toDateString() === new Date().toDateString() && parseInt(time) < new Date().getHours());
                   const inSelection = isSlotInSelection(dateStr, dayIdx, time);
                   const isStart = isSlotStart(dayIdx, time);

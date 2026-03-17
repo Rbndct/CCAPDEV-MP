@@ -1,7 +1,9 @@
 const express = require('express');
 const router = express.Router();
-const Facility = require('../models/Facility');
+const SportFacility = require('../models/SportFacility');
 const Reservation = require('../models/Reservation');
+const FacilityOperatingSchedule = require('../models/FacilityOperatingSchedule');
+const FacilityReview = require('../models/FacilityReview');
 const { verifyToken } = require('../middleware/auth');
 
 // ─── Public ──────────────────────────────────────────────────────────────────
@@ -9,10 +11,40 @@ const { verifyToken } = require('../middleware/auth');
 // GET /api/reservations/facilities  — list all facilities (public)
 router.get('/facilities', async (req, res) => {
     try {
-        const facilities = await Facility.find().sort({ name: 1 });
+        const facilities = await SportFacility.find().sort({ facility_name: 1 });
         res.json(facilities);
     } catch (err) {
         res.status(500).json({ message: 'Error fetching facilities.', error: err.message });
+    }
+});
+
+// GET /api/reservations/facilities/:id  — get single facility (public)
+router.get('/facilities/:id', async (req, res) => {
+    try {
+        const facility = await SportFacility.findById(req.params.id);
+        if (!facility) {
+            return res.status(404).json({ message: 'Facility not found.' });
+        }
+        res.json(facility);
+    } catch (err) {
+        res.status(500).json({ message: 'Error fetching facility.', error: err.message });
+    }
+});
+
+// GET /api/reservations/facilities/:id/schedule  — get facility schedule (public)
+router.get('/facilities/:id/schedule', async (req, res) => {
+    try {
+        const schedules = await FacilityOperatingSchedule.find({ facility_id: req.params.id });
+        
+        const dayOrder = {
+          'monday': 1, 'tuesday': 2, 'wednesday': 3, 'thursday': 4,
+          'friday': 5, 'saturday': 6, 'sunday': 7
+        };
+        schedules.sort((a, b) => dayOrder[a.day_of_week] - dayOrder[b.day_of_week]);
+        
+        res.json(schedules);
+    } catch (err) {
+        res.status(500).json({ message: 'Error fetching schedule.', error: err.message });
     }
 });
 
@@ -48,7 +80,77 @@ router.get('/facilities/:id/availability', async (req, res) => {
     }
 });
 
+// GET /api/reservations/facilities/:id/reviews  — get facility reviews (public)
+router.get('/facilities/:id/reviews', async (req, res) => {
+    try {
+        const reviews = await FacilityReview.find({ facility_id: req.params.id })
+            .populate('reviewer_user_id', 'full_name')
+            .sort({ created_at: -1 });
+            
+        const formatted = reviews.map(r => ({
+            _id: r._id,
+            rating: r.rating_score,
+            title: r.review_title,
+            body: r.review_body,
+            reviewerName: r.is_anonymous ? 'Anonymous' : (r.reviewer_user_id ? r.reviewer_user_id.full_name : 'Unknown User'),
+            date: r.created_at
+        }));
+        
+        res.json(formatted);
+    } catch (err) {
+        res.status(500).json({ message: 'Error fetching reviews.', error: err.message });
+    }
+});
+
 // ─── Protected (Student) ─────────────────────────────────────────────────────
+
+// POST /api/reservations/facilities/:id/reviews  — leave a review (protected)
+router.post('/facilities/:id/reviews', verifyToken, async (req, res) => {
+    try {
+        const { rating, title, body, is_anonymous } = req.body;
+        
+        if (!rating || rating < 1 || rating > 5) {
+            return res.status(400).json({ message: 'Valid rating (1-5) is required.' });
+        }
+        
+        const pastReservation = await Reservation.findOne({
+            facility: req.params.id,
+            user: req.userId,
+            date: { $lt: new Date() },
+            status: { $in: ['reserved', 'completed'] }
+        });
+        
+        if (!pastReservation) {
+             return res.status(403).json({ message: 'You must have a past reservation to leave a review.' });
+        }
+
+        const review = await FacilityReview.create({
+            facility_id: req.params.id,
+            reviewer_user_id: req.userId,
+            reservation_id: pastReservation._id,
+            rating_score: rating,
+            review_title: title || '',
+            review_body: body || '',
+            is_anonymous: !!is_anonymous
+        });
+        
+        await review.populate('reviewer_user_id', 'full_name');
+        
+        res.status(201).json({
+            _id: review._id,
+            rating: review.rating_score,
+            title: review.review_title,
+            body: review.review_body,
+            reviewerName: review.is_anonymous ? 'Anonymous' : review.reviewer_user_id.full_name,
+            date: review.created_at
+        });
+    } catch (err) {
+        if (err.code === 11000) {
+            return res.status(409).json({ message: 'You have already reviewed this facility.' });
+        }
+        res.status(500).json({ message: 'Failed to submit review.', error: err.message });
+    }
+});
 
 // POST /api/reservations  — student creates a reservation
 router.post('/', verifyToken, async (req, res) => {
@@ -90,7 +192,7 @@ router.post('/', verifyToken, async (req, res) => {
 router.get('/my', verifyToken, async (req, res) => {
     try {
         const reservations = await Reservation.find({ user: req.userId })
-            .populate('facility', 'name type')
+            .populate('facility', 'facility_name facility_type hourly_rate_php')
             .sort({ date: -1, start_time: -1 });
         res.json(reservations);
     } catch (err) {

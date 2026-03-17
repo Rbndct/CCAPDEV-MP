@@ -58,12 +58,13 @@ export const DashboardPage = () => {
       const resData = await resResponse.json();
 
       if (resResponse.ok) {
-        const formatted = resData.data.map(r => ({
+        const reservationsArray = Array.isArray(resData) ? resData : resData.data || [];
+        const formatted = reservationsArray.map(r => ({
           id: r._id,
-          court: r.facility?.name || 'Unknown Facility',
+          court: r.facility?.facility_name || r.facility?.name || 'Unknown Facility',
           date: r.date,
           time: `${r.start_time} - ${r.end_time}`,
-          status: r.status,
+          status: r.status === 'reserved' ? 'confirmed' : r.status,
           price: r.total_price || 0
         }));
 
@@ -196,6 +197,15 @@ export const DashboardPage = () => {
                           <p className="text-xs text-[var(--text-muted)]">per hour</p>
                           {(booking.status === 'confirmed' || booking.status === 'pending') && (
                             <div className="flex items-center gap-2 mt-1">
+                              {booking.status === 'pending' && (
+                                <Link
+                                  to={`/dashboard/payment?reservationId=${booking.id}`}
+                                  className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-lg bg-[var(--accent-green)] text-black hover:bg-[rgba(0,255,136,0.8)] transition-all"
+                                  title="Pay for reservation"
+                                >
+                                  Pay Now
+                                </Link>
+                              )}
                               <button
                                 onClick={() => handleEditClick(booking)}
                                 className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-lg bg-[var(--bg-tertiary)] border border-[var(--border-subtle)] hover:border-[var(--accent-green)] hover:text-[var(--accent-green)] transition-all"

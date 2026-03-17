@@ -2,9 +2,7 @@ import { useState, useEffect } from 'react';
 import { Modal } from '../Modal';
 import { Button, Input, Select, DatePicker, TimePicker } from '../ui';
 import { User } from 'lucide-react';
-import { useAuth } from '../../contexts/AuthContext';
-
-const API_BASE_URL = 'http://localhost:5000/api';
+import { useAuth, API_BASE_URL } from '../../contexts/AuthContext';
 
 export const NewBookingModal = ({ isOpen, onClose }) => {
     const { token } = useAuth();
@@ -47,7 +45,7 @@ export const NewBookingModal = ({ isOpen, onClose }) => {
                 const data = await response.json();
                 const options = [
                     { value: '', label: 'Select a facility' },
-                    ...data.map(f => ({ value: f._id, label: f.name }))
+                    ...data.map(f => ({ value: f._id, label: f.facility_name || f.name }))
                 ];
                 setFacilities(options);
             } catch (error) {

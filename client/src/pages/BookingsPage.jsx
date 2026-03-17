@@ -35,10 +35,10 @@ export const BookingsPage = () => {
       const data = await response.json();
       if (response.ok) {
         // Map the backend data to match the expected format in the table
-        // The backend returns an array directly
-        const formatted = data.map(r => ({
+        const bookingsArray = Array.isArray(data) ? data : data.data || [];
+        const formatted = bookingsArray.map(r => ({
           id: r._id,
-          court: r.facility?.name || 'Unknown Facility',
+          court: r.facility?.facility_name || r.facility?.name || 'Unknown Facility',
           date: r.date,
           time: `${r.start_time} - ${r.end_time}`,
           status: r.status === 'reserved' ? 'confirmed' : r.status, // Map 'reserved' to 'confirmed' for student view
@@ -207,6 +207,15 @@ export const BookingsPage = () => {
                     {currentTab === 'upcoming' && (
                       <td className="p-4 text-right">
                         <div className="flex items-center justify-end gap-2">
+                          {booking.status === 'pending' && (
+                            <Link
+                              to={`/dashboard/payment?reservationId=${booking.id}`}
+                              className="px-3 py-1.5 text-xs font-medium rounded-lg bg-[var(--accent-green)] text-black hover:bg-[rgba(0,255,136,0.8)] transition-all flex items-center h-8"
+                              title="Pay for reservation"
+                            >
+                              Pay Now
+                            </Link>
+                          )}
                           <Button variant="outline" size="sm" className="!px-2 !py-1 !text-xs h-8">
                             Modify
                           </Button>

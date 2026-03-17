@@ -44,6 +44,42 @@ router.delete('/me', verifyToken, async (req, res) => {
     }
 });
 
+// GET /api/profiles/me/favorites  — get populated favorites (protected)
+router.get('/me/favorites', verifyToken, async (req, res) => {
+    try {
+        const user = await User.findById(req.userId).populate('favorites');
+        if (!user) return res.status(404).json({ message: 'User not found.' });
+        res.json(user.favorites);
+    } catch (err) {
+        res.status(500).json({ message: 'Error fetching favorites.', error: err.message });
+    }
+});
+
+// POST /api/profiles/me/favorites/:facilityId  — toggle favorite (protected)
+router.post('/me/favorites/:facilityId', verifyToken, async (req, res) => {
+    try {
+        const user = await User.findById(req.userId);
+        if (!user) return res.status(404).json({ message: 'User not found.' });
+
+        const facilityId = req.params.facilityId;
+        const index = user.favorites.indexOf(facilityId);
+        
+        let action = '';
+        if (index === -1) {
+            user.favorites.push(facilityId);
+            action = 'added';
+        } else {
+            user.favorites.splice(index, 1);
+            action = 'removed';
+        }
+        
+        await user.save();
+        res.json({ message: `Facility ${action} to favorites.`, favorites: user.favorites });
+    } catch (err) {
+        res.status(500).json({ message: 'Error toggling favorite.', error: err.message });
+    }
+});
+
 // GET /api/profiles/:id  — public profile (no auth required)
 router.get('/:id', async (req, res) => {
     try {

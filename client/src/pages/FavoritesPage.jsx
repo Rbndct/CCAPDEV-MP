@@ -1,45 +1,50 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, Button } from '../components/ui';
-import { Star, ArrowRight, Calendar, Heart, Trophy, Activity, Dumbbell } from 'lucide-react';
+import { Star, ArrowRight, Calendar, Heart, Trophy, Activity, Dumbbell, MapPin, Navigation } from 'lucide-react';
 import { Link } from 'react-router-dom';
-
-// Mock Favorites Data
-const mockFavorites = [
-  {
-    id: 1,
-    name: 'Court A - Premium Basketball',
-    type: 'Basketball',
-    icon: <Trophy className="w-8 h-8 text-[var(--accent-green)]" />,
-    price: 600,
-    rating: 4.9,
-    availability: 'high'
-  },
-  {
-    id: 8,
-    name: 'Court H - Pickleball Arena',
-    type: 'Pickleball',
-    icon: <Dumbbell className="w-8 h-8 text-[var(--accent-green)]" />,
-    price: 500,
-    rating: 4.9,
-    availability: 'high'
-  },
-  {
-    id: 3,
-    name: 'Court C - Tennis Court 1',
-    type: 'Tennis',
-    icon: <Activity className="w-8 h-8 text-[var(--accent-green)]" />,
-    price: 500,
-    rating: 4.8,
-    availability: 'high'
-  }
-];
+import { useAuth, API_BASE_URL } from '../contexts/AuthContext';
 
 export const FavoritesPage = () => {
-  const [favorites, setFavorites] = useState(mockFavorites);
+  const { token } = useAuth();
+  const [favorites, setFavorites] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const removeFavorite = (id) => {
-    setFavorites(prev => prev.filter(item => item.id !== id));
+  useEffect(() => {
+    const fetchFavorites = async () => {
+      try {
+        const response = await fetch(`${API_BASE_URL || 'http://localhost:5000/api'}/profiles/me/favorites`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (response.ok) {
+          const data = await response.json();
+          setFavorites(data);
+        }
+      } catch (error) {
+        console.error('Error fetching favorites:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    if (token) fetchFavorites();
+  }, [token]);
+
+  const removeFavorite = async (id) => {
+    try {
+      const response = await fetch(`${API_BASE_URL || 'http://localhost:5000/api'}/profiles/me/favorites/${id}`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (response.ok) {
+        setFavorites(prev => prev.filter(item => item._id !== id));
+      }
+    } catch (error) {
+      console.error('Failed to remove favorite:', error);
+    }
   };
+
+  if (isLoading) {
+      return <div className="p-12 text-center text-[var(--text-secondary)]">Loading favorites...</div>
+  }
 
   return (
     <div className="max-w-7xl mx-auto py-8">
@@ -51,9 +56,9 @@ export const FavoritesPage = () => {
       {favorites.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {favorites.map((facility) => (
-            <Card key={facility.id} variant="glass" className="p-6 relative group hover:border-[var(--accent-green)] transition-all">
+            <Card key={facility._id} variant="glass" className="p-6 relative group hover:border-[var(--accent-green)] transition-all">
               <button 
-                onClick={() => removeFavorite(facility.id)}
+                onClick={() => removeFavorite(facility._id)}
                 className="absolute top-4 right-4 text-[var(--accent-green)] hover:text-red-500 transition-colors z-10"
                 title="Remove from favorites"
               >
@@ -61,33 +66,44 @@ export const FavoritesPage = () => {
               </button>
 
               <div className="flex items-center gap-4 mb-4">
-                <div className="w-16 h-16 rounded-xl bg-[var(--bg-tertiary)] flex items-center justify-center text-3xl shadow-inner group-hover:scale-105 transition-transform">
-                  {facility.icon}
+                <div className="w-16 h-16 rounded-xl bg-[var(--bg-tertiary)] flex items-center justify-center text-3xl shadow-inner group-hover:scale-105 transition-transform overflow-hidden">
+                   {facility.images && facility.images[0] ? (
+                       <img src={facility.images[0]} alt={facility.facility_name} className="w-full h-full object-cover" />
+                   ) : (
+                       <Trophy className="w-8 h-8 text-[var(--accent-green)]" />
+                   )}
                 </div>
                 <div>
-                  <h3 className="font-bold text-lg leading-tight">{facility.name}</h3>
-                  <p className="text-sm text-[var(--text-secondary)]">{facility.type}</p>
+                  <h3 className="font-bold text-lg leading-tight truncate">{facility.facility_name}</h3>
+                  <p className="text-sm text-[var(--text-secondary)]">{facility.facility_type}</p>
                 </div>
+              </div>
+
+              <div className="flex items-center justify-between mb-4">
+                 <div className="flex items-center gap-1 text-sm text-[var(--text-secondary)]">
+                    <MapPin className="w-4 h-4" />
+                    <span className="truncate">{facility.location}</span>
+                 </div>
               </div>
 
               <div className="flex items-center gap-4 mb-6 text-sm text-[var(--text-muted)]">
                 <div className="flex items-center gap-1">
                   <Star className="w-4 h-4 text-[var(--warning)] fill-current" />
-                  <span className="font-medium text-[var(--text-primary)]">{facility.rating}</span>
+                  <span className="font-medium text-[var(--text-primary)]">4.5</span>
                 </div>
                 <div className="flex items-center gap-1">
-                  <span className="font-bold text-[var(--accent-green)]">₱{facility.price}</span>
+                  <span className="font-bold text-[var(--accent-green)]">₱{facility.hourly_rate_php}</span>
                   <span>/ hour</span>
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
-                <Link to={`/facilities/${facility.id}`} className="block">
+                <Link to={`/facilities/${facility._id}`} className="block">
                     <Button variant="outline" className="w-full text-xs">
                         View Details
                     </Button>
                 </Link>
-                <Link to={`/facilities/${facility.id}?action=book`} className="block">
+                <Link to={`/facilities/${facility._id}?action=book`} className="block">
                     <Button variant="primary" className="w-full text-xs" icon={<Calendar className="w-3 h-3" />}>
                         Book Now
                     </Button>

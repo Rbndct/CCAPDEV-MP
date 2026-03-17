@@ -72,7 +72,7 @@ const SportSelect = ({ value, onChange }) => {
 
 // Navigation Bar Component
 export const Navbar = () => {
-  const { isLoggedIn, user, toggleMockAuth, logout } = useAuth();
+  const { isLoggedIn, user, logout } = useAuth();
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 glass border-b border-[var(--border-subtle)]">
@@ -109,25 +109,6 @@ export const Navbar = () => {
 
           {/* Auth Section */}
           <div className="flex items-center gap-4">
-            {/* Mock Auth Toggle (Dev Tool) */}
-            <button
-              onClick={toggleMockAuth}
-              className="flex items-center gap-2 px-3 py-2 rounded-lg bg-[var(--bg-tertiary)] border border-[var(--border-subtle)] hover:border-[var(--accent-green)] transition-all text-sm font-medium"
-              title="Toggle Mock Login (Dev Tool)"
-            >
-              {isLoggedIn ? (
-                <>
-                  <User className="w-4 h-4 text-[var(--accent-green)]" />
-                  <span className="text-[var(--accent-green)]">Logged In</span>
-                </>
-              ) : (
-                <>
-                  <User className="w-4 h-4 text-[var(--text-muted)]" />
-                  <span className="text-[var(--text-muted)]">Guest</span>
-                </>
-              )}
-            </button>
-
             {/* Conditional Auth Buttons */}
             {isLoggedIn ? (
               <>

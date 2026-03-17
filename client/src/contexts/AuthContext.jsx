@@ -1,7 +1,8 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 
 const AuthContext = createContext();
-export const API_BASE_URL = 'http://localhost:5000/api';
+export const API_BASE_URL = 'http://localhost:5001/api';
+
 
 export function AuthProvider({ children }) {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -75,6 +76,11 @@ export function AuthProvider({ children }) {
     localStorage.removeItem('token');
   };
 
+  const quickGuestLogin = async () => {
+    // Uses the seeded LeBron James account for quick testing
+    return await login('lebron@sportsplex.com', 'password123');
+  };
+
   const register = async (full_name, email, password, phone_number) => {
     try {
       const response = await fetch(`${API_BASE_URL}/auth/register`, {
@@ -104,7 +110,8 @@ export function AuthProvider({ children }) {
       isLoading,
       login,
       logout,
-      register
+      register,
+      quickGuestLogin
     }}>
       {!isLoading && children}
     </AuthContext.Provider>

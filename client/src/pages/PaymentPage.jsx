@@ -1,24 +1,114 @@
-import { useState } from 'react';
-import { CreditCard, Smartphone, Wallet, Lock, CheckCircle, ArrowLeft } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { CreditCard, Smartphone, Wallet, Lock, CheckCircle, ArrowLeft, Loader } from 'lucide-react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Card, Button } from '../components/ui';
+import { useAuth, API_BASE_URL } from '../contexts/AuthContext';
 
 export const PaymentPage = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const { token, isLoggedIn } = useAuth();
+  
   const [paymentMethod, setPaymentMethod] = useState('card');
   const [isProcessing, setIsProcessing] = useState(false);
   const [paymentStatus, setPaymentStatus] = useState(null); // 'success' or 'error'
+  const [reservation, setReservation] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const handlePayment = (e) => {
+  const queryParams = new URLSearchParams(location.search);
+  const reservationId = queryParams.get('reservationId');
+
+  useEffect(() => {
+    if (!isLoggedIn || !token) {
+        navigate('/');
+        return;
+    }
+
+    if (!reservationId) {
+        setIsLoading(false);
+        return;
+    }
+
+    const fetchReservation = async () => {
+        try {
+            const res = await fetch(`${API_BASE_URL}/reservations/my`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (res.ok) {
+                const data = await res.json();
+                const found = data.find(r => r._id === reservationId);
+                if (found) {
+                    setReservation(found);
+                }
+            }
+        } catch (err) {
+            console.error("Failed to fetch reservation for payment", err);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+    fetchReservation();
+  }, [isLoggedIn, token, reservationId, navigate]);
+
+  const handlePayment = async (e) => {
     e.preventDefault();
+    if (!reservation) return;
+
     setIsProcessing(true);
     
-    // Simulate payment processing
-    setTimeout(() => {
-      setIsProcessing(false);
-      setPaymentStatus('success');
-    }, 2000);
+    try {
+        const response = await fetch(`${API_BASE_URL}/payments/${reservation._id}`, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        if (response.ok) {
+            setPaymentStatus('success');
+        } else {
+            const errData = await response.json();
+            alert(`Payment failed: ${errData.message}`);
+        }
+    } catch (err) {
+        console.error("Payment error", err);
+        alert("Payment simulation failed. Check connection.");
+    } finally {
+        setIsProcessing(false);
+    }
   };
+
+  if (isLoading) {
+      return (
+          <div className="min-h-screen flex items-center justify-center">
+              <Loader className="w-8 h-8 animate-spin text-[var(--accent-green)]" />
+          </div>
+      );
+  }
+
+  if (!reservation && !paymentStatus) {
+      return (
+          <div className="max-w-md mx-auto py-12 px-6 text-center">
+              <h2 className="text-2xl font-bold mb-4">No Reservation Found</h2>
+              <p className="text-[var(--text-secondary)] mb-6">We couldn't figure out what you are trying to pay for.</p>
+              <Button variant="primary" onClick={() => navigate('/dashboard')}>Return to Dashboard</Button>
+          </div>
+      );
+  }
+
+  // Calculate duration and totals
+  let duration = 2; // Default fallback
+  let hourlyRate = 500;
+  if (reservation) {
+      const [startH] = reservation.start_time.split(':').map(Number);
+      const [endH] = reservation.end_time.split(':').map(Number);
+      if (!isNaN(startH) && !isNaN(endH)) duration = endH - startH;
+      if (reservation.facility && reservation.facility.hourly_rate_php) {
+          hourlyRate = reservation.facility.hourly_rate_php;
+      }
+  }
+
+  const subtotal = duration * hourlyRate;
+  const serviceFee = 50;
+  const total = subtotal + serviceFee;
 
   if (paymentStatus === 'success') {
     return (
@@ -75,9 +165,9 @@ export const PaymentPage = () => {
                 🏀
               </div>
               <div>
-                <h4 className="font-bold text-lg leading-tight mb-1">Court A - Premium</h4>
+                <h4 className="font-bold text-lg leading-tight mb-1">{reservation.facility?.facility_name || 'Court'}</h4>
                 <div className="flex items-center gap-2">
-                  <span className="text-xs font-semibold px-2 py-0.5 rounded bg-[rgba(0,255,136,0.1)] text-[var(--accent-green)]">Basketball</span>
+                  <span className="text-xs font-semibold px-2 py-0.5 rounded bg-[rgba(0,255,136,0.1)] text-[var(--accent-green)]">{reservation.facility?.facility_type || 'Sport'}</span>
                   <span className="text-xs text-[var(--text-muted)]">Indoor</span>
                 </div>
               </div>
@@ -88,34 +178,34 @@ export const PaymentPage = () => {
                 <span className="text-[var(--text-secondary)] flex items-center gap-2">
                   <div className="w-1 h-1 rounded-full bg-[var(--text-muted)]"></div> Date
                 </span>
-                <span className="font-medium text-[var(--text-primary)]">Feb 15, 2026</span>
+                <span className="font-medium text-[var(--text-primary)]">{new Date(reservation.date).toLocaleDateString()}</span>
               </div>
               <div className="flex justify-between items-center text-sm">
                 <span className="text-[var(--text-secondary)] flex items-center gap-2">
                    <div className="w-1 h-1 rounded-full bg-[var(--text-muted)]"></div> Time
                 </span>
-                <span className="font-medium text-[var(--text-primary)]">6:00 PM - 8:00 PM</span>
+                <span className="font-medium text-[var(--text-primary)]">{reservation.start_time} - {reservation.end_time}</span>
               </div>
               <div className="flex justify-between items-center text-sm">
                 <span className="text-[var(--text-secondary)] flex items-center gap-2">
                    <div className="w-1 h-1 rounded-full bg-[var(--text-muted)]"></div> Duration
                 </span>
-                <span className="font-medium text-[var(--text-primary)]">2 hours</span>
+                <span className="font-medium text-[var(--text-primary)]">{duration} hour{duration > 1 ? 's' : ''}</span>
               </div>
             </div>
 
             <div className="space-y-2 pt-4 border-t border-[var(--border-subtle)]">
               <div className="flex justify-between text-sm">
                 <span className="text-[var(--text-secondary)]">Subtotal</span>
-                <span>₱1,200.00</span>
+                <span>₱{subtotal.toFixed(2)}</span>
               </div>
               <div className="flex justify-between text-sm">
                 <span className="text-[var(--text-secondary)]">Service Fee</span>
-                <span>₱50.00</span>
+                <span>₱{serviceFee.toFixed(2)}</span>
               </div>
               <div className="flex justify-between font-bold text-xl pt-4 text-[var(--accent-green)]">
                 <span>Total</span>
-                <span>₱1,250.00</span>
+                <span>₱{total.toFixed(2)}</span>
               </div>
             </div>
           </Card>
@@ -264,7 +354,7 @@ export const PaymentPage = () => {
                      Processing...
                    </span>
                 ) : (
-                  'Pay ₱1,250.00'
+                  `Pay ₱${total.toFixed(2)}`
                 )}
               </Button>
               

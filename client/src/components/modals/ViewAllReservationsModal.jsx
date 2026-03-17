@@ -2,9 +2,7 @@ import { useState, useEffect } from 'react';
 import { Modal } from '../Modal';
 import { Badge, Button } from '../ui';
 import { Search, Calendar, Clock, Check, X } from 'lucide-react';
-import { useAuth } from '../../contexts/AuthContext';
-
-const API_BASE_URL = 'http://localhost:5000/api';
+import { useAuth, API_BASE_URL } from '../../contexts/AuthContext';
 
 export const ViewAllReservationsModal = ({ isOpen, onClose }) => {
     const { token } = useAuth();

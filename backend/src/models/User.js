@@ -37,7 +37,11 @@ const userSchema = new mongoose.Schema({
   is_verified: {
     type: Boolean,
     default: false
-  }
+  },
+  favorites: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'SportFacility'
+  }]
 }, {
   timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' }
 });

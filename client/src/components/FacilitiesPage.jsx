@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Calendar, Clock, Star, Users, MapPin, Zap, ArrowRight, Filter, CheckCircle, AlertTriangle, Info, ChevronDown, X, Check, Dribbble, Trophy, Wind, Activity } from 'lucide-react';
+import { Calendar, Clock, Star, Users, MapPin, Zap, ArrowRight, Filter, CheckCircle, AlertTriangle, Info, ChevronDown, X, Check, Dribbble, Trophy, Wind, Activity, Heart } from 'lucide-react';
 import { Card, Button, Badge } from './ui';
 import { AvailabilityCalendar } from './AvailabilityCalendar';
 
@@ -263,7 +263,9 @@ const FilterSection = ({ filters, setFilters, onApplyFilters, amenities }) => {
 // I need to ensure `FacilitiesPage` component logic is updated too.
 
 // Facility Card Component
-const FacilityCard = ({ facility, onViewSchedule }) => {
+const FacilityCard = ({ facility, onViewSchedule, isFavorite, onToggleFavorite, isLoggedIn }) => {
+  if (!facility) return null; // Safeguard if facility is undefined
+  
   const availabilityConfig = {
     high: {
       text: 'High Availability',
@@ -298,13 +300,13 @@ const FacilityCard = ({ facility, onViewSchedule }) => {
     }
   };
 
-  const iconUrl = facility.icon || getIconForType(facility.type);
+  const iconUrl = facility?.icon || getIconForType(facility?.type);
 
   return (
     <Card variant="elevated" hover="lift" className="overflow-hidden h-full flex flex-col">
       {/* Icon Header */}
       <div className="relative h-48 bg-gradient-to-br from-[var(--bg-secondary)] to-[var(--bg-tertiary)] flex items-center justify-center">
-        <img src={iconUrl} alt={facility.type} className="w-32 h-32" />
+        <img src={iconUrl} alt={facility?.type || 'Sport'} className="w-32 h-32" />
         <Badge
           variant={status.color}
           className="absolute top-4 right-4 flex items-center gap-1.5 shadow-lg backdrop-blur-md"
@@ -312,40 +314,50 @@ const FacilityCard = ({ facility, onViewSchedule }) => {
           <StatusIcon className="w-3.5 h-3.5" />
           {status.text}
         </Badge>
+        {isLoggedIn && (
+           <button 
+             onClick={(e) => { e.preventDefault(); e.stopPropagation(); onToggleFavorite(facility?._id || facility?.id); }}
+             className={`absolute top-4 left-4 p-2 rounded-full backdrop-blur-md transition-all shadow-lg ${
+               isFavorite ? 'bg-[var(--accent-green)] text-black' : 'bg-black/50 text-white hover:bg-black/70 hover:text-[var(--accent-green)]'
+             }`}
+           >
+             <Heart className={`w-5 h-5 ${isFavorite ? 'fill-current' : ''}`} />
+           </button>
+        )}
       </div>
 
       {/* Card Content */}
       <div className="p-6 flex flex-col flex-1">
         <div className="flex items-start justify-between mb-3">
           <div>
-            <h3 className="text-xl font-bold mb-1">{facility.name}</h3>
-            <p className="text-sm text-[var(--text-muted)]">{facility.type}</p>
+            <h3 className="text-xl font-bold mb-1">{facility?.name || facility?.facility_name || 'Court'}</h3>
+            <p className="text-sm text-[var(--text-muted)]">{facility?.type || facility?.facility_type || 'Facility'}</p>
           </div>
           <div className="flex items-center gap-1">
             <Star className="w-4 h-4 text-[var(--warning)] fill-[var(--warning)]" />
-            <span className="font-bold">{facility.rating || 4.5}</span>
+            <span className="font-bold">{facility?.rating || 4.5}</span>
           </div>
         </div>
 
         <p className="text-sm text-[var(--text-secondary)] mb-4 leading-relaxed">
-          {facility.description}
+          {facility?.description || facility?.facility_description || ''}
         </p>
 
         {/* Info Grid */}
         <div className="grid grid-cols-2 gap-3 mb-4 mt-auto">
           <div className="flex items-center gap-2 text-sm">
             <span className="w-4 h-4 text-[var(--accent-green)] font-bold text-sm flex items-center justify-center">₱</span>
-            <span className="text-[var(--text-secondary)]">₱{facility.hourly_rate || facility.price || 500}/hour</span>
+            <span className="text-[var(--text-secondary)]">₱{facility?.hourly_rate || facility?.hourly_rate_php || facility?.price || 500}/hour</span>
           </div>
           <div className="flex items-center gap-2 text-sm">
             <Users className="w-4 h-4 text-[var(--accent-green)]" />
-            <span className="text-[var(--text-secondary)]">Up to {facility.capacity}</span>
+            <span className="text-[var(--text-secondary)]">Up to {facility?.capacity || facility?.total_capacity || 0}</span>
           </div>
         </div>
 
         {/* Amenities */}
         <div className="flex flex-wrap gap-2 mb-6">
-          {(facility.amenities || []).slice(0, 3).map((amenity, index) => (
+          {(facility?.amenities || facility?.facility_amenities || []).slice(0, 3).map((amenity, index) => (
             <span
               key={index}
               className={`text-xs px-2.5 py-1 rounded-[var(--radius-sm)] font-medium transition-colors ${getAmenityStyle(amenity)}`}
@@ -353,15 +365,15 @@ const FacilityCard = ({ facility, onViewSchedule }) => {
               {amenity}
             </span>
           ))}
-          {(facility.amenities || []).length > 3 && (
+          {(facility?.amenities || facility?.facility_amenities || []).length > 3 && (
             <span className="text-xs px-2.5 py-1 bg-[var(--bg-tertiary)] rounded-[var(--radius-sm)] text-[var(--text-muted)] border border-[var(--border-subtle)]">
-              +{(facility.amenities || []).length - 3}
+              +{(facility?.amenities || facility?.facility_amenities || []).length - 3}
             </span>
           )}
         </div>
 
         {/* Action Button */}
-        <Link to={`/facilities/${facility._id || facility.id}`} className="block">
+        <Link to={`/facilities/${facility?._id || facility?.id}`} className="block">
           <Button
             variant="outline"
             className="w-full !rounded-[var(--radius-md)] group-hover:bg-[var(--accent-green)] group-hover:text-[var(--bg-primary)] group-hover:border-[var(--accent-green)] transition-all"
@@ -377,6 +389,8 @@ const FacilityCard = ({ facility, onViewSchedule }) => {
 
 // Main Facilities Page Component
 export const FacilitiesPage = () => {
+  const { token, isLoggedIn } = useAuth();
+  const [favoritesList, setFavoritesList] = useState([]);
   const [filters, setFilters] = useState({
     sportType: 'all',
     amenities: [],
@@ -396,8 +410,18 @@ export const FacilitiesPage = () => {
         const response = await fetch(`${API_BASE_URL || 'http://localhost:5000/api'}/reservations/facilities`);
         const data = await response.json();
         if (response.ok) {
-          setFacilitiesData(data);
-          setFilteredFacilities(data);
+          // Normalize MongoDB field names to what FacilityCard expects
+          const normalized = data.map(f => ({
+            ...f,
+            name: f.facility_name,
+            type: f.facility_type,
+            description: f.facility_description,
+            capacity: f.total_capacity,
+            hourly_rate: f.hourly_rate_php,
+            amenities: f.facility_amenities || [],
+          }));
+          setFacilitiesData(normalized);
+          setFilteredFacilities(normalized);
         }
       } catch (err) {
         console.error("Failed to fetch facilities:", err);
@@ -405,8 +429,25 @@ export const FacilitiesPage = () => {
         setIsLoading(false);
       }
     };
+
+    const fetchFavorites = async () => {
+      try {
+        const response = await fetch(`${API_BASE_URL || 'http://localhost:5000/api'}/profiles/me/favorites`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (response.ok) {
+          const data = await response.json();
+          // data should be populated facilities, map to their IDs
+          setFavoritesList(data.map(f => f._id || f));
+        }
+      } catch (err) {
+        console.error("Failed to fetch favorites", err);
+      }
+    };
+
     fetchFacilities();
-  }, []);
+    if (isLoggedIn && token) fetchFavorites();
+  }, [isLoggedIn, token]);
 
   const applyFilters = () => {
     let filtered = facilitiesData;
@@ -427,6 +468,24 @@ export const FacilitiesPage = () => {
     filtered = filtered.filter(f => (f.hourly_rate || f.price || 500) <= parseInt(filters.maxPrice));
 
     setFilteredFacilities(filtered);
+  };
+
+  const handleToggleFavorite = async (facilityId) => {
+    try {
+      const response = await fetch(`${API_BASE_URL || 'http://localhost:5000/api'}/profiles/me/favorites/${facilityId}`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (response.ok) {
+         if (favoritesList.includes(facilityId)) {
+            setFavoritesList(prev => prev.filter(id => id !== facilityId));
+         } else {
+            setFavoritesList(prev => [...prev, facilityId]);
+         }
+      }
+    } catch (error) {
+       console.error("Failed to toggle favorite", error);
+    }
   };
 
   const handleViewSchedule = (facility) => {
@@ -473,6 +532,9 @@ export const FacilitiesPage = () => {
                 key={facility._id || facility.id}
                 facility={facility}
                 onViewSchedule={handleViewSchedule}
+                isLoggedIn={isLoggedIn}
+                isFavorite={favoritesList.includes(facility._id || facility.id)}
+                onToggleFavorite={handleToggleFavorite}
               />
             ))}
           </div>

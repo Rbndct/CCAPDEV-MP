@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
-const Facility = require('../models/Facility');
+const SportFacility = require('../models/SportFacility');
+const FacilityOperatingSchedule = require('../models/FacilityOperatingSchedule');
 const Reservation = require('../models/Reservation');
 const User = require('../models/User');
 const { verifyToken, isAdminOrStaff } = require('../middleware/auth');
@@ -13,7 +14,7 @@ router.use(verifyToken, isAdminOrStaff);
 // GET /api/admin/facilities
 router.get('/facilities', async (req, res) => {
     try {
-        const facilities = await Facility.find().sort({ name: 1 });
+        const facilities = await SportFacility.find().sort({ facility_name: 1 });
         res.json(facilities);
     } catch (err) {
         res.status(500).json({ message: 'Error fetching facilities.', error: err.message });
@@ -23,9 +24,22 @@ router.get('/facilities', async (req, res) => {
 // POST /api/admin/facilities
 router.post('/facilities', async (req, res) => {
     try {
-        const { name, type, capacity, hourly_rate, status, description } = req.body;
-        const facility = await Facility.create({
-            name, type, capacity, hourly_rate, status: status?.toLowerCase(), description
+        const {
+            facility_name, facility_type, facility_description, facility_location,
+            facility_image_url, facility_images, facility_amenities,
+            facility_surface, facility_size,
+            total_capacity, total_bookable_slots, hourly_rate_php,
+            min_booking_hours, max_booking_hours, advance_booking_days,
+            facility_status
+        } = req.body;
+
+        const facility = await SportFacility.create({
+            facility_name, facility_type, facility_description, facility_location,
+            facility_image_url, facility_images, facility_amenities,
+            facility_surface, facility_size,
+            total_capacity, total_bookable_slots, hourly_rate_php,
+            min_booking_hours, max_booking_hours, advance_booking_days,
+            facility_status: facility_status?.toLowerCase() || 'available'
         });
         res.status(201).json(facility);
     } catch (err) {
@@ -36,10 +50,27 @@ router.post('/facilities', async (req, res) => {
 // PUT /api/admin/facilities/:id
 router.put('/facilities/:id', async (req, res) => {
     try {
-        const { name, type, capacity, hourly_rate, status, description } = req.body;
-        const updated = await Facility.findByIdAndUpdate(req.params.id, {
-            name, type, capacity, hourly_rate, status: status?.toLowerCase(), description
-        }, { new: true });
+        const {
+            facility_name, facility_type, facility_description, facility_location,
+            facility_image_url, facility_images, facility_amenities,
+            facility_surface, facility_size,
+            total_capacity, total_bookable_slots, hourly_rate_php,
+            min_booking_hours, max_booking_hours, advance_booking_days,
+            facility_status
+        } = req.body;
+
+        const updatePayload = {
+            facility_name, facility_type, facility_description, facility_location,
+            facility_image_url, facility_images, facility_amenities,
+            facility_surface, facility_size,
+            total_capacity, total_bookable_slots, hourly_rate_php,
+            min_booking_hours, max_booking_hours, advance_booking_days,
+        };
+        if (facility_status) updatePayload.facility_status = facility_status.toLowerCase();
+
+        const updated = await SportFacility.findByIdAndUpdate(
+            req.params.id, updatePayload, { new: true, runValidators: true }
+        );
         if (!updated) return res.status(404).json({ message: 'Facility not found.' });
         res.json(updated);
     } catch (err) {
@@ -50,11 +81,42 @@ router.put('/facilities/:id', async (req, res) => {
 // DELETE /api/admin/facilities/:id
 router.delete('/facilities/:id', async (req, res) => {
     try {
-        const deleted = await Facility.findByIdAndDelete(req.params.id);
+        const deleted = await SportFacility.findByIdAndDelete(req.params.id);
         if (!deleted) return res.status(404).json({ message: 'Facility not found.' });
+        // Also clean up associated schedules
+        await FacilityOperatingSchedule.deleteMany({ facility_id: req.params.id });
         res.json({ message: 'Facility deleted successfully.' });
     } catch (err) {
         res.status(500).json({ message: 'Error deleting facility.', error: err.message });
+    }
+});
+
+// ─── Operating Schedules ─────────────────────────────────────────────────────
+
+// GET /api/admin/facilities/:id/schedule
+router.get('/facilities/:id/schedule', async (req, res) => {
+    try {
+        const schedule = await FacilityOperatingSchedule.find({ facility_id: req.params.id })
+            .sort({ day_of_week: 1 });
+        res.json(schedule);
+    } catch (err) {
+        res.status(500).json({ message: 'Error fetching schedule.', error: err.message });
+    }
+});
+
+// PUT /api/admin/facilities/:id/schedule/:day
+router.put('/facilities/:id/schedule/:day', async (req, res) => {
+    try {
+        const { open_time, close_time, is_closed, is_maintenance, maintenance_note } = req.body;
+        const updated = await FacilityOperatingSchedule.findOneAndUpdate(
+            { facility_id: req.params.id, day_of_week: req.params.day },
+            { open_time, close_time, is_closed, is_maintenance, maintenance_note },
+            { new: true, runValidators: true }
+        );
+        if (!updated) return res.status(404).json({ message: 'Schedule entry not found.' });
+        res.json(updated);
+    } catch (err) {
+        res.status(500).json({ message: 'Error updating schedule.', error: err.message });
     }
 });
 
@@ -64,7 +126,7 @@ router.delete('/facilities/:id', async (req, res) => {
 router.get('/reservations', async (req, res) => {
     try {
         const reservations = await Reservation.find()
-            .populate('facility', 'name type')
+            .populate('facility', 'facility_name facility_type')
             .populate('user', 'full_name email')
             .populate('reserved_by', 'full_name email')
             .sort({ date: 1, start_time: 1 });

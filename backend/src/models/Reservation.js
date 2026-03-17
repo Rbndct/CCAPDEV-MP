@@ -12,7 +12,7 @@ const reservationSchema = new mongoose.Schema({
     },
     facility: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'Facility',
+        ref: 'SportFacility',
         required: true
     },
     seat_number: {
@@ -37,8 +37,13 @@ const reservationSchema = new mongoose.Schema({
     },
     status: {
         type: String,
-        enum: ['reserved', 'blocked', 'cancelled', 'no-show'],
+        enum: ['reserved', 'blocked', 'cancelled', 'no-show', 'completed'],
         default: 'reserved'
+    },
+    payment_status: {
+        type: String,
+        enum: ['pending', 'paid'],
+        default: 'pending'
     },
     reserved_by: {
         type: mongoose.Schema.Types.ObjectId,
@@ -49,7 +54,8 @@ const reservationSchema = new mongoose.Schema({
         default: Date.now
     }
 }, {
-    timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' }
+    timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' },
+    collection: 'reservations'
 });
 
 // Compound index to prevent double booking of the same slot at the same time

@@ -9,6 +9,7 @@ const authRoutes = require('./routes/auth');
 const adminRoutes = require('./routes/admin');
 const reservationRoutes = require('./routes/reservations');
 const profileRoutes = require('./routes/profiles');
+const paymentRoutes = require('./routes/payments');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -34,6 +35,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/reservations', reservationRoutes);
 app.use('/api/profiles', profileRoutes);
+app.use('/api/payments', paymentRoutes);
 
 // Shared/Utility Routes
 app.get('/api/health', (req, res) => {
