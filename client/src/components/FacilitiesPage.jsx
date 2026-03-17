@@ -121,8 +121,10 @@ const SportSelect = ({ value, onChange }) => {
     { id: 'Basketball', label: 'Basketball', icon: Dribbble },
     { id: 'Tennis', label: 'Tennis', icon: Trophy },
     { id: 'Badminton', label: 'Badminton', icon: Wind },
-    { id: 'Volleyball', label: 'Volleyball', icon: Activity }, // No direct volleyball icon in basic set, fallback
+    { id: 'Volleyball', label: 'Volleyball', icon: Activity },
     { id: 'Pickleball', label: 'Pickleball', icon: Activity },
+    { id: 'Futsal', label: 'Futsal', icon: Activity },
+    { id: 'Table Tennis', label: 'Table Tennis', icon: Activity },
     { id: 'Multi-Purpose', label: 'Multi-Purpose', icon: Activity },
   ];
 
@@ -233,9 +235,11 @@ const FilterSection = ({ filters, setFilters, onApplyFilters, amenities }) => {
             value={filters.maxPrice}
             onChange={(e) => setFilters({ ...filters, maxPrice: e.target.value })}
           >
-            <option value="999">Any Price</option>
+            <option value="9999">Any Price</option>
+            <option value="300">Up to ₱300</option>
             <option value="500">Up to ₱500</option>
             <option value="600">Up to ₱600</option>
+            <option value="700">Up to ₱700</option>
           </select>
         </div>
       </div>
@@ -295,6 +299,8 @@ const FacilityCard = ({ facility, onViewSchedule, isFavorite, onToggleFavorite, 
       case 'Badminton': return 'https://api.iconify.design/mdi/badminton.svg?color=%2300ff88';
       case 'Volleyball': return 'https://api.iconify.design/mdi/volleyball.svg?color=%2300ff88';
       case 'Pickleball': return 'https://api.iconify.design/mdi/tennis.svg?color=%2300ff88';
+      case 'Futsal': return 'https://api.iconify.design/mdi/soccer.svg?color=%2300ff88';
+      case 'Table Tennis': return 'https://api.iconify.design/mdi/table-tennis.svg?color=%2300ff88';
       case 'Multi-Purpose': return 'https://api.iconify.design/mdi/soccer.svg?color=%2300ff88';
       default: return 'https://api.iconify.design/mdi/calendar.svg?color=%2300ff88';
     }
@@ -396,7 +402,7 @@ export const FacilitiesPage = () => {
     amenities: [],
     date: '',
     time: '',
-    maxPrice: '999'
+    maxPrice: '9999'
   });
 
   const [facilitiesData, setFacilitiesData] = useState([]);

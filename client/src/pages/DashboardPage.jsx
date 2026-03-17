@@ -59,14 +59,27 @@ export const DashboardPage = () => {
 
       if (resResponse.ok) {
         const reservationsArray = Array.isArray(resData) ? resData : resData.data || [];
-        const formatted = reservationsArray.map(r => ({
-          id: r._id,
-          court: r.facility?.facility_name || r.facility?.name || 'Unknown Facility',
-          date: r.date,
-          time: `${r.start_time} - ${r.end_time}`,
-          status: r.status === 'reserved' ? 'confirmed' : r.status,
-          price: r.total_price || 0
-        }));
+        const formatted = reservationsArray.map(r => {
+          let duration = 1;
+          let hourlyRate = 0;
+          if (r.start_time && r.end_time) {
+            const [startH, startM = 0] = r.start_time.split(':').map(Number);
+            const [endH, endM = 0] = r.end_time.split(':').map(Number);
+            if (!isNaN(startH) && !isNaN(endH)) duration = (endH + endM / 60) - (startH + startM / 60);
+          }
+          if (r.facility && r.facility.hourly_rate_php) {
+            hourlyRate = r.facility.hourly_rate_php;
+          }
+
+          return {
+            id: r._id,
+            court: r.facility?.facility_name || r.facility?.name || 'Unknown Facility',
+            date: r.date,
+            time: `${r.start_time} - ${r.end_time}`,
+            status: r.status === 'reserved' ? 'confirmed' : r.status,
+            price: r.total_price || (duration * hourlyRate)
+          };
+        });
 
         setUpcomingBookings(formatted.filter(b => ['pending', 'confirmed'].includes(b.status)));
         setBookingHistory(formatted.filter(b => ['completed', 'cancelled'].includes(b.status)).slice(0, 3)); // Only show top 3 history
@@ -117,18 +130,16 @@ export const DashboardPage = () => {
   const handleCancelBooking = async (bookingId) => {
     if (window.confirm('Are you sure you want to cancel this reservation?')) {
       try {
-        const response = await fetch(`${API_BASE_URL || 'http://localhost:5000/api'}/reservations/${bookingId}`, {
-          method: 'DELETE',
+        const response = await fetch(`${API_BASE_URL || 'http://localhost:5000/api'}/reservations/${bookingId}/cancel`, {
+          method: 'PATCH',
           headers: { 'Authorization': `Bearer ${token}` }
         });
         if (response.ok) {
-          setUpcomingBookings(prev =>
-            prev.map(b => b.id === bookingId ? { ...b, status: 'cancelled' } : b)
-              .filter(b => b.status !== 'cancelled') // Remove it from upcoming entirely
-          );
+          // Re-fetch so the booking moves to the cancelled tab with correct status
+          fetchDashboardData();
         }
       } catch (error) {
-        console.log("Error cancelling booking");
+        console.log('Error cancelling booking');
       }
     }
   };

@@ -200,7 +200,28 @@ router.get('/my', verifyToken, async (req, res) => {
     }
 });
 
-// DELETE /api/reservations/:id  — cancel own reservation
+// PATCH /api/reservations/:id/cancel  — cancel own reservation (marks as cancelled, does not delete)
+router.patch('/:id/cancel', verifyToken, async (req, res) => {
+    try {
+        const reservation = await Reservation.findOne({ _id: req.params.id, user: req.userId });
+        if (!reservation) {
+            return res.status(404).json({ message: 'Reservation not found or you do not own it.' });
+        }
+
+        if (reservation.status === 'cancelled') {
+            return res.status(400).json({ message: 'Reservation is already cancelled.' });
+        }
+
+        reservation.status = 'cancelled';
+        await reservation.save();
+
+        res.json({ message: 'Reservation cancelled successfully.', reservation });
+    } catch (err) {
+        res.status(500).json({ message: 'Cancellation failed.', error: err.message });
+    }
+});
+
+// DELETE /api/reservations/:id  — hard delete own reservation (kept for admin/legacy use)
 router.delete('/:id', verifyToken, async (req, res) => {
     try {
         const reservation = await Reservation.findOne({ _id: req.params.id, user: req.userId });
@@ -209,9 +230,9 @@ router.delete('/:id', verifyToken, async (req, res) => {
         }
 
         await reservation.deleteOne();
-        res.json({ message: 'Reservation cancelled successfully.' });
+        res.json({ message: 'Reservation deleted successfully.' });
     } catch (err) {
-        res.status(500).json({ message: 'Cancellation failed.', error: err.message });
+        res.status(500).json({ message: 'Deletion failed.', error: err.message });
     }
 });
 

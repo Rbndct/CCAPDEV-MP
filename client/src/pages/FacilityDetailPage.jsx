@@ -79,6 +79,9 @@ export const FacilityDetailPage = () => {
                   : found.facility_type === 'Volleyball' ? '🏐'
                   : found.facility_type === 'Swimming' ? '🏊'
                   : found.facility_type === 'Gym' ? '🏋️'
+                  : found.facility_type === 'Pickleball' ? '🏓'
+                  : found.facility_type === 'Futsal' ? '⚽'
+                  : found.facility_type === 'Table Tennis' ? '🏓'
                   : '🏟️',
             };
             setFacility(normalized);

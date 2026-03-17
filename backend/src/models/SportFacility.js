@@ -10,7 +10,7 @@ const sportFacilitySchema = new mongoose.Schema({
     facility_type: {
         type: String,
         required: true,
-        enum: ['Basketball', 'Tennis', 'Badminton', 'Volleyball', 'Swimming', 'Gym', 'Other']
+        enum: ['Basketball', 'Tennis', 'Badminton', 'Volleyball', 'Swimming', 'Gym', 'Pickleball', 'Futsal', 'Table Tennis', 'Other']
     },
     facility_description: {
         type: String,

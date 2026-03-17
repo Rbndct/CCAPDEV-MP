@@ -36,14 +36,27 @@ export const BookingsPage = () => {
       if (response.ok) {
         // Map the backend data to match the expected format in the table
         const bookingsArray = Array.isArray(data) ? data : data.data || [];
-        const formatted = bookingsArray.map(r => ({
-          id: r._id,
-          court: r.facility?.facility_name || r.facility?.name || 'Unknown Facility',
-          date: r.date,
-          time: `${r.start_time} - ${r.end_time}`,
-          status: r.status === 'reserved' ? 'confirmed' : r.status, // Map 'reserved' to 'confirmed' for student view
-          price: r.total_price || 500
-        }));
+        const formatted = bookingsArray.map(r => {
+          let duration = 1;
+          let hourlyRate = 0;
+          if (r.start_time && r.end_time) {
+            const [startH, startM = 0] = r.start_time.split(':').map(Number);
+            const [endH, endM = 0] = r.end_time.split(':').map(Number);
+            if (!isNaN(startH) && !isNaN(endH)) duration = (endH + endM / 60) - (startH + startM / 60);
+          }
+          if (r.facility && r.facility.hourly_rate_php) {
+            hourlyRate = r.facility.hourly_rate_php;
+          }
+
+          return {
+            id: r._id,
+            court: r.facility?.facility_name || r.facility?.name || 'Unknown Facility',
+            date: r.date,
+            time: `${r.start_time} - ${r.end_time}`,
+            status: r.status === 'reserved' ? 'confirmed' : r.status, // Map 'reserved' to 'confirmed' for student view
+            price: r.total_price || (duration * hourlyRate)
+          };
+        });
         setAllBookings(formatted);
       }
     } catch (error) {
@@ -83,15 +96,15 @@ export const BookingsPage = () => {
     setIsCancelling(true);
 
     try {
-      const response = await fetch(`${API_BASE_URL || 'http://localhost:5000/api'}/reservations/${bookingToCancel.id}`, {
-        method: 'DELETE',
+      const response = await fetch(`${API_BASE_URL || 'http://localhost:5000/api'}/reservations/${bookingToCancel.id}/cancel`, {
+        method: 'PATCH',
         headers: {
           'Authorization': `Bearer ${token}`
         }
       });
 
       if (response.ok) {
-        // Refresh bookings after cancellation
+        // Re-fetch so the booking appears under the cancelled tab
         fetchBookings();
       } else {
         console.error('Failed to cancel booking');
