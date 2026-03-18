@@ -546,32 +546,7 @@ export const FacilityDetailPage = () => {
             {/* Booking Sidebar */}
             <div className="lg:col-span-1">
               <div className="sticky top-24">
-                <Card variant="glass" className="p-6">
-                  <div className="mb-6">
-                    <div className="text-3xl font-bold text-[var(--accent-green)] mb-1">
-                      ₱{facility.price}
-                    </div>
-                    <div className="text-sm text-[var(--text-muted)]">per hour</div>
-                  </div>
-
-                  <Button
-                    variant="primary"
-                    className="w-full !rounded-[var(--radius-md)] mb-4"
-                    onClick={() => document.getElementById('availability-calendar')?.scrollIntoView({ behavior: 'smooth' })}
-                  >
-                    Book Now
-                  </Button>
-
-                  <p className="text-xs text-center text-[var(--text-muted)] mb-4">
-                    Select your time slots in the calendar below
-                  </p>
-
-                  <p className="text-xs text-center text-[var(--text-muted)]">
-                    Free cancellation up to 24 hours before
-                  </p>
-
-
-                </Card>
+                
               </div>
             </div>
           </div>
