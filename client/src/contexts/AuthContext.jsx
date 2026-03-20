@@ -10,6 +10,27 @@ export function AuthProvider({ children }) {
   const [token, setToken] = useState(localStorage.getItem('token'));
   const [isLoading, setIsLoading] = useState(true);
 
+  const refreshUser = async () => {
+    if (!token) return;
+    try {
+      const response = await fetch(`${API_BASE_URL}/profiles/me`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (response.ok) {
+        const userData = await response.json();
+        setUser(userData);
+        setIsLoggedIn(true);
+      } else {
+        logout();
+      }
+    } catch (error) {
+      console.error('Failed to refresh user:', error);
+    }
+  };
+
   useEffect(() => {
     const validateSession = async () => {
       if (!token) {
@@ -111,7 +132,8 @@ export function AuthProvider({ children }) {
       login,
       logout,
       register,
-      quickGuestLogin
+      quickGuestLogin,
+      refreshUser
     }}>
       {!isLoading && children}
     </AuthContext.Provider>

@@ -19,6 +19,60 @@ function timesOverlap(startA, endA, startB, endB) {
     return startA < endB && startB < endA;
 }
 
+function parseTimeToMinutes(timeStr) {
+    const [hRaw, mRaw] = String(timeStr).split(':');
+    const h = Number(hRaw);
+    const m = Number(mRaw);
+    if (Number.isNaN(h) || Number.isNaN(m)) return null;
+    return h * 60 + m;
+}
+
+function reservationStartDateTime(reservation) {
+    const d = normalizeDate(reservation.date);
+    const startMinutes = parseTimeToMinutes(reservation.start_time);
+    if (startMinutes === null) return null;
+    const h = Math.floor(startMinutes / 60);
+    const m = startMinutes % 60;
+    d.setHours(h, m, 0, 0);
+    return d;
+}
+
+function withinLastHours(startDateTime, hours) {
+    if (!startDateTime) return false;
+    const now = new Date();
+    const diffMs = startDateTime.getTime() - now.getTime();
+    return diffMs <= hours * 60 * 60 * 1000;
+}
+
+async function computeCancellationFee(reservation) {
+    // Industry-standard-ish last-minute fee example: 20% of the booking total.
+    const cancellationFeePercent = 20;
+
+    const facility = await SportFacility.findById(reservation.facility).select('hourly_rate_php');
+    const hourlyRate = Number(facility?.hourly_rate_php || 0);
+
+    const startMinutes = parseTimeToMinutes(reservation.start_time);
+    const endMinutes = parseTimeToMinutes(reservation.end_time);
+    if (hourlyRate <= 0 || startMinutes === null || endMinutes === null || endMinutes <= startMinutes) {
+        return {
+            fee_percent: cancellationFeePercent,
+            fee_amount: null,
+            currency: 'PHP'
+        };
+    }
+
+    const durationHours = (endMinutes - startMinutes) / 60;
+    const total = hourlyRate * durationHours;
+    // Use ceil so the fee isn't accidentally undercharged due to rounding.
+    const feeAmount = Math.ceil(total * (cancellationFeePercent / 100));
+
+    return {
+        fee_percent: cancellationFeePercent,
+        fee_amount: feeAmount,
+        currency: 'PHP'
+    };
+}
+
 // ─── Public ──────────────────────────────────────────────────────────────────
 
 // GET /api/reservations/facilities  — list all facilities (public)
@@ -239,6 +293,17 @@ router.patch('/:id', verifyToken, async (req, res) => {
             return res.status(400).json({ message: 'This reservation can no longer be modified.' });
         }
 
+        const startDateTime = reservationStartDateTime(reservation);
+        if (withinLastHours(startDateTime, 24)) {
+            const fee = await computeCancellationFee(reservation);
+            return res.status(403).json({
+                message: `Modifications are not allowed within 24 hours of the scheduled start time. ${
+                    fee.fee_amount !== null ? `An estimated last-minute cancellation fee of ${fee.fee_percent}% (~₱${fee.fee_amount}) would apply.` : `A last-minute cancellation fee of ${fee.fee_percent}% would apply.`
+                }`,
+                policy: { within_hours: 24, cancellation_fee_percent: fee.fee_percent, cancellation_fee_amount: fee.fee_amount, currency: fee.currency }
+            });
+        }
+
         const updatedDate = normalizeDate(date);
         if (Number.isNaN(updatedDate.getTime())) {
             return res.status(400).json({ message: 'Invalid reservation date.' });
@@ -282,6 +347,17 @@ router.patch('/:id/cancel', verifyToken, async (req, res) => {
 
         if (reservation.status === 'cancelled') {
             return res.status(400).json({ message: 'Reservation is already cancelled.' });
+        }
+
+        const startDateTime = reservationStartDateTime(reservation);
+        if (withinLastHours(startDateTime, 24)) {
+            const fee = await computeCancellationFee(reservation);
+            return res.status(403).json({
+                message: `Cancellations are not allowed within 24 hours of the scheduled start time. ${
+                    fee.fee_amount !== null ? `An estimated last-minute cancellation fee of ${fee.fee_percent}% (~₱${fee.fee_amount}) applies to this policy.` : `A last-minute cancellation fee of ${fee.fee_percent}% applies to this policy.`
+                }`,
+                policy: { within_hours: 24, cancellation_fee_percent: fee.fee_percent, cancellation_fee_amount: fee.fee_amount, currency: fee.currency }
+            });
         }
 
         reservation.status = 'cancelled';

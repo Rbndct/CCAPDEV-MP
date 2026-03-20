@@ -48,6 +48,36 @@ export const DashboardPage = () => {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [playerSearch, setPlayerSearch] = useState('');
   const [isLoading, setIsLoading] = useState(true);
+  const [restrictionMessage, setRestrictionMessage] = useState('');
+
+  const getBookingStartDateTime = (booking) => {
+    // booking.time is like "HH:mm - HH:mm"
+    const timeStr = booking?.time || '';
+    const [startStr] = timeStr.split(' - ');
+    if (!startStr) return null;
+    const [hRaw, mRaw] = startStr.split(':');
+    const h = Number(hRaw);
+    const m = Number(mRaw || 0);
+    if (Number.isNaN(h) || Number.isNaN(m)) return null;
+    const d = new Date(booking.date);
+    d.setHours(h, m, 0, 0);
+    return d;
+  };
+
+  const isLockedWithin24Hours = (booking) => {
+    const startDateTime = getBookingStartDateTime(booking);
+    if (!startDateTime) return false;
+    const diffMs = startDateTime.getTime() - Date.now();
+    return diffMs <= 24 * 60 * 60 * 1000;
+  };
+
+  const buildFeeMessage = (booking) => {
+    const feePercent = 20;
+    const price = Number(booking?.price || 0);
+    const feeAmount = price > 0 ? Math.ceil(price * (feePercent / 100)) : null;
+    if (feeAmount !== null) return `A 20% last-minute cancellation fee (~₱${feeAmount}) applies.`;
+    return `A 20% last-minute cancellation fee applies.`;
+  };
 
   const fetchDashboardData = async () => {
     try {
@@ -116,7 +146,16 @@ export const DashboardPage = () => {
     ? allPlayers.filter(p => p.name.toLowerCase().includes(playerSearch.toLowerCase()) || p.sport.toLowerCase().includes(playerSearch.toLowerCase()))
     : [];
 
+  const suggestedPlayers = !playerSearch.trim()
+    ? allPlayers.slice(0, 6)
+    : [];
+
   const handleEditClick = (booking) => {
+    setRestrictionMessage('');
+    if (isLockedWithin24Hours(booking)) {
+      setRestrictionMessage(`You can't modify this booking within 24 hours of the scheduled start time. ${buildFeeMessage(booking)}`);
+      return;
+    }
     setEditingBooking(booking);
     setIsEditModalOpen(true);
   };
@@ -143,9 +182,16 @@ export const DashboardPage = () => {
     await fetchDashboardData();
   };
 
-  const handleCancelBooking = async (bookingId) => {
+  const handleCancelBooking = async (booking) => {
+    setRestrictionMessage('');
+    if (isLockedWithin24Hours(booking)) {
+      setRestrictionMessage(`You can't cancel this booking within 24 hours of the scheduled start time. ${buildFeeMessage(booking)}`);
+      return;
+    }
+
     if (window.confirm('Are you sure you want to cancel this reservation?')) {
       try {
+        const bookingId = booking.id;
         const response = await fetch(`${API_BASE_URL || 'http://localhost:5000/api'}/reservations/${bookingId}/cancel`, {
           method: 'PATCH',
           headers: { 'Authorization': `Bearer ${token}` }
@@ -153,7 +199,10 @@ export const DashboardPage = () => {
         if (response.ok) {
           // Re-fetch so the booking moves to the cancelled tab with correct status
           fetchDashboardData();
+          return;
         }
+        const data = await response.json().catch(() => ({}));
+        if (data?.message) setRestrictionMessage(data.message);
       } catch (error) {
         console.log('Error cancelling booking');
       }
@@ -191,6 +240,12 @@ export const DashboardPage = () => {
                     View All
                   </Link>
                 </div>
+
+                {restrictionMessage && (
+                  <div className="mb-4 p-3 rounded-lg bg-red-500/10 border border-red-500 text-red-500 text-sm">
+                    {restrictionMessage}
+                  </div>
+                )}
 
                 <div className="space-y-4">
                   {upcomingBookings.length === 0 && !isLoading && (
@@ -242,7 +297,7 @@ export const DashboardPage = () => {
                                 Edit
                               </button>
                               <button
-                                onClick={() => handleCancelBooking(booking.id)}
+                                onClick={() => handleCancelBooking(booking)}
                                 className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-lg bg-[var(--bg-tertiary)] border border-[var(--border-subtle)] hover:border-red-500 hover:text-red-500 transition-all"
                                 title="Cancel reservation"
                               >
@@ -313,9 +368,9 @@ export const DashboardPage = () => {
                   />
                 </div>
 
-                {playerSearch.trim() && (
+                {(playerSearch.trim() ? filteredPlayers : suggestedPlayers).length > 0 ? (
                   <div className="space-y-2 max-h-64 overflow-y-auto">
-                    {filteredPlayers.length > 0 ? (
+                    {playerSearch.trim() ? (
                       filteredPlayers.map((player) => (
                         <Link key={player.id} to={`/dashboard/user/${player.id}`}>
                           <div className="flex items-center gap-3 p-3 rounded-lg bg-[var(--bg-secondary)] border border-[var(--border-subtle)] hover:border-[var(--accent-green)] transition-all cursor-pointer">
@@ -330,14 +385,27 @@ export const DashboardPage = () => {
                         </Link>
                       ))
                     ) : (
-                      <p className="text-sm text-[var(--text-muted)] text-center py-4">No players found</p>
+                      <>
+                        <p className="text-xs text-[var(--text-muted)] px-1">Suggested players</p>
+                        {suggestedPlayers.map((player) => (
+                          <Link key={player.id} to={`/dashboard/user/${player.id}`}>
+                            <div className="flex items-center gap-3 p-3 rounded-lg bg-[var(--bg-secondary)] border border-[var(--border-subtle)] hover:border-[var(--accent-green)] transition-all cursor-pointer">
+                              <div className="w-9 h-9 rounded-full bg-[var(--bg-tertiary)] flex items-center justify-center flex-shrink-0">
+                                <span className="text-sm font-bold text-[var(--accent-green)]">{player.avatar}</span>
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="font-medium text-sm truncate">{player.name}</p>
+                                <p className="text-xs text-[var(--text-muted)]">{player.sport}</p>
+                              </div>
+                            </div>
+                          </Link>
+                        ))}
+                      </>
                     )}
                   </div>
-                )}
-
-                {!playerSearch.trim() && (
-                  <p className="text-xs text-[var(--text-muted)] text-center">
-                    Search for players by name or sport
+                ) : (
+                  <p className="text-xs text-[var(--text-muted)] text-center py-2">
+                    {playerSearch.trim() ? 'No players found' : 'Search for players by name or sport'}
                   </p>
                 )}
               </Card>

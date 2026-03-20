@@ -122,15 +122,20 @@ export const BookingSuccessModal = ({ isOpen, onClose, booking }) => {
           </Card>
 
           {/* Action Buttons */}
-          <div className="grid grid-cols-2 gap-3 mb-4">
-            <Link to="/dashboard" className="block">
-              <Button variant="primary" className="w-full !rounded-[var(--radius-md)]">
+          <div className="grid grid-cols-2 gap-3 mb-4 items-stretch">
+            <Link to="/dashboard" className="block h-full">
+              <Button
+                variant="primary"
+                size="sm"
+                className="w-full h-full !rounded-[var(--radius-md)] whitespace-nowrap"
+              >
                 View My Bookings
               </Button>
             </Link>
             <Button 
               variant="outline" 
-              className="w-full !rounded-[var(--radius-md)]"
+              size="sm"
+              className="w-full h-full !rounded-[var(--radius-md)] whitespace-nowrap"
               onClick={handleDownloadReceipt}
               icon={<Download className="w-4 h-4" />}
             >

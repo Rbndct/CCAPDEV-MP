@@ -29,6 +29,36 @@ export const BookingsPage = () => {
   const [allBookings, setAllBookings] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isCancelling, setIsCancelling] = useState(false);
+  const [restrictionMessage, setRestrictionMessage] = useState('');
+
+  const getBookingStartDateTime = (booking) => {
+    // booking.time is like "HH:mm - HH:mm"
+    const timeStr = booking?.time || '';
+    const [startStr] = timeStr.split(' - ');
+    if (!startStr) return null;
+    const [hRaw, mRaw] = startStr.split(':');
+    const h = Number(hRaw);
+    const m = Number(mRaw || 0);
+    if (Number.isNaN(h) || Number.isNaN(m)) return null;
+    const d = new Date(booking.date);
+    d.setHours(h, m, 0, 0);
+    return d;
+  };
+
+  const isLockedWithin24Hours = (booking) => {
+    const startDateTime = getBookingStartDateTime(booking);
+    if (!startDateTime) return false;
+    const diffMs = startDateTime.getTime() - Date.now();
+    return diffMs <= 24 * 60 * 60 * 1000;
+  };
+
+  const buildFeeMessage = (booking) => {
+    const feePercent = 20;
+    const price = Number(booking?.price || 0);
+    const feeAmount = price > 0 ? Math.ceil(price * (feePercent / 100)) : null;
+    if (feeAmount !== null) return `A 20% last-minute cancellation fee (~₱${feeAmount}) applies.`;
+    return `A 20% last-minute cancellation fee applies.`;
+  };
 
   const fetchBookings = async () => {
     try {
@@ -91,11 +121,21 @@ export const BookingsPage = () => {
   };
 
   const handleCancelClick = (booking) => {
+    setRestrictionMessage('');
+    if (isLockedWithin24Hours(booking)) {
+      setRestrictionMessage(`You can't cancel this booking within 24 hours of the scheduled start time. ${buildFeeMessage(booking)}`);
+      return;
+    }
     setBookingToCancel(booking);
     setIsCancelModalOpen(true);
   };
 
   const handleEditClick = (booking) => {
+    setRestrictionMessage('');
+    if (isLockedWithin24Hours(booking)) {
+      setRestrictionMessage(`You can't modify this booking within 24 hours of the scheduled start time. ${buildFeeMessage(booking)}`);
+      return;
+    }
     setBookingToEdit(booking);
     setIsEditModalOpen(true);
   };
@@ -126,6 +166,7 @@ export const BookingsPage = () => {
   const confirmCancel = async () => {
     if (!bookingToCancel) return;
     setIsCancelling(true);
+    setRestrictionMessage('');
 
     try {
       const response = await fetch(`${API_BASE_URL || 'http://localhost:5000/api'}/reservations/${bookingToCancel.id}/cancel`, {
@@ -138,9 +179,11 @@ export const BookingsPage = () => {
       if (response.ok) {
         // Re-fetch so the booking appears under the cancelled tab
         fetchBookings();
-      } else {
-        console.error('Failed to cancel booking');
+        return;
       }
+
+      const data = await response.json().catch(() => ({}));
+      if (data?.message) setRestrictionMessage(data.message);
     } catch (error) {
       console.error('Error cancelling booking:', error);
     } finally {
@@ -174,6 +217,11 @@ export const BookingsPage = () => {
         <p className="text-[var(--text-secondary)]">
           Manage your bookings and view your history
         </p>
+        {restrictionMessage && (
+          <div className="mt-4 p-3 rounded-lg bg-red-500/10 border border-red-500 text-red-500 text-sm">
+            {restrictionMessage}
+          </div>
+        )}
       </div>
 
       {/* Tabs */}
