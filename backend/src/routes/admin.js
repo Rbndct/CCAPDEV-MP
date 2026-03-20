@@ -304,14 +304,17 @@ router.post('/facilities/reviews/seed-all', async (req, res) => {
         const facilities = await SportFacility.find().select('_id').limit(safeLimitFacilities);
         const facilityIds = facilities.map(f => f._id);
 
-        // Use the same pool of users for all facilities.
-        const users = await User.find().select('_id').limit(safeCountPerFacility);
-        const reviewerIds = users.map(u => u._id);
-
         const seededByFacility = [];
         for (let facilityIndex = 0; facilityIndex < facilityIds.length; facilityIndex++) {
             const facilityId = facilityIds[facilityIndex];
             const seeded = [];
+
+            // Pick users who haven't reviewed this specific facility yet.
+            const existingReviewerIds = await FacilityReview.distinct('reviewer_user_id', { facility_id: facilityId });
+            const users = await User.find({ _id: { $nin: existingReviewerIds } })
+                .select('_id')
+                .limit(safeCountPerFacility);
+            const reviewerIds = users.map(u => u._id);
 
             for (let i = 0; i < reviewerIds.length; i++) {
                 const reviewer_user_id = reviewerIds[i];
