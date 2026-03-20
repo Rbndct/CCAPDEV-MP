@@ -34,6 +34,14 @@ const userSchema = new mongoose.Schema({
     type: String,
     default: ''
   },
+  language: {
+    type: String,
+    default: 'English (US)'
+  },
+  timezone: {
+    type: String,
+    default: 'Asia/Manila (GMT+8)'
+  },
   is_verified: {
     type: Boolean,
     default: false
