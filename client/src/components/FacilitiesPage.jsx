@@ -269,7 +269,7 @@ const FilterSection = ({ filters, setFilters, onApplyFilters, amenities }) => {
 // Facility Card Component
 const FacilityCard = ({ facility, onViewSchedule, isFavorite, onToggleFavorite, isLoggedIn }) => {
   if (!facility) return null; // Safeguard if facility is undefined
-  
+
   const availabilityConfig = {
     high: {
       text: 'High Availability',
@@ -321,14 +321,13 @@ const FacilityCard = ({ facility, onViewSchedule, isFavorite, onToggleFavorite, 
           {status.text}
         </Badge>
         {isLoggedIn && (
-           <button 
-             onClick={(e) => { e.preventDefault(); e.stopPropagation(); onToggleFavorite(facility?._id || facility?.id); }}
-             className={`absolute top-4 left-4 p-2 rounded-full backdrop-blur-md transition-all shadow-lg ${
-               isFavorite ? 'bg-[var(--accent-green)] text-black' : 'bg-black/50 text-white hover:bg-black/70 hover:text-[var(--accent-green)]'
-             }`}
-           >
-             <Heart className={`w-5 h-5 ${isFavorite ? 'fill-current' : ''}`} />
-           </button>
+          <button
+            onClick={(e) => { e.preventDefault(); e.stopPropagation(); onToggleFavorite(facility?._id || facility?.id); }}
+            className={`absolute top-4 left-4 p-2 rounded-full backdrop-blur-md transition-all shadow-lg ${isFavorite ? 'bg-[var(--accent-green)] text-black' : 'bg-black/50 text-white hover:bg-black/70 hover:text-[var(--accent-green)]'
+              }`}
+          >
+            <Heart className={`w-5 h-5 ${isFavorite ? 'fill-current' : ''}`} />
+          </button>
         )}
       </div>
 
@@ -483,14 +482,14 @@ export const FacilitiesPage = () => {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (response.ok) {
-         if (favoritesList.includes(facilityId)) {
-            setFavoritesList(prev => prev.filter(id => id !== facilityId));
-         } else {
-            setFavoritesList(prev => [...prev, facilityId]);
-         }
+        if (favoritesList.includes(facilityId)) {
+          setFavoritesList(prev => prev.filter(id => id !== facilityId));
+        } else {
+          setFavoritesList(prev => [...prev, facilityId]);
+        }
       }
     } catch (error) {
-       console.error("Failed to toggle favorite", error);
+      console.error("Failed to toggle favorite", error);
     }
   };
 

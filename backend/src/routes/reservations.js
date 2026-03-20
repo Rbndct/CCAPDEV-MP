@@ -205,7 +205,7 @@ router.post('/', verifyToken, async (req, res) => {
 
         res.status(201).json(reservation);
     } catch (err) {
-        res.status(500).json({ message: 'Reservation failed.', error: err.message });
+        res.status(500).json({ message: `Reservation failed: ${err.message}`, error: err.message });
     }
 });
 
