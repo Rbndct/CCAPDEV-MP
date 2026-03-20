@@ -4,7 +4,7 @@ import { useAuth, API_BASE_URL } from '../contexts/AuthContext';
 import { Card, Button, Badge } from '../components/ui';
 
 export const ProfilePage = () => {
-  const { user, token } = useAuth();
+  const { user, token, refreshUser } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [saveStatus, setSaveStatus] = useState(null);
@@ -97,8 +97,18 @@ export const ProfilePage = () => {
       });
 
       if (response.ok) {
+        const updated = await response.json();
         setSaveStatus('success');
         setIsEditing(false);
+        setUserInfo(prev => ({
+          ...prev,
+          name: updated.full_name || prev.name,
+          email: updated.email || prev.email,
+          phone: updated.phone_number || prev.phone,
+          bio: updated.bio || prev.bio
+        }));
+        // Ensure any other dashboard widgets using AuthContext get fresh data.
+        if (refreshUser) await refreshUser();
         setTimeout(() => setSaveStatus(null), 3000);
       } else {
         setSaveStatus('error');

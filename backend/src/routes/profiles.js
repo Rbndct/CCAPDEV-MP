@@ -3,6 +3,7 @@ const router = express.Router();
 const User = require('../models/User');
 const Reservation = require('../models/Reservation');
 const { verifyToken } = require('../middleware/auth');
+const bcrypt = require('bcryptjs');
 
 // GET /api/profiles/me  — own profile (protected)
 router.get('/me', verifyToken, async (req, res) => {
@@ -18,11 +19,20 @@ router.get('/me', verifyToken, async (req, res) => {
 // PUT /api/profiles/me  — update own profile (protected)
 router.put('/me', verifyToken, async (req, res) => {
     try {
-        const { full_name, phone_number, bio, avatar_url } = req.body;
+        const { full_name, phone_number, bio, avatar_url, language, timezone } = req.body;
+
+        const updatePayload = {
+            full_name,
+            phone_number,
+            bio,
+            avatar_url
+        };
+        if (language !== undefined) updatePayload.language = language;
+        if (timezone !== undefined) updatePayload.timezone = timezone;
 
         const user = await User.findByIdAndUpdate(
             req.userId,
-            { full_name, phone_number, bio, avatar_url },
+            updatePayload,
             { new: true }
         ).select('-password_hash');
 
@@ -30,6 +40,51 @@ router.put('/me', verifyToken, async (req, res) => {
         res.json(user);
     } catch (err) {
         res.status(500).json({ message: 'Error updating profile.', error: err.message });
+    }
+});
+
+// PUT /api/profiles/me/preferences  — update language/timezone preferences (protected)
+router.put('/me/preferences', verifyToken, async (req, res) => {
+    try {
+        const { language, timezone } = req.body || {};
+        const user = await User.findByIdAndUpdate(
+            req.userId,
+            { language, timezone },
+            { new: true }
+        ).select('-password_hash');
+
+        if (!user) return res.status(404).json({ message: 'User not found.' });
+        res.json(user);
+    } catch (err) {
+        res.status(500).json({ message: 'Error updating preferences.', error: err.message });
+    }
+});
+
+// POST /api/profiles/me/change-password  — change password (protected)
+router.post('/me/change-password', verifyToken, async (req, res) => {
+    try {
+        const { currentPassword, newPassword } = req.body || {};
+
+        if (!currentPassword || !newPassword) {
+            return res.status(400).json({ message: 'Current password and new password are required.' });
+        }
+        if (String(newPassword).length < 8) {
+            return res.status(400).json({ message: 'New password must be at least 8 characters.' });
+        }
+
+        const user = await User.findById(req.userId).select('password_hash');
+        if (!user) return res.status(404).json({ message: 'User not found.' });
+
+        const isMatch = await bcrypt.compare(currentPassword, user.password_hash);
+        if (!isMatch) return res.status(400).json({ message: 'Current password is incorrect.' });
+
+        const newHash = await bcrypt.hash(newPassword, 10);
+        user.password_hash = newHash;
+        await user.save();
+
+        res.json({ message: 'Password changed successfully.' });
+    } catch (err) {
+        res.status(500).json({ message: 'Password change failed.', error: err.message });
     }
 });
 
