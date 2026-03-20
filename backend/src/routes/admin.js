@@ -4,6 +4,7 @@ const SportFacility = require('../models/SportFacility');
 const FacilityOperatingSchedule = require('../models/FacilityOperatingSchedule');
 const Reservation = require('../models/Reservation');
 const User = require('../models/User');
+const FacilityReview = require('../models/FacilityReview');
 const { verifyToken, isAdminOrStaff } = require('../middleware/auth');
 
 // All routes below require a valid JWT and admin/staff role
@@ -215,6 +216,130 @@ router.delete('/reservations/:id', async (req, res) => {
         res.json({ message: 'Reservation deleted successfully.' });
     } catch (err) {
         res.status(500).json({ message: 'Error deleting reservation.', error: err.message });
+    }
+});
+
+// ─── Facility Reviews (Testing/Seeding) ────────────────────────────────────
+// Seed reviews for a single facility so the Facility Detail page can be tested.
+// POST /api/admin/facilities/:id/reviews/seed
+// Body: { count?: number, is_anonymous?: boolean, ratingRange?: [min,max], title_prefix?: string, body_prefix?: string }
+router.post('/facilities/:id/reviews/seed', async (req, res) => {
+    try {
+        const facilityId = req.params.id;
+        const {
+            count = 3,
+            is_anonymous = false,
+            ratingRange = [1, 5],
+            title_prefix = 'Test Review',
+            body_prefix = 'This is a seeded test review to verify the facility reviews UI.'
+        } = req.body || {};
+
+        const facilityExists = await SportFacility.findById(facilityId).select('_id');
+        if (!facilityExists) return res.status(404).json({ message: 'Facility not found.' });
+
+        const safeCount = Math.max(0, Math.min(Number(count) || 0, 25));
+        if (safeCount === 0) return res.json({ seeded: 0, facilityId });
+
+        const minRating = Math.max(1, Number(ratingRange?.[0]) || 1);
+        const maxRating = Math.min(5, Number(ratingRange?.[1]) || 5);
+
+        const users = await User.find().select('_id').limit(safeCount);
+        const reviewers = users.map(u => u._id);
+
+        const seeded = [];
+        for (let i = 0; i < reviewers.length; i++) {
+            const reviewer_user_id = reviewers[i];
+            const rating_score = Math.floor(Math.random() * (maxRating - minRating + 1)) + minRating;
+            const review_title = `${title_prefix} ${i + 1}`;
+            const review_body = `${body_prefix} (${i + 1})`;
+
+            const review = await FacilityReview.findOneAndUpdate(
+                { facility_id: facilityId, reviewer_user_id },
+                {
+                    $set: {
+                        rating_score,
+                        review_title,
+                        review_body,
+                        is_anonymous: !!is_anonymous
+                    }
+                },
+                { new: true, upsert: true }
+            );
+            seeded.push(review);
+        }
+
+        res.json({
+            seeded: seeded.length,
+            facilityId,
+            reviews: seeded.map(r => ({
+                _id: r._id,
+                facility_id: r.facility_id,
+                reviewer_user_id: r.reviewer_user_id,
+                rating: r.rating_score,
+                title: r.review_title,
+                body: r.review_body,
+                is_anonymous: r.is_anonymous,
+                date: r.created_at
+            }))
+        });
+    } catch (err) {
+        res.status(500).json({ message: 'Error seeding facility reviews.', error: err.message });
+    }
+});
+
+// Seed reviews for every facility (handy for quick UI testing).
+// POST /api/admin/facilities/reviews/seed-all
+// Body: { countPerFacility?: number, limitFacilities?: number, is_anonymous?: boolean }
+router.post('/facilities/reviews/seed-all', async (req, res) => {
+    try {
+        const {
+            countPerFacility = 3,
+            limitFacilities = 50,
+            is_anonymous = false
+        } = req.body || {};
+
+        const safeLimitFacilities = Math.max(0, Math.min(Number(limitFacilities) || 0, 200));
+        const safeCountPerFacility = Math.max(0, Math.min(Number(countPerFacility) || 0, 25));
+
+        const facilities = await SportFacility.find().select('_id').limit(safeLimitFacilities);
+        const facilityIds = facilities.map(f => f._id);
+
+        // Use the same pool of users for all facilities.
+        const users = await User.find().select('_id').limit(safeCountPerFacility);
+        const reviewerIds = users.map(u => u._id);
+
+        const seededByFacility = [];
+        for (let facilityIndex = 0; facilityIndex < facilityIds.length; facilityIndex++) {
+            const facilityId = facilityIds[facilityIndex];
+            const seeded = [];
+
+            for (let i = 0; i < reviewerIds.length; i++) {
+                const reviewer_user_id = reviewerIds[i];
+                const rating_score = Math.floor(Math.random() * 5) + 1;
+                const review_title = `Test Review ${facilityIndex + 1}-${i + 1}`;
+                const review_body = `Seeded test review for facility ${facilityIndex + 1} (${i + 1}).`;
+
+                const review = await FacilityReview.findOneAndUpdate(
+                    { facility_id: facilityId, reviewer_user_id },
+                    {
+                        $set: {
+                            rating_score,
+                            review_title,
+                            review_body,
+                            is_anonymous: !!is_anonymous
+                        }
+                    },
+                    { new: true, upsert: true }
+                );
+                seeded.push(review);
+            }
+
+            seededByFacility.push({ facilityId, seeded: seeded.length });
+        }
+
+        res.json({ facilities: facilityIds.length, seededByFacility });
+    } catch (err) {
+        res.status(500).json({ message: 'Error seeding all facility reviews.', error: err.message });
     }
 });
 

@@ -266,16 +266,21 @@ export const FacilityDetailPage = () => {
       if (!res.ok) {
         setReviewError(data.message || 'Failed to submit review');
       } else {
-        setReviews([data, ...reviews]);
         setReviewForm({ rating: 5, title: '', body: '', isAnonymous: false });
         setCanReview(false);
-        setFacility(prev => {
-           const newTotal = prev.reviews + 1;
-           const newRating = prev.rating === 'New' 
-               ? data.rating 
-               : ((parseFloat(prev.rating) * prev.reviews + data.rating) / newTotal).toFixed(1);
-           return { ...prev, reviews: newTotal, rating: newRating };
+
+        // Re-fetch so the aggregate rating + review list stay consistent with the backend.
+        const reviewsRes = await fetch(`${API_BASE_URL}/reservations/facilities/${facilityId}/reviews`, {
+          headers: { 'Authorization': `Bearer ${token}` }
         });
+        if (reviewsRes.ok) {
+          const reviewsData = await reviewsRes.json();
+          setReviews(reviewsData);
+          if (reviewsData?.length) {
+            const avg = reviewsData.reduce((acc, curr) => acc + Number(curr.rating || 0), 0) / reviewsData.length;
+            setFacility(prev => ({ ...prev, reviews: reviewsData.length, rating: avg.toFixed(1) }));
+          }
+        }
       }
     } catch (err) {
       setReviewError('An error occurred. Please try again.');
@@ -334,107 +339,6 @@ export const FacilityDetailPage = () => {
                   ))}
                 </div>
               </Card>
-
-              {/* Facility Info */}
-              <div>
-                <div className="flex items-start justify-between mb-4">
-                  <div className="flex items-center gap-4">
-                    <div>
-                      <h1 className="text-4xl font-bold mb-2">{facility.name}</h1>
-                      <p className="text-xl text-[var(--text-secondary)]">{facility.type}</p>
-                    </div>
-                    {isLoggedIn && (
-                        <button
-                          onClick={handleToggleFavorite}
-                          className={`p-3 rounded-full border transition-all ${
-                            isFavorite 
-                              ? 'border-[var(--accent-green)] text-[var(--accent-green)] bg-[rgba(0,255,136,0.1)] hover:bg-[rgba(0,255,136,0.2)]' 
-                              : 'border-[var(--border-subtle)] text-[var(--text-secondary)] hover:text-[var(--accent-green)] hover:border-[var(--accent-green)]'
-                          }`}
-                          title={isFavorite ? "Remove from Favorites" : "Add to Favorites"}
-                        >
-                          <Heart className={`w-6 h-6 ${isFavorite ? 'fill-current' : ''}`} />
-                        </button>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Star className="w-6 h-6 text-[var(--warning)] fill-[var(--warning)]" />
-                    <span className="text-2xl font-bold">{facility.rating}</span>
-                    <span className="text-[var(--text-muted)]">({facility.reviews} reviews)</span>
-                  </div>
-                </div>
-
-                <p className="text-lg text-[var(--text-secondary)] leading-relaxed">
-                  {facility.description}
-                </p>
-              </div>
-
-              {/* Quick Stats */}
-              <Card variant="outlined" className="p-6">
-                <h3 className="text-xl font-bold mb-4">Facility Details</h3>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-                  <div>
-                    <div className="text-[var(--text-muted)] text-sm mb-1">Price</div>
-                    <div className="text-2xl font-bold text-[var(--accent-green)]">₱{facility.price}/hr</div>
-                  </div>
-                  <div>
-                    <div className="text-[var(--text-muted)] text-sm mb-1">Capacity</div>
-                    <div className="text-2xl font-bold">{facility.capacity} people</div>
-                  </div>
-                  <div>
-                    <div className="text-[var(--text-muted)] text-sm mb-1">Court Size</div>
-                    <div className="text-lg font-bold">{facility.size}</div>
-                  </div>
-                  <div>
-                    <div className="text-[var(--text-muted)] text-sm mb-1">Surface</div>
-                    <div className="text-lg font-bold">{facility.surface}</div>
-                  </div>
-                </div>
-              </Card>
-
-              {/* Amenities */}
-              <Card variant="outlined" className="p-6">
-                <h3 className="text-xl font-bold mb-4">Amenities</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  {facility.amenities.map((amenity, idx) => (
-                    <div key={idx} className="flex items-center gap-3">
-                      <div className="w-6 h-6 rounded-full bg-[rgba(0,255,136,0.1)] flex items-center justify-center flex-shrink-0">
-                        <Check className="w-4 h-4 text-[var(--accent-green)]" />
-                      </div>
-                      <span className="text-[var(--text-secondary)]">{amenity}</span>
-                    </div>
-                  ))}
-                </div>
-              </Card>
-
-              {/* Operating Hours */}
-              {schedule && schedule.length > 0 && (
-                <Card variant="outlined" className="p-6">
-                  <div className="flex items-center gap-2 mb-4">
-                    <Clock className="w-5 h-5 text-[var(--accent-green)]" />
-                    <h3 className="text-xl font-bold">Operating Hours</h3>
-                  </div>
-                  <div className="space-y-3">
-                    {schedule.map((day, idx) => (
-                      <div key={idx} className="flex items-center justify-between pb-2 border-b border-[var(--border-subtle)] last:border-0 last:pb-0">
-                        <span className="capitalize font-medium text-[var(--text-secondary)]">{day.day_of_week}</span>
-                        <div className="text-right">
-                          {day.is_maintenance ? (
-                            <div className="flex flex-col items-end">
-                              <Badge variant="warning">Maintenance</Badge>
-                              {day.maintenance_note && <span className="text-xs text-[var(--text-muted)] mt-1">{day.maintenance_note}</span>}
-                            </div>
-                          ) : day.is_closed ? (
-                            <Badge variant="error" className="bg-red-500/10 text-red-500 border-red-500">Closed</Badge>
-                          ) : (
-                            <span className="font-semibold">{day.open_time} - {day.close_time}</span>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </Card>
-              )}
 
               <ErrorBoundary name="PublicAvailabilityCalendar">
                 <div id="availability-calendar">
@@ -546,10 +450,117 @@ export const FacilityDetailPage = () => {
               </ErrorBoundary>
             </div>
 
-            {/* Booking Sidebar */}
+            {/* Facility Details Sidebar */}
             <div className="lg:col-span-1">
-              <div className="sticky top-24">
-                
+              <div className="sticky top-24 space-y-6">
+                <Card variant="outlined" className="p-6">
+                  <div className="flex items-start justify-between mb-4 gap-3">
+                    <div>
+                      <h1 className="text-3xl font-bold mb-1">{facility.name}</h1>
+                      <p className="text-lg text-[var(--text-secondary)]">{facility.type}</p>
+                    </div>
+                    {isLoggedIn && (
+                      <button
+                        onClick={handleToggleFavorite}
+                        className={`p-3 rounded-full border transition-all shrink-0 ${
+                          isFavorite
+                            ? 'border-[var(--accent-green)] text-[var(--accent-green)] bg-[rgba(0,255,136,0.1)] hover:bg-[rgba(0,255,136,0.2)]'
+                            : 'border-[var(--border-subtle)] text-[var(--text-secondary)] hover:text-[var(--accent-green)] hover:border-[var(--accent-green)]'
+                        }`}
+                        title={isFavorite ? "Remove from Favorites" : "Add to Favorites"}
+                      >
+                        <Heart className={`w-6 h-6 ${isFavorite ? 'fill-current' : ''}`} />
+                      </button>
+                    )}
+                  </div>
+
+                  <div className="flex items-center gap-2 mb-3">
+                    <Star className="w-5 h-5 text-[var(--warning)] fill-[var(--warning)]" />
+                    <span className="text-xl font-bold">{facility.rating}</span>
+                    <span className="text-[var(--text-muted)]">({facility.reviews} reviews)</span>
+                  </div>
+
+                  <p className="text-[var(--text-secondary)] leading-relaxed">
+                    {facility.description}
+                  </p>
+                </Card>
+
+                <Card variant="outlined" className="p-6">
+                  <h3 className="text-xl font-bold mb-4">Facility Details</h3>
+                  <div className="grid grid-cols-2 gap-6">
+                    <div>
+                      <div className="text-[var(--text-muted)] text-sm mb-1">Price</div>
+                      <div className="text-2xl font-bold text-[var(--accent-green)]">₱{facility.price}/hr</div>
+                    </div>
+                    <div>
+                      <div className="text-[var(--text-muted)] text-sm mb-1">Capacity</div>
+                      <div className="text-2xl font-bold">{facility.capacity} people</div>
+                    </div>
+                    <div>
+                      <div className="text-[var(--text-muted)] text-sm mb-1">Court Size</div>
+                      <div className="text-lg font-bold">{facility.size}</div>
+                    </div>
+                    <div>
+                      <div className="text-[var(--text-muted)] text-sm mb-1">Surface</div>
+                      <div className="text-lg font-bold">{facility.surface}</div>
+                    </div>
+                  </div>
+                </Card>
+
+                <Card variant="outlined" className="p-6">
+                  <h3 className="text-xl font-bold mb-4">Amenities</h3>
+                  <div className="grid grid-cols-1 gap-3">
+                    {facility.amenities.map((amenity, idx) => (
+                      <div key={idx} className="flex items-center gap-3">
+                        <div className="w-6 h-6 rounded-full bg-[rgba(0,255,136,0.1)] flex items-center justify-center flex-shrink-0">
+                          <Check className="w-4 h-4 text-[var(--accent-green)]" />
+                        </div>
+                        <span className="text-[var(--text-secondary)]">{amenity}</span>
+                      </div>
+                    ))}
+                  </div>
+                </Card>
+
+                {schedule && schedule.length > 0 && (
+                  <Card variant="outlined" className="p-6">
+                    <div className="flex items-center gap-2 mb-4">
+                      <Clock className="w-5 h-5 text-[var(--accent-green)]" />
+                      <h3 className="text-xl font-bold">Operating Hours</h3>
+                    </div>
+                    <div className="space-y-3">
+                      {schedule.map((day, idx) => (
+                        <div
+                          key={idx}
+                          className="flex items-center justify-between pb-2 border-b border-[var(--border-subtle)] last:border-0 last:pb-0"
+                        >
+                          <span className="capitalize font-medium text-[var(--text-secondary)]">
+                            {day.day_of_week}
+                          </span>
+                          <div className="text-right">
+                            {day.is_maintenance ? (
+                              <div className="flex flex-col items-end">
+                                <Badge variant="warning">Maintenance</Badge>
+                                {day.maintenance_note && (
+                                  <span className="text-xs text-[var(--text-muted)] mt-1">
+                                    {day.maintenance_note}
+                                  </span>
+                                )}
+                              </div>
+                            ) : day.is_closed ? (
+                              <Badge variant="error" className="bg-red-500/10 text-red-500 border-red-500">
+                                Closed
+                              </Badge>
+                            ) : (
+                              <span className="font-semibold">
+                                {day.open_time} - {day.close_time}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </Card>
+                )}
               </div>
             </div>
           </div>
