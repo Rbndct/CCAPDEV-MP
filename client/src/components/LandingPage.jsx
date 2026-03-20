@@ -34,7 +34,7 @@ const SportSelect = ({ value, onChange }) => {
 
   return (
     <div className="relative" ref={dropdownRef}>
-      <div 
+      <div
         className="w-full bg-[var(--bg-tertiary)] border border-[var(--border-subtle)] rounded-[var(--radius-md)] px-4 py-3 text-[var(--text-primary)] cursor-pointer flex items-center justify-between hover:border-[var(--accent-green)] transition-all"
         onClick={() => setIsOpen(!isOpen)}
       >
@@ -50,7 +50,7 @@ const SportSelect = ({ value, onChange }) => {
           {sports.map((sport) => {
             const Icon = sport.icon;
             return (
-              <div 
+              <div
                 key={sport.id}
                 className={`flex items-center gap-3 px-4 py-3 cursor-pointer transition-colors ${value === sport.id ? 'bg-[var(--accent-green)] text-black' : 'hover:bg-[var(--bg-tertiary)]'}`}
                 onClick={() => {
@@ -142,6 +142,15 @@ export const Navbar = () => {
 
 // Hero Section Component
 export const Hero = () => {
+  const [facilityCount, setFacilityCount] = useState(0);
+
+  useEffect(() => {
+    fetch('/api/reservations/facilities')
+      .then(r => r.json())
+      .then(data => { if (Array.isArray(data)) setFacilityCount(data.length); })
+      .catch(() => { });
+  }, []);
+
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden pt-18">
       {/* Background Gradient */}
@@ -180,11 +189,13 @@ export const Hero = () => {
         {/* Stats */}
         <div className="grid grid-cols-3 gap-8 mt-16 max-w-2xl mx-auto">
           <div className="text-center">
-            <div className="text-3xl md:text-4xl font-bold text-[var(--accent-green)]">67+</div>
+            <div className="text-3xl md:text-4xl font-bold text-[var(--accent-green)]">
+              {facilityCount > 0 ? `${facilityCount}+` : '—'}
+            </div>
             <div className="text-sm text-[var(--text-muted)] mt-1">Facilities</div>
           </div>
           <div className="text-center">
-            <div className="text-3xl md:text-4xl font-bold text-[var(--accent-green)]">694200</div>
+            <div className="text-3xl md:text-4xl font-bold text-[var(--accent-green)]">10K+</div>
             <div className="text-sm text-[var(--text-muted)] mt-1">Members</div>
           </div>
           <div className="text-center">
@@ -218,11 +229,11 @@ export const QuickSearch = () => {
             label="Time"
           />
 
-            <div className="flex flex-col gap-2">
+          <div className="flex flex-col gap-2">
             <label className="text-sm font-medium text-[var(--text-secondary)]">
               Sport Type
             </label>
-            <SportSelect value="all" onChange={() => {}} />
+            <SportSelect value="all" onChange={() => { }} />
           </div>
 
           <div className="flex flex-col gap-2">
@@ -249,26 +260,36 @@ export const QuickSearch = () => {
 
 // Facility Highlights Component
 export const FacilityHighlights = () => {
-  const facilities = [
-    {
-      name: 'Basketball Courts',
-      description: 'Professional-grade indoor courts with premium flooring and lighting',
-      icon: <Trophy className="w-8 h-8" />,
-      image: 'basketball'
-    },
-    {
-      name: 'Tennis Courts',
-      description: 'Outdoor and indoor courts with high-quality surfaces',
-      icon: <Zap className="w-8 h-8" />,
-      image: 'tennis'
-    },
-    {
-      name: 'Multi-Purpose Arena',
-      description: 'Versatile space for badminton, volleyball, and more',
-      icon: <Users className="w-8 h-8" />,
-      image: 'arena'
-    }
-  ];
+  const [highlights, setHighlights] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    fetch('/api/reservations/facilities')
+      .then(r => r.json())
+      .then(data => {
+        if (!Array.isArray(data)) return;
+        // Group by facility_type, pick first of each
+        const seen = new Set();
+        const grouped = [];
+        for (const f of data) {
+          if (!seen.has(f.facility_type) && grouped.length < 3) {
+            seen.add(f.facility_type);
+            grouped.push(f);
+          }
+        }
+        setHighlights(grouped);
+      })
+      .catch(() => { })
+      .finally(() => setIsLoading(false));
+  }, []);
+
+  const typeIcon = (type) => {
+    const t = (type || '').toLowerCase();
+    if (t.includes('basket')) return <Trophy className="w-8 h-8" />;
+    if (t.includes('tennis')) return <Zap className="w-8 h-8" />;
+    if (t.includes('badminton') || t.includes('volleyball') || t.includes('multi')) return <Users className="w-8 h-8" />;
+    return <Activity className="w-8 h-8" />;
+  };
 
   return (
     <section className="py-24 px-6">
@@ -282,30 +303,37 @@ export const FacilityHighlights = () => {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {facilities.map((facility, index) => (
-            <Card key={index} variant="elevated" hover="lift" className="group cursor-pointer">
-              {/* Image Placeholder */}
-              <div className="h-48 bg-gradient-to-br from-[var(--bg-secondary)] to-[var(--bg-tertiary)] flex items-center justify-center border-b border-[var(--border-subtle)]">
-                <div className="text-[var(--accent-green)] group-hover:scale-110 transition-transform">
-                  {facility.icon}
+        {isLoading ? (
+          <div className="flex justify-center py-16">
+            <div className="w-8 h-8 border-2 border-[var(--accent-green)] border-t-transparent rounded-full animate-spin"></div>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {highlights.map((facility) => (
+              <Card key={facility._id} variant="elevated" hover="lift" className="group cursor-pointer">
+                {/* Image Placeholder */}
+                <div className="h-48 bg-gradient-to-br from-[var(--bg-secondary)] to-[var(--bg-tertiary)] flex items-center justify-center border-b border-[var(--border-subtle)]">
+                  <div className="text-[var(--accent-green)] group-hover:scale-110 transition-transform">
+                    {typeIcon(facility.facility_type)}
+                  </div>
                 </div>
-              </div>
 
-              {/* Content */}
-              <div className="p-6">
-                <h3 className="text-xl font-bold mb-2">{facility.name}</h3>
-                <p className="text-[var(--text-secondary)] text-sm mb-4">
-                  {facility.description}
-                </p>
-                <Link to={`/facilities/${index + 1}`} className="inline-flex items-center gap-2 text-[var(--accent-green)] hover:gap-3 transition-all font-medium">
-                  View Details
-                  <ArrowRight className="w-4 h-4" />
-                </Link>
-              </div>
-            </Card>
-          ))}
-        </div>
+                {/* Content */}
+                <div className="p-6">
+                  <h3 className="text-xl font-bold mb-1">{facility.facility_name}</h3>
+                  <span className="text-xs font-semibold px-2 py-0.5 rounded bg-[rgba(0,255,136,0.1)] text-[var(--accent-green)] mb-2 inline-block">{facility.facility_type}</span>
+                  <p className="text-[var(--text-secondary)] text-sm mb-4 mt-2">
+                    {facility.facility_description || 'Professional-grade facility available for booking.'}
+                  </p>
+                  <Link to={`/facilities/${facility._id}`} className="inline-flex items-center gap-2 text-[var(--accent-green)] hover:gap-3 transition-all font-medium">
+                    View Details
+                    <ArrowRight className="w-4 h-4" />
+                  </Link>
+                </div>
+              </Card>
+            ))}
+          </div>
+        )}
       </div>
     </section>
   );
@@ -313,12 +341,35 @@ export const FacilityHighlights = () => {
 
 // Announcements Component
 export const Announcements = () => {
+  const [latestFacility, setLatestFacility] = useState(null);
+
+  useEffect(() => {
+    fetch('/api/reservations/facilities')
+      .then(r => r.json())
+      .then(data => {
+        if (Array.isArray(data) && data.length > 0) {
+          // The seed/admin always pushes new ones; sort by createdAt desc if available
+          const sorted = [...data].sort((a, b) => {
+            if (a.createdAt && b.createdAt) return new Date(b.createdAt) - new Date(a.createdAt);
+            if (a._id > b._id) return -1;
+            return 1;
+          });
+          setLatestFacility(sorted[0]);
+        }
+      })
+      .catch(() => { });
+  }, []);
+
   const announcements = [
     {
       badge: 'New',
       icon: <Zap className="w-6 h-6" />,
-      title: 'New Basketball Court Opening',
-      description: 'State-of-the-art court with professional-grade flooring now available for booking!',
+      title: latestFacility
+        ? `New ${latestFacility.facility_type || 'Court'} Opening: ${latestFacility.facility_name}`
+        : 'New Court Opening',
+      description: latestFacility
+        ? (latestFacility.facility_description || `A brand-new ${latestFacility.facility_type} facility is now available for booking!`)
+        : 'State-of-the-art court with professional-grade flooring now available for booking!',
       variant: 'neon'
     },
     {
@@ -497,7 +548,7 @@ export const Footer = () => {
           <p className="text-[var(--text-muted)] text-xs">
             © 2026 SportsPlex. Best Group 67
           </p>
-          
+
           {/* Backend Status Indicator */}
           <BackendStatus />
 

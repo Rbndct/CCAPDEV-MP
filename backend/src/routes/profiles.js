@@ -118,7 +118,7 @@ router.post('/me/favorites/:facilityId', verifyToken, async (req, res) => {
 
         const facilityId = req.params.facilityId;
         const index = user.favorites.indexOf(facilityId);
-        
+
         let action = '';
         if (index === -1) {
             user.favorites.push(facilityId);
@@ -127,11 +127,33 @@ router.post('/me/favorites/:facilityId', verifyToken, async (req, res) => {
             user.favorites.splice(index, 1);
             action = 'removed';
         }
-        
+
         await user.save();
         res.json({ message: `Facility ${action} to favorites.`, favorites: user.favorites });
     } catch (err) {
         res.status(500).json({ message: 'Error toggling favorite.', error: err.message });
+    }
+});
+
+// GET /api/profiles/search?q=<term>  — search users by name or email (protected)
+router.get('/search', verifyToken, async (req, res) => {
+    try {
+        const q = String(req.query.q || '').trim();
+        if (!q) return res.json([]);
+
+        const regex = new RegExp(q, 'i');
+        const users = await User.find({
+            $or: [
+                { full_name: { $regex: regex } },
+                { email: { $regex: regex } }
+            ]
+        })
+            .select('_id full_name email avatar_url role')
+            .limit(10);
+
+        res.json(users);
+    } catch (err) {
+        res.status(500).json({ message: 'Search failed.', error: err.message });
     }
 });
 

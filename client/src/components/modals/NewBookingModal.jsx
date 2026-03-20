@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Modal } from '../Modal';
 import { Button, Input, Select, DatePicker, TimePicker } from '../ui';
-import { User } from 'lucide-react';
+import { User, Search } from 'lucide-react';
 import { useAuth, API_BASE_URL } from '../../contexts/AuthContext';
 
 export const NewBookingModal = ({ isOpen, onClose }) => {
@@ -16,20 +16,36 @@ export const NewBookingModal = ({ isOpen, onClose }) => {
         paymentStatus: 'unpaid'
     });
     const [showUserSuggestions, setShowUserSuggestions] = useState(false);
+    const [userSearchResults, setUserSearchResults] = useState([]);
+    const [isSearchingUsers, setIsSearchingUsers] = useState(false);
 
-    // Mock previous users - in real app, fetch from API
-    const previousUsers = [
-        { name: 'John Doe', email: 'john.doe@example.com', phone: '+63 912 345 6789' },
-        { name: 'Jane Smith', email: 'jane.smith@example.com', phone: '+63 923 456 7890' },
-        { name: 'Mike Ross', email: 'mike.ross@example.com', phone: '+63 934 567 8901' },
-        { name: 'Sarah Cole', email: 'sarah.cole@example.com', phone: '+63 945 678 9012' },
-        { name: 'Tom Hardy', email: 'tom.hardy@example.com', phone: '+63 956 789 0123' },
-    ];
-
-    const filteredUsers = previousUsers.filter(user =>
-        user.name.toLowerCase().includes(formData.userName.toLowerCase()) ||
-        user.email.toLowerCase().includes(formData.userName.toLowerCase())
-    );
+    // Debounced user search
+    useEffect(() => {
+        const q = formData.userName.trim();
+        if (!q) {
+            setUserSearchResults([]);
+            setShowUserSuggestions(false);
+            return;
+        }
+        const timer = setTimeout(async () => {
+            setIsSearchingUsers(true);
+            try {
+                const res = await fetch(`${API_BASE_URL}/profiles/search?q=${encodeURIComponent(q)}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    setUserSearchResults(data);
+                    setShowUserSuggestions(true);
+                }
+            } catch (e) {
+                console.error('User search error', e);
+            } finally {
+                setIsSearchingUsers(false);
+            }
+        }, 300);
+        return () => clearTimeout(timer);
+    }, [formData.userName, token]);
 
     const [facilities, setFacilities] = useState([{ value: '', label: 'Loading facilities...' }]);
     const [isLoading, setIsLoading] = useState(false);
@@ -77,10 +93,11 @@ export const NewBookingModal = ({ isOpen, onClose }) => {
     const selectUser = (user) => {
         setFormData({
             ...formData,
-            userName: user.name,
+            userName: user.full_name || user.name,
             userEmail: user.email
         });
         setShowUserSuggestions(false);
+        setUserSearchResults([]);
     };
 
     const handleSubmit = async (e) => {
@@ -160,11 +177,14 @@ export const NewBookingModal = ({ isOpen, onClose }) => {
                             placeholder="Start typing to see previous users..."
                             required
                         />
-                        {showUserSuggestions && filteredUsers.length > 0 && (
+                        {showUserSuggestions && userSearchResults.length > 0 && (
                             <div className="absolute z-10 w-full mt-1 bg-[var(--bg-tertiary)] border border-[var(--border-subtle)] rounded-lg shadow-lg max-h-48 overflow-y-auto">
-                                {filteredUsers.map((user, index) => (
+                                {isSearchingUsers && (
+                                    <div className="px-4 py-2 text-xs text-[var(--text-muted)]">Searching...</div>
+                                )}
+                                {userSearchResults.map((user, index) => (
                                     <button
-                                        key={index}
+                                        key={user._id || index}
                                         type="button"
                                         onClick={() => selectUser(user)}
                                         className="w-full text-left px-4 py-3 hover:bg-[var(--bg-secondary)] transition-colors border-b border-[var(--border-subtle)] last:border-0"
@@ -172,12 +192,17 @@ export const NewBookingModal = ({ isOpen, onClose }) => {
                                         <div className="flex items-center gap-2">
                                             <User size={16} className="text-[var(--accent-green)]" />
                                             <div>
-                                                <p className="font-medium text-sm">{user.name}</p>
+                                                <p className="font-medium text-sm">{user.full_name}</p>
                                                 <p className="text-xs text-[var(--text-muted)]">{user.email}</p>
                                             </div>
                                         </div>
                                     </button>
                                 ))}
+                            </div>
+                        )}
+                        {showUserSuggestions && !isSearchingUsers && userSearchResults.length === 0 && formData.userName.trim() && (
+                            <div className="absolute z-10 w-full mt-1 bg-[var(--bg-tertiary)] border border-[var(--border-subtle)] rounded-lg shadow-lg">
+                                <p className="px-4 py-3 text-sm text-[var(--text-muted)]">No players found</p>
                             </div>
                         )}
                     </div>

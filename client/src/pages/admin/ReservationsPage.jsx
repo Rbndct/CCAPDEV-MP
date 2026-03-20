@@ -35,12 +35,12 @@ export function ReservationsPage() {
                 const mapped = data.map(r => ({
                     id: r._id,
                     user: r.user?.full_name || r.walk_in_name || 'Guest',
-                    facility: r.facility?.name || 'Unknown',
+                    facility: r.facility?.facility_name || r.facility?.name || 'Unknown',
                     date: new Date(r.date).toISOString().split('T')[0],
                     time: `${r.start_time} - ${r.end_time}`,
                     status: r.status,
-                    payment: r.payment_status || 'paid', // Default to paid if not set
-                    archived: false // Default to unarchived
+                    payment: r.payment_status || 'paid',
+                    archived: false
                 }));
                 setReservations(mapped);
             }

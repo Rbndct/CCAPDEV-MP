@@ -346,13 +346,83 @@ router.post('/facilities/reviews/seed-all', async (req, res) => {
     }
 });
 
+// ─── Stats ───────────────────────────────────────────────────────────────────
+
+// GET /api/admin/stats  — aggregated dashboard stats
+router.get('/stats', async (req, res) => {
+    try {
+        const [totalFacilities, totalUsers, reservations] = await Promise.all([
+            SportFacility.countDocuments(),
+            User.countDocuments(),
+            Reservation.find().populate('facility', 'hourly_rate_php')
+        ]);
+
+        const noShows = reservations.filter(r => r.status === 'no-show').length;
+        const activeBookings = reservations.filter(r => ['reserved', 'confirmed', 'pending'].includes(r.status)).length;
+
+        // Revenue: sum of (duration * hourly_rate) for confirmed/completed reservations
+        let totalRevenue = 0;
+        for (const r of reservations) {
+            if (!['confirmed', 'completed', 'reserved'].includes(r.status)) continue;
+            const parseTime = (t) => { const [h, m] = String(t || '').split(':').map(Number); return isNaN(h) ? null : h * 60 + (m || 0); };
+            const start = parseTime(r.start_time);
+            const end = parseTime(r.end_time);
+            const rate = Number(r.facility?.hourly_rate_php || 0);
+            if (start !== null && end !== null && end > start && rate > 0) {
+                totalRevenue += ((end - start) / 60) * rate;
+            }
+        }
+
+        // Occupancy rate: booked slots in last 7 days / (facilities * 12 operating hours * 7 days)
+        const now = new Date();
+        const sevenDaysAgo = new Date(now); sevenDaysAgo.setDate(now.getDate() - 7);
+        const recentActiveReservations = reservations.filter(r =>
+            ['reserved', 'confirmed', 'pending', 'completed'].includes(r.status) &&
+            new Date(r.date) >= sevenDaysAgo && new Date(r.date) <= now
+        );
+        const totalBookedHours = recentActiveReservations.reduce((sum, r) => {
+            const parseTime = (t) => { const [h, m] = String(t || '').split(':').map(Number); return isNaN(h) ? null : h * 60 + (m || 0); };
+            const s = parseTime(r.start_time), e = parseTime(r.end_time);
+            if (s !== null && e !== null && e > s) return sum + (e - s) / 60;
+            return sum;
+        }, 0);
+        const totalPossibleHours = Math.max(totalFacilities * 12 * 7, 1); // 12hr/day * 7 days
+        const occupancyRate = Math.min(Math.round((totalBookedHours / totalPossibleHours) * 100), 100);
+
+        res.json({
+            totalRevenue: Math.round(totalRevenue),
+            activeBookings,
+            noShows,
+            totalFacilities,
+            totalUsers,
+            occupancyRate
+        });
+    } catch (err) {
+        res.status(500).json({ message: 'Error fetching stats.', error: err.message });
+    }
+});
+
 // ─── Users ───────────────────────────────────────────────────────────────────
 
-// GET /api/admin/users
+// GET /api/admin/users  — list all users with booking counts
 router.get('/users', async (req, res) => {
     try {
         const users = await User.find().select('-password_hash').sort({ created_at: -1 });
-        res.json(users);
+
+        // Get booking counts for all users in one aggregation
+        const bookingCounts = await Reservation.aggregate([
+            { $match: { user: { $ne: null } } },
+            { $group: { _id: '$user', count: { $sum: 1 } } }
+        ]);
+        const countMap = {};
+        bookingCounts.forEach(({ _id, count }) => { countMap[String(_id)] = count; });
+
+        const enriched = users.map(u => ({
+            ...u.toObject(),
+            booking_count: countMap[String(u._id)] || 0
+        }));
+
+        res.json(enriched);
     } catch (err) {
         res.status(500).json({ message: 'Error fetching users.', error: err.message });
     }

@@ -25,7 +25,7 @@ export function BookingsPage() {
                 if (response.ok) {
                     const mapped = data.map(r => ({
                         id: r._id,
-                        facility: r.facility?.name || 'Unknown',
+                        facility: r.facility?.facility_name || r.facility?.name || 'Unknown',
                         user: r.user?.full_name || r.walk_in_name || 'Guest',
                         date: new Date(r.date).toISOString().split('T')[0],
                         startTime: r.start_time,
@@ -55,7 +55,7 @@ export function BookingsPage() {
                 if (res.ok) {
                     setFacilities([
                         { value: 'all', label: 'All Facilities' },
-                        ...data.map(f => ({ value: f.name, label: f.name }))
+                        ...data.map(f => ({ value: f.facility_name || f.name, label: f.facility_name || f.name }))
                     ]);
                 }
             } catch (e) {

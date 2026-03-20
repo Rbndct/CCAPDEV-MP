@@ -64,6 +64,7 @@ router.get('/due', verifyToken, async (req, res) => {
         const totalDue = items.reduce((acc, item) => acc + Number(item.totalDue || 0), 0);
         res.json({ totalDue, items });
     } catch (err) {
+        console.error('[payments] GET /due error:', err);
         res.status(500).json({ message: 'Error fetching payment due.', error: err.message });
     }
 });
@@ -74,7 +75,7 @@ router.post('/:reservationId', verifyToken, async (req, res) => {
     try {
         const reservationId = req.params.reservationId;
         const { paymentMethod } = req.body || {};
-        
+
         // Find the reservation and ensure it belongs to the user
         const reservation = await Reservation.findOne({
             _id: reservationId,
@@ -94,12 +95,12 @@ router.post('/:reservationId', verifyToken, async (req, res) => {
         }
 
         // Simulate payment processing...
-        
+
         // Success! Update status
         reservation.payment_status = 'paid';
         reservation.status = 'confirmed'; // reserved -> confirmed after payment
         if (paymentMethod) reservation.payment_method = paymentMethod;
-        
+
         await reservation.save();
 
         res.json({
@@ -107,6 +108,7 @@ router.post('/:reservationId', verifyToken, async (req, res) => {
             reservation
         });
     } catch (err) {
+        console.error('[payments] POST /:reservationId error:', err);
         res.status(500).json({ message: 'Payment processing failed.', error: err.message });
     }
 });

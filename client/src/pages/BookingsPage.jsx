@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { Card, Badge, Button } from '../components/ui';
 import { Modal } from '../components/Modal';
 import { EditReservationModal } from '../components/modals/EditReservationModal';
-import { Calendar, Clock, TrendingUp, Filter, ArrowRight, XCircle, CheckCircle, AlertTriangle } from 'lucide-react';
+import { Calendar, Clock, TrendingUp, Filter, ArrowRight, XCircle, CheckCircle, AlertTriangle, TriangleAlert } from 'lucide-react';
 
 import { useAuth, API_BASE_URL } from '../contexts/AuthContext';
 
@@ -24,6 +24,11 @@ export const BookingsPage = () => {
   const [bookingToCancel, setBookingToCancel] = useState(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [bookingToEdit, setBookingToEdit] = useState(null);
+
+  // Warning modal for 24h cutoff
+  const [isWarningModalOpen, setIsWarningModalOpen] = useState(false);
+  const [warningMessage, setWarningMessage] = useState('');
+  const [pendingAction, setPendingAction] = useState(null); // 'cancel' | 'edit'
 
   const { token } = useAuth();
   const [allBookings, setAllBookings] = useState([]);
@@ -123,7 +128,10 @@ export const BookingsPage = () => {
   const handleCancelClick = (booking) => {
     setRestrictionMessage('');
     if (isLockedWithin24Hours(booking)) {
-      setRestrictionMessage(`You can't cancel this booking within 24 hours of the scheduled start time. ${buildFeeMessage(booking)}`);
+      const msg = `You can't cancel this booking within 24 hours of the scheduled start time. ${buildFeeMessage(booking)}`;
+      setWarningMessage(msg);
+      setPendingAction({ type: 'cancel', booking });
+      setIsWarningModalOpen(true);
       return;
     }
     setBookingToCancel(booking);
@@ -133,11 +141,27 @@ export const BookingsPage = () => {
   const handleEditClick = (booking) => {
     setRestrictionMessage('');
     if (isLockedWithin24Hours(booking)) {
-      setRestrictionMessage(`You can't modify this booking within 24 hours of the scheduled start time. ${buildFeeMessage(booking)}`);
+      const msg = `You can't modify this booking within 24 hours of the scheduled start time. ${buildFeeMessage(booking)}`;
+      setWarningMessage(msg);
+      setPendingAction({ type: 'edit', booking });
+      setIsWarningModalOpen(true);
       return;
     }
     setBookingToEdit(booking);
     setIsEditModalOpen(true);
+  };
+
+  const handleWarningProceed = () => {
+    setIsWarningModalOpen(false);
+    if (!pendingAction) return;
+    if (pendingAction.type === 'cancel') {
+      setBookingToCancel(pendingAction.booking);
+      setIsCancelModalOpen(true);
+    } else if (pendingAction.type === 'edit') {
+      setBookingToEdit(pendingAction.booking);
+      setIsEditModalOpen(true);
+    }
+    setPendingAction(null);
   };
 
   const handleSaveEdit = async (updatedBooking) => {
@@ -223,6 +247,39 @@ export const BookingsPage = () => {
           </div>
         )}
       </div>
+
+      {/* 24h Warning Modal */}
+      <Modal
+        isOpen={isWarningModalOpen}
+        onClose={() => { setIsWarningModalOpen(false); setPendingAction(null); }}
+        title="Last-Minute Change Warning"
+        size="small"
+        footer={
+          <>
+            <Button variant="ghost" onClick={() => { setIsWarningModalOpen(false); setPendingAction(null); }}>
+              Go Back
+            </Button>
+            <Button
+              variant="primary"
+              className="bg-orange-500 hover:bg-orange-600 text-white"
+              onClick={handleWarningProceed}
+            >
+              Proceed Anyway
+            </Button>
+          </>
+        }
+      >
+        <div className="flex flex-col items-center text-center py-4">
+          <div className="w-16 h-16 bg-orange-500/10 rounded-full flex items-center justify-center mb-4">
+            <AlertTriangle className="w-8 h-8 text-orange-500" />
+          </div>
+          <h3 className="text-lg font-bold mb-3">Important Notice</h3>
+          <p className="text-[var(--text-secondary)] text-sm leading-relaxed">{warningMessage}</p>
+          <p className="mt-3 text-xs text-[var(--text-muted)] bg-[var(--bg-tertiary)] p-3 rounded-lg w-full">
+            By proceeding, you acknowledge this policy and any applicable fees.
+          </p>
+        </div>
+      </Modal>
 
       {/* Tabs */}
       <div className="border-b border-[var(--border-subtle)] mb-6">
