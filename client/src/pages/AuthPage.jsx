@@ -223,7 +223,7 @@ export const AuthPage = () => {
                                 <button
                                     type="button"
                                     onClick={() => {
-                                        setEmail('admin@sportsplex.com');
+                                        setEmail('raphael@sportsplex.com');
                                         setPassword('password123');
                                     }}
                                     className="text-sm text-[var(--accent-green)] hover:underline font-medium"
