@@ -23,11 +23,11 @@ export function FacilitiesManagementPage() {
                 // Map to what table expects
                 const mapped = data.map(f => ({
                     id: f._id,
-                    name: f.name,
-                    type: f.type,
-                    status: f.status || 'available',
-                    rate: `₱${f.hourly_rate || 500}/hr`,
-                    capacity: f.capacity
+                    name: f.facility_name,
+                    type: f.facility_type,
+                    status: f.facility_status || 'available',
+                    rate: `₱${f.hourly_rate_php || 500}/hr`,
+                    capacity: f.total_capacity
                 }));
                 setFacilities(mapped);
             }
