@@ -6,6 +6,19 @@ const FacilityOperatingSchedule = require('../models/FacilityOperatingSchedule')
 const FacilityReview = require('../models/FacilityReview');
 const { verifyToken } = require('../middleware/auth');
 
+/** Normalize date to midnight local for consistent comparison */
+function normalizeDate(d) {
+    const date = d instanceof Date ? d : new Date(d);
+    const normalized = new Date(date);
+    normalized.setHours(0, 0, 0, 0);
+    return normalized;
+}
+
+/** Check if two time ranges overlap (times as "HH:mm" strings) */
+function timesOverlap(startA, endA, startB, endB) {
+    return startA < endB && startB < endA;
+}
+
 // ─── Public ──────────────────────────────────────────────────────────────────
 
 // GET /api/reservations/facilities  — list all facilities (public)
@@ -161,12 +174,20 @@ router.post('/', verifyToken, async (req, res) => {
             return res.status(400).json({ message: 'Missing required fields.' });
         }
 
-        const conflict = await Reservation.findOne({
+        const resDate = normalizeDate(date);
+        if (Number.isNaN(resDate.getTime())) {
+            return res.status(400).json({ message: 'Invalid date.' });
+        }
+
+        const activeSlots = await Reservation.find({
             facility,
-            date: new Date(date),
-            start_time,
+            date: resDate,
             status: { $in: ['reserved', 'blocked'] },
-        });
+        }).select('start_time end_time');
+
+        const conflict = activeSlots.some(slot =>
+            timesOverlap(start_time, end_time, slot.start_time, slot.end_time)
+        );
         if (conflict) {
             return res.status(409).json({ message: 'This slot is already taken.' });
         }
@@ -175,7 +196,7 @@ router.post('/', verifyToken, async (req, res) => {
             user: req.userId,
             facility,
             seat_number: 1,
-            date: new Date(date),
+            date: resDate,
             start_time,
             end_time,
             is_anonymous: !!is_anonymous,
@@ -218,19 +239,21 @@ router.patch('/:id', verifyToken, async (req, res) => {
             return res.status(400).json({ message: 'This reservation can no longer be modified.' });
         }
 
-        const updatedDate = new Date(date);
+        const updatedDate = normalizeDate(date);
         if (Number.isNaN(updatedDate.getTime())) {
             return res.status(400).json({ message: 'Invalid reservation date.' });
         }
 
-        const conflict = await Reservation.findOne({
+        const activeSlots = await Reservation.find({
             _id: { $ne: reservation._id },
             facility: reservation.facility,
-            seat_number: reservation.seat_number,
             date: updatedDate,
-            start_time,
             status: { $in: ['reserved', 'blocked'] },
-        });
+        }).select('start_time end_time');
+
+        const conflict = activeSlots.some(slot =>
+            timesOverlap(start_time, end_time, slot.start_time, slot.end_time)
+        );
 
         if (conflict) {
             return res.status(409).json({ message: 'This slot is already taken.' });

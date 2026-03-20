@@ -27,7 +27,21 @@ mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/sportsple
   useNewUrlParser: true,
   useUnifiedTopology: true,
 })
-  .then(() => console.log('Connected to MongoDB (SportsPlex)'))
+  .then(async () => {
+    console.log('Connected to MongoDB (SportsPlex)');
+    // Drop old unique index that blocked rebooking after cancel (replaced by partial index)
+    try {
+      const Reservation = require('./models/Reservation');
+      await Reservation.collection.dropIndex('facility_1_seat_number_1_date_1_start_time_1');
+      console.log('Dropped legacy reservation unique index');
+    } catch (e) {
+      if (e.code === 27 || e.codeName === 'IndexNotFound' || (e.message && e.message.includes('index not found'))) {
+        // Index doesn't exist (e.g. fresh install or already migrated) - fine
+      } else {
+        console.warn('Index migration note:', e.message);
+      }
+    }
+  })
   .catch(err => console.error('Could not connect to MongoDB', err));
 
 // Route Registration

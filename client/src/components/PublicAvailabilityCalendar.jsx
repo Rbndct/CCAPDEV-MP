@@ -21,7 +21,7 @@ const ALL_TIME_SLOTS = generateTimeSlots();
 // Get the index of a time slot in the full list
 const getSlotIndex = (time, allSlots) => allSlots.indexOf(time);
 
-export const PublicAvailabilityCalendar = ({ facility, onSlotSelect, isBooking }) => {
+export const PublicAvailabilityCalendar = ({ facility, onSlotSelect, isBooking, refreshKey }) => {
   const { isLoggedIn } = useAuth();
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [selectedDate, setSelectedDate] = useState(new Date());
@@ -73,7 +73,7 @@ export const PublicAvailabilityCalendar = ({ facility, onSlotSelect, isBooking }
     
     fetchAvailability();
     return () => { isMounted = false; };
-  }, [facility]);
+  }, [facility, refreshKey]);
 
   const getAvailability = (dateStr, time) => {
     return slotStatusMap.get(`${dateStr}|${time}`) || 'available';
@@ -329,7 +329,7 @@ export const PublicAvailabilityCalendar = ({ facility, onSlotSelect, isBooking }
                           ? 'bg-[rgba(0,255,136,0.35)] border-[var(--accent-green)] border-2 ring-1 ring-[var(--accent-green)] cursor-pointer'
                           : status === 'available' && !isPast
                             ? 'bg-[rgba(0,255,136,0.1)] border-[var(--accent-green)] hover:bg-[rgba(0,255,136,0.2)] cursor-pointer'
-                            : status === 'booked'
+                            : (status === 'reserved' || status === 'blocked')
                               ? 'bg-[rgba(239,68,68,0.1)] border-red-500 cursor-not-allowed'
                               : 'bg-[var(--bg-tertiary)] border-[var(--border-subtle)] cursor-not-allowed'
                         }
@@ -340,7 +340,7 @@ export const PublicAvailabilityCalendar = ({ facility, onSlotSelect, isBooking }
                       {inSelection && isEnd && 'END'}
                       {inSelection && !isStart && !isEnd && '•'}
                       {!inSelection && status === 'available' && !isPast && <Check className="w-3 h-3 mx-auto" />}
-                      {status === 'booked' && <X className="w-3 h-3 mx-auto" />}
+                      {(status === 'reserved' || status === 'blocked') && <X className="w-3 h-3 mx-auto" />}
                     </button>
                   );
                 })}

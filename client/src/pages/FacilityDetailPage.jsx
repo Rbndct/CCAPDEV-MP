@@ -41,6 +41,7 @@ export const FacilityDetailPage = () => {
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [bookingData, setBookingData] = useState(null);
+  const [availabilityRefreshKey, setAvailabilityRefreshKey] = useState(0);
   const [isBooking, setIsBooking] = useState(false);
   const [facility, setFacility] = useState(null);
   const [schedule, setSchedule] = useState([]);
@@ -233,6 +234,7 @@ export const FacilityDetailPage = () => {
 
       setBookingData(booking);
       setShowSuccessModal(true);
+      setAvailabilityRefreshKey(k => k + 1); // refresh calendar so new booking shows as taken
     } catch (error) {
       console.error("Booking error:", error);
       alert("Failed to book court. Please check your connection.");
@@ -440,6 +442,7 @@ export const FacilityDetailPage = () => {
                     facility={facility}
                     onSlotSelect={handleSlotSelect}
                     isBooking={isBooking}
+                    refreshKey={availabilityRefreshKey}
                   />
                 </div>
               </ErrorBoundary>
