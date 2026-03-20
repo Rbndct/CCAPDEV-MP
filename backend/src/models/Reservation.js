@@ -59,7 +59,10 @@ const reservationSchema = new mongoose.Schema({
 });
 
 // Compound index to prevent double booking of the same slot at the same time
-reservationSchema.index({ facility: 1, seat_number: 1, date: 1, start_time: 1 }, { unique: true });
+reservationSchema.index(
+    { facility: 1, seat_number: 1, date: 1, start_time: 1 },
+    { unique: true, partialFilterExpression: { status: { $in: ['reserved', 'blocked'] } } }
+);
 
 const Reservation = mongoose.model('Reservation', reservationSchema);
 
