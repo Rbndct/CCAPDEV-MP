@@ -9,11 +9,20 @@ export const PaymentPage = () => {
   const location = useLocation();
   const { token, isLoggedIn } = useAuth();
   
-  const [paymentMethod, setPaymentMethod] = useState('card');
+  // Used only for the reservation-specific checkout view.
+  const [paymentMethod, setPaymentMethod] = useState('gcash'); // 'cash'|'credit'|'debit'|'gcash'
   const [isProcessing, setIsProcessing] = useState(false);
   const [paymentStatus, setPaymentStatus] = useState(null); // 'success' or 'error'
   const [reservation, setReservation] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+
+  // Payments due tab state (when no reservationId is selected)
+  const [dueItems, setDueItems] = useState([]);
+  const [dueTotal, setDueTotal] = useState(0);
+  const [isDueLoading, setIsDueLoading] = useState(false);
+  const [dueMessage, setDueMessage] = useState('');
+  const [selectedPaymentMethods, setSelectedPaymentMethods] = useState({});
+  const [payingReservationId, setPayingReservationId] = useState(null);
 
   const queryParams = new URLSearchParams(location.search);
   const reservationId = queryParams.get('reservationId');
@@ -26,6 +35,27 @@ export const PaymentPage = () => {
 
     if (!reservationId) {
         setIsLoading(false);
+        const fetchDue = async () => {
+          setIsDueLoading(true);
+          setDueMessage('');
+          try {
+            const res = await fetch(`${API_BASE_URL}/payments/due`, {
+              headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (!res.ok) {
+              const data = await res.json().catch(() => ({}));
+              throw new Error(data.message || 'Failed to fetch payment due.');
+            }
+            const data = await res.json();
+            setDueItems(Array.isArray(data.items) ? data.items : []);
+            setDueTotal(Number(data.totalDue || 0));
+          } catch (err) {
+            setDueMessage(err.message || 'Failed to load payments due.');
+          } finally {
+            setIsDueLoading(false);
+          }
+        };
+        fetchDue();
         return;
     }
 
@@ -59,7 +89,11 @@ export const PaymentPage = () => {
     try {
         const response = await fetch(`${API_BASE_URL}/payments/${reservation._id}`, {
             method: 'POST',
-            headers: { 'Authorization': `Bearer ${token}` }
+            headers: { 
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ paymentMethod })
         });
 
         if (response.ok) {
@@ -76,6 +110,44 @@ export const PaymentPage = () => {
     }
   };
 
+  const handleDuePayment = async (reservationId, method) => {
+    if (!reservationId) return;
+    setPayingReservationId(reservationId);
+    setDueMessage('');
+    try {
+      const response = await fetch(`${API_BASE_URL}/payments/${reservationId}`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ paymentMethod: method })
+      });
+
+      if (!response.ok) {
+        const errData = await response.json().catch(() => ({}));
+        throw new Error(errData.message || 'Payment simulation failed.');
+      }
+
+      const dueRes = await fetch(`${API_BASE_URL}/payments/due`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+
+      if (!dueRes.ok) {
+        throw new Error('Payment succeeded, but failed to refresh payments due.');
+      }
+
+      const dueData = await dueRes.json();
+      setDueItems(Array.isArray(dueData.items) ? dueData.items : []);
+      setDueTotal(Number(dueData.totalDue || 0));
+      setDueMessage('Payment simulated successfully. Your booking has been confirmed.');
+    } catch (err) {
+      setDueMessage(err.message || 'Payment simulation failed.');
+    } finally {
+      setPayingReservationId(null);
+    }
+  };
+
   if (isLoading) {
       return (
           <div className="min-h-screen flex items-center justify-center">
@@ -84,7 +156,7 @@ export const PaymentPage = () => {
       );
   }
 
-  if (!reservation && !paymentStatus) {
+  if (reservationId && !reservation && !paymentStatus) {
       return (
           <div className="max-w-md mx-auto py-12 px-6 text-center">
               <h2 className="text-2xl font-bold mb-4">No Reservation Found</h2>
@@ -94,21 +166,30 @@ export const PaymentPage = () => {
       );
   }
 
-  // Calculate duration and totals
-  let duration = 2; // Default fallback
-  let hourlyRate = 500;
-  if (reservation) {
-      const [startH] = reservation.start_time.split(':').map(Number);
-      const [endH] = reservation.end_time.split(':').map(Number);
-      if (!isNaN(startH) && !isNaN(endH)) duration = endH - startH;
-      if (reservation.facility && reservation.facility.hourly_rate_php) {
-          hourlyRate = reservation.facility.hourly_rate_php;
-      }
-  }
+  const parseTimeToMinutes = (timeStr) => {
+    const [hRaw, mRaw] = String(timeStr || '').split(':');
+    const h = Number(hRaw);
+    const m = Number(mRaw || 0);
+    if (Number.isNaN(h) || Number.isNaN(m)) return null;
+    return h * 60 + m;
+  };
 
-  const subtotal = duration * hourlyRate;
+  // Calculate duration and totals (reservation-specific checkout view)
+  let duration = 2; // Default fallback
+  let hourlyRate = 0;
+  let subtotal = 0;
   const serviceFee = 50;
-  const total = subtotal + serviceFee;
+  let total = 0;
+  if (reservation) {
+    const startMinutes = parseTimeToMinutes(reservation.start_time);
+    const endMinutes = parseTimeToMinutes(reservation.end_time);
+    hourlyRate = Number(reservation.facility?.hourly_rate_php || 0);
+    if (startMinutes !== null && endMinutes !== null && endMinutes > startMinutes) {
+      duration = (endMinutes - startMinutes) / 60;
+    }
+    subtotal = duration * hourlyRate;
+    total = subtotal + serviceFee;
+  }
 
   if (paymentStatus === 'success') {
     return (
@@ -128,6 +209,104 @@ export const PaymentPage = () => {
             Return to Dashboard
           </Button>
         </div>
+      </div>
+    );
+  }
+
+  // Payments due tab (no specific reservation checkout selected)
+  if (!reservationId) {
+    if (isDueLoading) {
+      return (
+        <div className="min-h-screen flex items-center justify-center">
+          <Loader className="w-8 h-8 animate-spin text-[var(--accent-green)]" />
+        </div>
+      );
+    }
+
+    return (
+      <div className="max-w-5xl mx-auto py-8 px-6 animate-fade-in">
+        <div className="mb-8 flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold">Payments Due</h1>
+            <p className="text-[var(--text-secondary)] mt-2">
+              Simulate payment methods and confirm your pending bookings.
+            </p>
+          </div>
+          <div className="hidden md:block text-right">
+            <div className="text-xs text-[var(--text-muted)]">Total due</div>
+            <div className="text-2xl font-bold text-[var(--accent-green)]">₱{dueTotal.toFixed(2)}</div>
+          </div>
+        </div>
+
+        {dueMessage && (
+          <div className="mb-4 p-3 rounded-lg bg-red-500/10 border border-red-500 text-red-500 text-sm">
+            {dueMessage}
+          </div>
+        )}
+
+        {dueItems.length === 0 ? (
+          <div className="p-12 text-center">
+            <div className="w-16 h-16 rounded-full bg-[var(--bg-tertiary)] flex items-center justify-center text-[var(--text-muted)] mx-auto mb-4">
+              <Lock className="w-8 h-8" />
+            </div>
+            <p className="text-lg font-medium text-[var(--text-primary)]">No pending payments</p>
+            <p className="text-[var(--text-secondary)] mt-2">
+              Your bookings are up to date.
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {dueItems.map((item) => {
+              const method = selectedPaymentMethods[item.reservationId] || 'gcash';
+              return (
+                <Card key={item.reservationId} variant="glass" className="p-6">
+                  <div className="flex items-start justify-between gap-6">
+                    <div className="min-w-0">
+                      <h3 className="font-bold text-lg truncate">{item.facilityName}</h3>
+                      <p className="text-sm text-[var(--text-secondary)]">
+                        {new Date(item.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} • {item.start_time} - {item.end_time}
+                      </p>
+                      <div className="mt-3 text-sm text-[var(--text-muted)] space-y-1">
+                        <div>Subtotal: ₱{Number(item.subtotal || 0).toFixed(2)}</div>
+                        <div>Service fee: ₱{Number(item.serviceFee || 0).toFixed(2)}</div>
+                      </div>
+                    </div>
+
+                    <div className="text-right">
+                      <div className="text-2xl font-bold text-[var(--accent-green)]">₱{Number(item.totalDue || 0).toFixed(2)}</div>
+                      <div className="text-xs text-[var(--text-muted)] mt-1">Due now</div>
+                    </div>
+                  </div>
+
+                  <div className="mt-5 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+                    <div className="flex items-center gap-3">
+                      <div className="text-sm font-medium text-[var(--text-secondary)]">Payment method</div>
+                      <select
+                        value={method}
+                        onChange={(e) => setSelectedPaymentMethods(prev => ({ ...prev, [item.reservationId]: e.target.value }))}
+                        className="bg-[var(--bg-tertiary)] border border-[var(--border-subtle)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[var(--accent-green)]"
+                      >
+                        <option value="cash">Cash</option>
+                        <option value="credit">Credit</option>
+                        <option value="debit">Debit</option>
+                        <option value="gcash">GCash</option>
+                      </select>
+                    </div>
+
+                    <Button
+                      variant="primary"
+                      onClick={() => handleDuePayment(item.reservationId, method)}
+                      disabled={payingReservationId === item.reservationId}
+                      className="w-full md:w-auto"
+                    >
+                      {payingReservationId === item.reservationId ? 'Processing...' : `Pay ₱${Number(item.totalDue || 0).toFixed(2)}`}
+                    </Button>
+                  </div>
+                </Card>
+              );
+            })}
+          </div>
+        )}
       </div>
     );
   }
@@ -217,28 +396,58 @@ export const PaymentPage = () => {
             <h2 className="text-xl font-bold mb-6">Select Payment Method</h2>
             
             {/* Visual Payment Options */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
               <button
-                onClick={() => setPaymentMethod('card')}
+                onClick={() => setPaymentMethod('cash')}
                 className={`relative overflow-hidden flex flex-col items-center justify-center p-6 rounded-xl border transition-all duration-300 group ${
-                  paymentMethod === 'card'
+                  paymentMethod === 'cash'
                     ? 'border-[var(--accent-green)] bg-[rgba(0,255,136,0.05)] shadow-[var(--glow-green)]'
                     : 'border-[var(--border-subtle)] bg-[var(--bg-tertiary)] hover:border-[var(--text-secondary)]'
                 }`}
               >
-                {paymentMethod === 'card' && (
+                {paymentMethod === 'cash' && (
                   <div className="absolute top-2 right-2 text-[var(--accent-green)]">
                     <CheckCircle className="w-4 h-4" />
                   </div>
                 )}
-                <CreditCard className={`w-8 h-8 mb-3 ${paymentMethod === 'card' ? 'text-[var(--accent-green)]' : 'text-[var(--text-secondary)]'}`} />
-                <span className={`text-sm font-bold ${paymentMethod === 'card' ? 'text-[var(--accent-green)]' : 'text-[var(--text-primary)]'}`}>Card</span>
-                <div className="flex gap-2 mt-2 opacity-50 grayscale group-hover:grayscale-0 transition-all">
-                  <div className="w-6 h-4 bg-white/10 rounded-sm"></div>
-                  <div className="w-6 h-4 bg-white/10 rounded-sm"></div>
-                </div>
+                <Wallet className={`w-8 h-8 mb-3 ${paymentMethod === 'cash' ? 'text-[var(--accent-green)]' : 'text-[var(--text-secondary)]'}`} />
+                <span className={`text-sm font-bold ${paymentMethod === 'cash' ? 'text-[var(--accent-green)]' : 'text-[var(--text-primary)]'}`}>Cash</span>
               </button>
-              
+
+              <button
+                onClick={() => setPaymentMethod('credit')}
+                className={`relative overflow-hidden flex flex-col items-center justify-center p-6 rounded-xl border transition-all duration-300 group ${
+                  paymentMethod === 'credit'
+                    ? 'border-[var(--accent-green)] bg-[rgba(0,255,136,0.05)] shadow-[var(--glow-green)]'
+                    : 'border-[var(--border-subtle)] bg-[var(--bg-tertiary)] hover:border-[var(--text-secondary)]'
+                }`}
+              >
+                {paymentMethod === 'credit' && (
+                  <div className="absolute top-2 right-2 text-[var(--accent-green)]">
+                    <CheckCircle className="w-4 h-4" />
+                  </div>
+                )}
+                <CreditCard className={`w-8 h-8 mb-3 ${paymentMethod === 'credit' ? 'text-[var(--accent-green)]' : 'text-[var(--text-secondary)]'}`} />
+                <span className={`text-sm font-bold ${paymentMethod === 'credit' ? 'text-[var(--accent-green)]' : 'text-[var(--text-primary)]'}`}>Credit</span>
+              </button>
+
+              <button
+                onClick={() => setPaymentMethod('debit')}
+                className={`relative overflow-hidden flex flex-col items-center justify-center p-6 rounded-xl border transition-all duration-300 group ${
+                  paymentMethod === 'debit'
+                    ? 'border-[var(--accent-green)] bg-[rgba(0,255,136,0.05)] shadow-[var(--glow-green)]'
+                    : 'border-[var(--border-subtle)] bg-[var(--bg-tertiary)] hover:border-[var(--text-secondary)]'
+                }`}
+              >
+                {paymentMethod === 'debit' && (
+                  <div className="absolute top-2 right-2 text-[var(--accent-green)]">
+                    <CheckCircle className="w-4 h-4" />
+                  </div>
+                )}
+                <CreditCard className={`w-8 h-8 mb-3 ${paymentMethod === 'debit' ? 'text-[var(--accent-green)]' : 'text-[var(--text-secondary)]'}`} />
+                <span className={`text-sm font-bold ${paymentMethod === 'debit' ? 'text-[var(--accent-green)]' : 'text-[var(--text-primary)]'}`}>Debit</span>
+              </button>
+
               <button
                 onClick={() => setPaymentMethod('gcash')}
                 className={`relative overflow-hidden flex flex-col items-center justify-center p-6 rounded-xl border transition-all duration-300 group ${
@@ -255,28 +464,11 @@ export const PaymentPage = () => {
                 <Smartphone className={`w-8 h-8 mb-3 ${paymentMethod === 'gcash' ? 'text-[#007DFE]' : 'text-[var(--text-secondary)]'}`} />
                 <span className={`text-sm font-bold ${paymentMethod === 'gcash' ? 'text-[#007DFE]' : 'text-[var(--text-primary)]'}`}>GCash</span>
               </button>
-              
-              <button
-                onClick={() => setPaymentMethod('paymaya')}
-                className={`relative overflow-hidden flex flex-col items-center justify-center p-6 rounded-xl border transition-all duration-300 group ${
-                  paymentMethod === 'paymaya'
-                    ? 'border-[#000000] bg-white/5 shadow-[0_0_20px_rgba(255,255,255,0.1)]'
-                    : 'border-[var(--border-subtle)] bg-[var(--bg-tertiary)] hover:border-[var(--text-secondary)]'
-                }`}
-              >
-                 {paymentMethod === 'paymaya' && (
-                  <div className="absolute top-2 right-2 text-white">
-                    <CheckCircle className="w-4 h-4" />
-                  </div>
-                )}
-                <Wallet className={`w-8 h-8 mb-3 ${paymentMethod === 'paymaya' ? 'text-white' : 'text-[var(--text-secondary)]'}`} />
-                <span className={`text-sm font-bold ${paymentMethod === 'paymaya' ? 'text-white' : 'text-[var(--text-primary)]'}`}>PayMaya</span>
-              </button>
             </div>
 
             {/* Dynamic Form Content */}
             <form onSubmit={handlePayment} className="animate-fade-in">
-              {paymentMethod === 'card' && (
+              {(paymentMethod === 'credit' || paymentMethod === 'debit') && (
                 <div className="space-y-6">
                   <div>
                     <label className="block text-sm font-medium text-[var(--text-secondary)] mb-2">Card Details</label>
@@ -327,17 +519,31 @@ export const PaymentPage = () => {
                 </div>
               )}
 
-              {paymentMethod !== 'card' && (
+              {paymentMethod !== 'credit' && paymentMethod !== 'debit' && (
                 <div className="text-center py-10 bg-[var(--bg-tertiary)] rounded-2xl border border-[var(--border-subtle)] border-dashed">
-                  <div className={`w-20 h-20 mx-auto mb-6 rounded-full flex items-center justify-center ${paymentMethod === 'gcash' ? 'bg-[#007DFE]/10' : 'bg-white/5'}`}>
-                    {paymentMethod === 'gcash' ? <Smartphone className="w-10 h-10 text-[#007DFE]" /> : <Wallet className="w-10 h-10 text-white" />}
+                  <div className={`w-20 h-20 mx-auto mb-6 rounded-full flex items-center justify-center ${
+                    paymentMethod === 'gcash' ? 'bg-[#007DFE]/10' : 'bg-white/5'
+                  }`}>
+                    {paymentMethod === 'gcash' ? (
+                      <Smartphone className="w-10 h-10 text-[#007DFE]" />
+                    ) : paymentMethod === 'cash' ? (
+                      <Wallet className="w-10 h-10 text-white" />
+                    ) : (
+                      <CreditCard className="w-10 h-10 text-[var(--text-secondary)]" />
+                    )}
                   </div>
-                  <h3 className="text-lg font-bold mb-2">Pay with {paymentMethod === 'gcash' ? 'GCash' : 'PayMaya'}</h3>
+                  <h3 className="text-lg font-bold mb-2">
+                    {paymentMethod === 'gcash' ? 'Pay with GCash' : paymentMethod === 'cash' ? 'Pay with Cash' : 'Pay with Card'}
+                  </h3>
                   <p className="text-sm text-[var(--text-secondary)] mb-8 max-w-sm mx-auto">
-                    You will be securely redirected to the {paymentMethod === 'gcash' ? 'GCash' : 'PayMaya'} payment portal to complete your transaction.
+                    {paymentMethod === 'gcash'
+                      ? 'You will be securely redirected to the GCash payment portal to complete your transaction.'
+                      : paymentMethod === 'cash'
+                        ? 'You selected Cash. This is a simulation: your booking will be confirmed as paid.'
+                        : 'You will be securely redirected to your card payment portal to complete your transaction.'}
                   </p>
                   <Button variant="outline" type="button" className="hover:bg-[var(--bg-secondary)]">
-                    Link {paymentMethod === 'gcash' ? 'GCash' : 'PayMaya'} Account
+                    {paymentMethod === 'gcash' ? 'Link GCash Account' : 'Confirm Payment Method'}
                   </Button>
                 </div>
               )}
