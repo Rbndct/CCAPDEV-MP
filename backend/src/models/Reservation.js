@@ -45,6 +45,11 @@ const reservationSchema = new mongoose.Schema({
         enum: ['pending', 'paid'],
         default: 'pending'
     },
+    payment_method: {
+        type: String,
+        enum: ['cash', 'credit', 'debit', 'gcash'],
+        default: null
+    },
     reserved_by: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User' // Technically the Lab Technician
