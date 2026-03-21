@@ -43,7 +43,7 @@ export const AddFacilityModal = ({ isOpen, onClose, onRefresh }) => {
         e.preventDefault();
         setIsSubmitting(true);
         try {
-            const response = await fetch(`${API_BASE_URL || 'http://localhost:5000/api'}/admin/facilities`, {
+            const response = await fetch(`${API_BASE_URL || 'http://localhost:5001/api'}/admin/facilities`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

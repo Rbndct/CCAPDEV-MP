@@ -198,7 +198,7 @@ export const FacilityDetailPage = () => {
 
     setIsBooking(true);
     try {
-      const response = await fetch(`${API_BASE_URL || 'http://localhost:5000/api'}/reservations`, {
+      const response = await fetch(`${API_BASE_URL || 'http://localhost:5001/api'}/reservations`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

@@ -58,7 +58,7 @@ export const EditFacilityModal = ({ isOpen, onClose, facility, onRefresh }) => {
         if (!facility) return;
         setIsSubmitting(true);
         try {
-            const response = await fetch(`${API_BASE_URL || 'http://localhost:5000/api'}/admin/facilities/${facility.id}`, {
+            const response = await fetch(`${API_BASE_URL || 'http://localhost:5001/api'}/admin/facilities/${facility.id}`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',

@@ -412,7 +412,7 @@ export const FacilitiesPage = () => {
   useEffect(() => {
     const fetchFacilities = async () => {
       try {
-        const response = await fetch(`${API_BASE_URL || 'http://localhost:5000/api'}/reservations/facilities`);
+        const response = await fetch(`${API_BASE_URL || 'http://localhost:5001/api'}/reservations/facilities`);
         const data = await response.json();
         if (response.ok) {
           // Normalize MongoDB field names to what FacilityCard expects
@@ -437,7 +437,7 @@ export const FacilitiesPage = () => {
 
     const fetchFavorites = async () => {
       try {
-        const response = await fetch(`${API_BASE_URL || 'http://localhost:5000/api'}/profiles/me/favorites`, {
+        const response = await fetch(`${API_BASE_URL || 'http://localhost:5001/api'}/profiles/me/favorites`, {
           headers: { 'Authorization': `Bearer ${token}` }
         });
         if (response.ok) {
@@ -477,7 +477,7 @@ export const FacilitiesPage = () => {
 
   const handleToggleFavorite = async (facilityId) => {
     try {
-      const response = await fetch(`${API_BASE_URL || 'http://localhost:5000/api'}/profiles/me/favorites/${facilityId}`, {
+      const response = await fetch(`${API_BASE_URL || 'http://localhost:5001/api'}/profiles/me/favorites/${facilityId}`, {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}` }
       });

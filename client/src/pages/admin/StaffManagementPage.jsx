@@ -15,7 +15,7 @@ export function StaffManagementPage() {
 
     const fetchStaff = async () => {
         try {
-            const response = await fetch(`${API_BASE_URL || 'http://localhost:5000/api'}/admin/users`, {
+            const response = await fetch(`${API_BASE_URL || 'http://localhost:5001/api'}/admin/users`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             const data = await response.json();

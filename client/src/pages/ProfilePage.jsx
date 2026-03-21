@@ -27,10 +27,10 @@ export const ProfilePage = () => {
     const fetchProfileData = async () => {
       try {
         const [profileResponse, resResponse] = await Promise.all([
-          fetch(`${API_BASE_URL || 'http://localhost:5000/api'}/profiles/me`, {
+          fetch(`${API_BASE_URL || 'http://localhost:5001/api'}/profiles/me`, {
             headers: { 'Authorization': `Bearer ${token}` }
           }),
-          fetch(`${API_BASE_URL || 'http://localhost:5000/api'}/reservations/my`, {
+          fetch(`${API_BASE_URL || 'http://localhost:5001/api'}/reservations/my`, {
             headers: { 'Authorization': `Bearer ${token}` }
           })
         ]);
@@ -83,7 +83,7 @@ export const ProfilePage = () => {
     setSaveStatus('saving');
 
     try {
-      const response = await fetch(`${API_BASE_URL || 'http://localhost:5000/api'}/profiles/me`, {
+      const response = await fetch(`${API_BASE_URL || 'http://localhost:5001/api'}/profiles/me`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,

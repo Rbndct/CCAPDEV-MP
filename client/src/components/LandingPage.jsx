@@ -432,7 +432,7 @@ const BackendStatus = () => {
   useEffect(() => {
     const checkStatus = async () => {
       try {
-        const response = await fetch('http://localhost:5001/api/health');
+        const response = await fetch('/api/health');
         const data = await response.json();
         setStatus('online');
         setDbStatus(data.database);

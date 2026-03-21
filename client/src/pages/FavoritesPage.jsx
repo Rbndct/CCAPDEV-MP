@@ -12,7 +12,7 @@ export const FavoritesPage = () => {
   useEffect(() => {
     const fetchFavorites = async () => {
       try {
-        const response = await fetch(`${API_BASE_URL || 'http://localhost:5000/api'}/profiles/me/favorites`, {
+        const response = await fetch(`${API_BASE_URL || 'http://localhost:5001/api'}/profiles/me/favorites`, {
           headers: { 'Authorization': `Bearer ${token}` }
         });
         if (response.ok) {
@@ -30,7 +30,7 @@ export const FavoritesPage = () => {
 
   const removeFavorite = async (id) => {
     try {
-      const response = await fetch(`${API_BASE_URL || 'http://localhost:5000/api'}/profiles/me/favorites/${id}`, {
+      const response = await fetch(`${API_BASE_URL || 'http://localhost:5001/api'}/profiles/me/favorites/${id}`, {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}` }
       });

@@ -82,7 +82,7 @@ export const DashboardPage = () => {
   const fetchDashboardData = async () => {
     try {
       // Fetch user's reservations
-      const resResponse = await fetch(`${API_BASE_URL || 'http://localhost:5000/api'}/reservations/my`, {
+      const resResponse = await fetch(`${API_BASE_URL || 'http://localhost:5001/api'}/reservations/my`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const resData = await resResponse.json();
@@ -117,7 +117,7 @@ export const DashboardPage = () => {
       }
 
       // Fetch all public profiles for search
-      const profilesResponse = await fetch(`${API_BASE_URL || 'http://localhost:5000/api'}/profiles/`, {
+      const profilesResponse = await fetch(`${API_BASE_URL || 'http://localhost:5001/api'}/profiles/`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const profilesData = await profilesResponse.json();
@@ -161,7 +161,7 @@ export const DashboardPage = () => {
   };
 
   const handleSaveEdit = async (updatedBooking) => {
-    const response = await fetch(`${API_BASE_URL || 'http://localhost:5000/api'}/reservations/${updatedBooking.id}`, {
+    const response = await fetch(`${API_BASE_URL || 'http://localhost:5001/api'}/reservations/${updatedBooking.id}`, {
       method: 'PATCH',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -192,7 +192,7 @@ export const DashboardPage = () => {
     if (window.confirm('Are you sure you want to cancel this reservation?')) {
       try {
         const bookingId = booking.id;
-        const response = await fetch(`${API_BASE_URL || 'http://localhost:5000/api'}/reservations/${bookingId}/cancel`, {
+        const response = await fetch(`${API_BASE_URL || 'http://localhost:5001/api'}/reservations/${bookingId}/cancel`, {
           method: 'PATCH',
           headers: { 'Authorization': `Bearer ${token}` }
         });

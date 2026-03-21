@@ -18,7 +18,7 @@ export function BookingsPage() {
     useEffect(() => {
         const fetchBookings = async () => {
             try {
-                const response = await fetch(`${API_BASE_URL || 'http://localhost:5000/api'}/admin/reservations`, {
+                const response = await fetch(`${API_BASE_URL || 'http://localhost:5001/api'}/admin/reservations`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
                 const data = await response.json();
@@ -50,7 +50,7 @@ export function BookingsPage() {
     useEffect(() => {
         const loadFacilities = async () => {
             try {
-                const res = await fetch(`${API_BASE_URL || 'http://localhost:5000/api'}/reservations/facilities`);
+                const res = await fetch(`${API_BASE_URL || 'http://localhost:5001/api'}/reservations/facilities`);
                 const data = await res.json();
                 if (res.ok) {
                     setFacilities([

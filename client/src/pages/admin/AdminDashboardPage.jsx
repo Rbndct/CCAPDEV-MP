@@ -28,13 +28,13 @@ export function AdminDashboardPage() {
         const fetchDashboardData = async () => {
             try {
                 const [userRes, statsRes, resRes] = await Promise.all([
-                    fetch(`${API_BASE_URL || 'http://localhost:5000/api'}/admin/users`, {
+                    fetch(`${API_BASE_URL || 'http://localhost:5001/api'}/admin/users`, {
                         headers: { 'Authorization': `Bearer ${token}` }
                     }),
-                    fetch(`${API_BASE_URL || 'http://localhost:5000/api'}/admin/stats`, {
+                    fetch(`${API_BASE_URL || 'http://localhost:5001/api'}/admin/stats`, {
                         headers: { 'Authorization': `Bearer ${token}` }
                     }),
-                    fetch(`${API_BASE_URL || 'http://localhost:5000/api'}/admin/reservations`, {
+                    fetch(`${API_BASE_URL || 'http://localhost:5001/api'}/admin/reservations`, {
                         headers: { 'Authorization': `Bearer ${token}` }
                     })
                 ]);

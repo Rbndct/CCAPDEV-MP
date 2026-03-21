@@ -26,7 +26,7 @@ export function ReservationsPage() {
 
     const fetchReservations = async () => {
         try {
-            const response = await fetch(`${API_BASE_URL || 'http://localhost:5000/api'}/admin/reservations`, {
+            const response = await fetch(`${API_BASE_URL || 'http://localhost:5001/api'}/admin/reservations`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             const data = await response.json();
@@ -62,7 +62,7 @@ export function ReservationsPage() {
         ));
 
         try {
-            await fetch(`${API_BASE_URL || 'http://localhost:5000/api'}/admin/reservations/${id}`, {
+            await fetch(`${API_BASE_URL || 'http://localhost:5001/api'}/admin/reservations/${id}`, {
                 method: 'PUT',
                 headers: {
                     'Authorization': `Bearer ${token}`,

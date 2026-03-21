@@ -20,7 +20,7 @@ export function FacilitiesManagementPage() {
 
     const fetchFacilities = async () => {
         try {
-            const response = await fetch(`${API_BASE_URL || 'http://localhost:5000/api'}/admin/facilities`, {
+            const response = await fetch(`${API_BASE_URL || 'http://localhost:5001/api'}/admin/facilities`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             const data = await response.json();

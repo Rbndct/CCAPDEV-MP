@@ -17,7 +17,7 @@ export function UserManagementPage() {
     useEffect(() => {
         const fetchUsers = async () => {
             try {
-                const response = await fetch(`${API_BASE_URL || 'http://localhost:5000/api'}/admin/users`, {
+                const response = await fetch(`${API_BASE_URL || 'http://localhost:5001/api'}/admin/users`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
                 const data = await response.json();
@@ -67,7 +67,7 @@ export function UserManagementPage() {
 
         try {
             // Fetch all reservations and filter by user ID
-            const response = await fetch(`${API_BASE_URL || 'http://localhost:5000/api'}/admin/reservations`, {
+            const response = await fetch(`${API_BASE_URL || 'http://localhost:5001/api'}/admin/reservations`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             const data = await response.json();
