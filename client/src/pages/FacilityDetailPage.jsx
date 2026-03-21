@@ -34,6 +34,28 @@ class ErrorBoundary extends React.Component {
   }
 }
 
+const getAmenityStyle = (amenity) => {
+  const lower = amenity.toLowerCase();
+  
+  if (lower.includes('professional') || lower.includes('grade') || lower.includes('surface') || lower.includes('court') || lower.includes('premium') || lower.includes('tournament') || lower.includes('standard')) {
+    return 'bg-blue-500/10 text-blue-500 border border-blue-500/20';
+  }
+  if (lower.includes('air') || lower.includes('lounge') || lower.includes('seating') || lower.includes('ceiling')) {
+    return 'bg-purple-500/10 text-purple-500 border border-purple-500/20';
+  }
+  if (lower.includes('scoreboard') || lower.includes('machine') || lower.includes('net') || lower.includes('lighting') || lower.includes('equipment')) {
+    return 'bg-orange-500/10 text-orange-500 border border-orange-500/20';
+  }
+  if (lower.includes('rental') || lower.includes('parking') || lower.includes('room') || lower.includes('shower') || lower.includes('water')) {
+    return 'bg-teal-500/10 text-teal-500 border border-teal-500/20';
+  }
+  if (lower.includes('setup') || lower.includes('sports') || lower.includes('convertible') || lower.includes('option') || lower.includes('flexible')) {
+    return 'bg-rose-500/10 text-rose-500 border border-rose-500/20';
+  }
+
+  return 'bg-[var(--bg-tertiary)] text-[var(--text-primary)] border border-[var(--border-subtle)]';
+};
+
 export const FacilityDetailPage = () => {
   const { facilityId } = useParams();
   const navigate = useNavigate();
@@ -509,14 +531,11 @@ export const FacilityDetailPage = () => {
 
                 <Card variant="outlined" className="p-6">
                   <h3 className="text-xl font-bold mb-4">Amenities</h3>
-                  <div className="grid grid-cols-1 gap-3">
+                  <div className="flex flex-wrap gap-2">
                     {facility.amenities.map((amenity, idx) => (
-                      <div key={idx} className="flex items-center gap-3">
-                        <div className="w-6 h-6 rounded-full bg-[rgba(0,255,136,0.1)] flex items-center justify-center flex-shrink-0">
-                          <Check className="w-4 h-4 text-[var(--accent-green)]" />
-                        </div>
-                        <span className="text-[var(--text-secondary)]">{amenity}</span>
-                      </div>
+                      <span key={idx} className={`text-sm px-3 py-1.5 rounded-[var(--radius-sm)] font-medium transition-colors ${getAmenityStyle(amenity)}`}>
+                        {amenity}
+                      </span>
                     ))}
                   </div>
                 </Card>

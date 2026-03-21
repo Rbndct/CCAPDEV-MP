@@ -20,7 +20,7 @@ const allAmenities = [
 const getAmenityStyle = (amenity) => {
   const lower = amenity.toLowerCase();
 
-  if (lower.includes('professional') || lower.includes('grade') || lower.includes('surface') || lower.includes('court')) {
+  if (lower.includes('professional') || lower.includes('grade') || lower.includes('surface') || lower.includes('court') || lower.includes('premium') || lower.includes('tournament') || lower.includes('standard')) {
     return 'bg-blue-500/10 text-blue-500 border border-blue-500/20';
   }
   if (lower.includes('air') || lower.includes('lounge') || lower.includes('seating') || lower.includes('ceiling')) {
@@ -29,8 +29,14 @@ const getAmenityStyle = (amenity) => {
   if (lower.includes('scoreboard') || lower.includes('machine') || lower.includes('net') || lower.includes('lighting') || lower.includes('equipment')) {
     return 'bg-orange-500/10 text-orange-500 border border-orange-500/20';
   }
+  if (lower.includes('rental') || lower.includes('parking') || lower.includes('room') || lower.includes('shower') || lower.includes('water')) {
+    return 'bg-teal-500/10 text-teal-500 border border-teal-500/20';
+  }
+  if (lower.includes('setup') || lower.includes('sports') || lower.includes('convertible') || lower.includes('option') || lower.includes('flexible')) {
+    return 'bg-rose-500/10 text-rose-500 border border-rose-500/20';
+  }
 
-  return 'bg-[var(--bg-tertiary)] text-[var(--text-secondary)] border border-[var(--border-subtle)]';
+  return 'bg-[var(--bg-tertiary)] text-[var(--text-primary)] border border-[var(--border-subtle)]';
 };
 
 // Custom Multi-Select Dropdown for Amenities
