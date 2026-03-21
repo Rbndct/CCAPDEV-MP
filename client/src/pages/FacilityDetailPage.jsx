@@ -40,13 +40,13 @@ const getAmenityStyle = (amenity) => {
   if (lower.includes('professional') || lower.includes('grade') || lower.includes('surface') || lower.includes('court') || lower.includes('premium') || lower.includes('tournament') || lower.includes('standard')) {
     return 'bg-blue-500/10 text-blue-500 border border-blue-500/20';
   }
-  if (lower.includes('air') || lower.includes('lounge') || lower.includes('seating') || lower.includes('ceiling')) {
+  if (lower.includes('air') || lower.includes('lounge') || lower.includes('seating') || lower.includes('ceiling') || lower.includes('bleacher')) {
     return 'bg-purple-500/10 text-purple-500 border border-purple-500/20';
   }
-  if (lower.includes('scoreboard') || lower.includes('machine') || lower.includes('net') || lower.includes('lighting') || lower.includes('equipment')) {
+  if (lower.includes('scoreboard') || lower.includes('machine') || lower.includes('net') || lower.includes('lighting') || lower.includes('equipment') || lower.includes('floodlight') || lower.includes('ball') || lower.includes('paddle')) {
     return 'bg-orange-500/10 text-orange-500 border border-orange-500/20';
   }
-  if (lower.includes('rental') || lower.includes('parking') || lower.includes('room') || lower.includes('shower') || lower.includes('water')) {
+  if (lower.includes('rental') || lower.includes('parking') || lower.includes('room') || lower.includes('locker') || lower.includes('shower') || lower.includes('water')) {
     return 'bg-teal-500/10 text-teal-500 border border-teal-500/20';
   }
   if (lower.includes('setup') || lower.includes('sports') || lower.includes('convertible') || lower.includes('option') || lower.includes('flexible')) {

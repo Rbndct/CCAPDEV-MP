@@ -8,12 +8,13 @@ import { useAuth, API_BASE_URL } from '../contexts/AuthContext';
 
 // Hardcoded comprehensive list of amenities for filtering since DB might not have all variations initially
 const allAmenities = [
-  'Air Conditioned', 'Professional Grade', 'Scoreboard', 'Good Lighting',
-  'Standard Equipment', 'Hard Court', 'Professional Net', 'Ball Machine',
-  'Tournament Grade', 'Spectator Seating', 'Premium Surface', '4 Courts',
-  'High Ceiling', 'Quality Nets', 'Professional Court', 'Sand Option',
-  'Scoreboards', 'Convertible', 'Multiple Sports', 'Flexible Setup',
-  'Paddle Rental', 'Locker Rooms', 'Showers', 'Free Parking', 'Water Fountains'
+  'Air Conditioned', 'Air Conditioning', 'Ball Machine', 'Ball Rental', 'Bleachers', 
+  'Convertible', 'Equipment Rental', 'Flexible Setup', 'Floodlights', 'Free Parking', 
+  'Good Lighting', 'Hard Court', 'High Ceiling', 'Locker Room', 'Locker Rooms', 
+  'Multiple Sports', 'Paddle Rental', 'Parking', 'Premium Surface', 'Professional Court', 
+  'Professional Grade', 'Professional Net', 'Quality Nets', 'Sand Option', 'Scoreboard', 
+  'Scoreboards', 'Shower', 'Showers', 'Spectator Seating', 'Standard Equipment', 
+  'Tournament Grade', 'Water Fountains', '4 Courts'
 ].sort();
 
 // Helper: Get color style for amenities
@@ -23,13 +24,13 @@ const getAmenityStyle = (amenity) => {
   if (lower.includes('professional') || lower.includes('grade') || lower.includes('surface') || lower.includes('court') || lower.includes('premium') || lower.includes('tournament') || lower.includes('standard')) {
     return 'bg-blue-500/10 text-blue-500 border border-blue-500/20';
   }
-  if (lower.includes('air') || lower.includes('lounge') || lower.includes('seating') || lower.includes('ceiling')) {
+  if (lower.includes('air') || lower.includes('lounge') || lower.includes('seating') || lower.includes('ceiling') || lower.includes('bleacher')) {
     return 'bg-purple-500/10 text-purple-500 border border-purple-500/20';
   }
-  if (lower.includes('scoreboard') || lower.includes('machine') || lower.includes('net') || lower.includes('lighting') || lower.includes('equipment')) {
+  if (lower.includes('scoreboard') || lower.includes('machine') || lower.includes('net') || lower.includes('lighting') || lower.includes('equipment') || lower.includes('floodlight') || lower.includes('ball') || lower.includes('paddle')) {
     return 'bg-orange-500/10 text-orange-500 border border-orange-500/20';
   }
-  if (lower.includes('rental') || lower.includes('parking') || lower.includes('room') || lower.includes('shower') || lower.includes('water')) {
+  if (lower.includes('rental') || lower.includes('parking') || lower.includes('room') || lower.includes('locker') || lower.includes('shower') || lower.includes('water')) {
     return 'bg-teal-500/10 text-teal-500 border border-teal-500/20';
   }
   if (lower.includes('setup') || lower.includes('sports') || lower.includes('convertible') || lower.includes('option') || lower.includes('flexible')) {
@@ -194,7 +195,7 @@ const FilterSection = ({ filters, setFilters, onApplyFilters, amenities }) => {
       </div>
 
       {/* First Row - Main Filters */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-4">
         {/* Sport Type Filter - ENHANCED */}
         <div className="flex flex-col gap-2">
           <label className="text-sm font-medium text-[var(--text-secondary)]">
@@ -246,6 +247,23 @@ const FilterSection = ({ filters, setFilters, onApplyFilters, amenities }) => {
             <option value="500">Up to ₱500</option>
             <option value="600">Up to ₱600</option>
             <option value="700">Up to ₱700</option>
+          </select>
+        </div>
+
+        {/* Rating Filter */}
+        <div className="flex flex-col gap-2">
+          <label className="text-sm font-medium text-[var(--text-secondary)]">
+            Min Rating
+          </label>
+          <select
+            className="w-full bg-[var(--bg-tertiary)] border border-[var(--border-subtle)] rounded-[var(--radius-md)] px-4 py-3 text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent-green)] focus:ring-2 focus:ring-[rgba(0,255,136,0.2)] transition-all"
+            value={filters.minRating}
+            onChange={(e) => setFilters({ ...filters, minRating: e.target.value })}
+          >
+            <option value="0">Any Rating</option>
+            <option value="4">4+ Stars</option>
+            <option value="3">3+ Stars</option>
+            <option value="2">2+ Stars</option>
           </select>
         </div>
       </div>
@@ -344,9 +362,14 @@ const FacilityCard = ({ facility, onViewSchedule, isFavorite, onToggleFavorite, 
             <h3 className="text-xl font-bold mb-1">{facility?.name || facility?.facility_name || 'Court'}</h3>
             <p className="text-sm text-[var(--text-muted)]">{facility?.type || facility?.facility_type || 'Facility'}</p>
           </div>
-          <div className="flex items-center gap-1">
-            <Star className="w-4 h-4 text-[var(--warning)] fill-[var(--warning)]" />
-            <span className="font-bold">{facility?.rating || 4.5}</span>
+          <div className="flex flex-col items-end">
+            <div className="flex items-center gap-1">
+              <Star className="w-4 h-4 text-[var(--warning)] fill-[var(--warning)]" />
+              <span className="font-bold">{facility?.rating || 'New'}</span>
+            </div>
+            {(facility?.reviews > 0) && (
+               <span className="text-[11px] text-[var(--text-muted)]">{facility.reviews} reviews</span>
+            )}
           </div>
         </div>
 
@@ -407,7 +430,8 @@ export const FacilitiesPage = () => {
     amenities: [],
     date: '',
     time: '',
-    maxPrice: '9999'
+    maxPrice: '9999',
+    minRating: '0'
   });
 
   const [facilitiesData, setFacilitiesData] = useState([]);
@@ -477,6 +501,12 @@ export const FacilitiesPage = () => {
 
     // Filter by price
     filtered = filtered.filter(f => (f.hourly_rate || f.price || 500) <= parseInt(filters.maxPrice));
+
+    // Filter by minimum rating
+    if (filters.minRating !== '0') {
+      const min = parseInt(filters.minRating);
+      filtered = filtered.filter(f => typeof f.rating === 'number' && f.rating >= min);
+    }
 
     setFilteredFacilities(filtered);
   };

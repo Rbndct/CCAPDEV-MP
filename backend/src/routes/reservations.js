@@ -78,8 +78,33 @@ async function computeCancellationFee(reservation) {
 // GET /api/reservations/facilities  — list all facilities (public)
 router.get('/facilities', async (req, res) => {
     try {
-        const facilities = await SportFacility.find().sort({ facility_name: 1 });
-        res.json(facilities);
+        const facilities = await SportFacility.find().sort({ facility_name: 1 }).lean();
+        
+        const reviewsAgg = await FacilityReview.aggregate([
+            {
+                $group: {
+                    _id: '$facility_id',
+                    averageRating: { $avg: '$rating_score' },
+                    reviewCount: { $sum: 1 }
+                }
+            }
+        ]);
+        
+        const reviewMap = {};
+        reviewsAgg.forEach(r => {
+            reviewMap[r._id.toString()] = r;
+        });
+        
+        const enrichedFacilities = facilities.map(f => {
+            const stats = reviewMap[f._id.toString()] || { averageRating: 0, reviewCount: 0 };
+            return {
+                ...f,
+                rating: stats.averageRating > 0 ? Number(stats.averageRating.toFixed(1)) : 'New',
+                reviews: stats.reviewCount
+            };
+        });
+
+        res.json(enrichedFacilities);
     } catch (err) {
         res.status(500).json({ message: 'Error fetching facilities.', error: err.message });
     }
