@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Calendar, ChevronLeft, ChevronRight, Clock, X, Check, Lightbulb, Loader } from 'lucide-react';
+import { Calendar, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Clock, X, Check, Lightbulb, Loader } from 'lucide-react';
 import { Card, Button, Badge } from './ui';
 import { useAuth, API_BASE_URL } from '../contexts/AuthContext';
 import { AuthModal } from './AuthModal';
@@ -24,6 +24,7 @@ const getSlotIndex = (time, allSlots) => allSlots.indexOf(time);
 export const PublicAvailabilityCalendar = ({ facility, onSlotSelect, isBooking, refreshKey }) => {
   const { isLoggedIn } = useAuth();
   const [showAuthModal, setShowAuthModal] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false);
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [timeFilter, setTimeFilter] = useState('all');
 
@@ -226,41 +227,57 @@ export const PublicAvailabilityCalendar = ({ facility, onSlotSelect, isBooking, 
   const totalPrice = duration * facility.price;
 
   return (
-    <Card variant="outlined" className="p-6">
+    <Card variant="outlined" className={`p-6 transition-all duration-300 ${!isExpanded ? 'hover:border-[var(--accent-green)] cursor-pointer group' : ''}`} onClick={() => !isExpanded && setIsExpanded(true)}>
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <Calendar className="w-6 h-6 text-[var(--accent-green)]" />
-          <h3 className="text-xl font-bold">Availability Schedule</h3>
+          <Calendar className={`w-6 h-6 transition-colors ${isExpanded ? 'text-[var(--accent-green)]' : 'text-[var(--text-secondary)] group-hover:text-[var(--accent-green)]'}`} />
+          <div>
+            <h3 className="text-xl font-bold">Availability Schedule</h3>
+            {!isExpanded && <p className="text-sm text-[var(--text-muted)] mt-1">Click to view open slots and book your court</p>}
+          </div>
         </div>
-        <div className="flex items-center gap-2">
-          <Button variant="ghost" size="sm" onClick={handlePrevWeek}>
-            <ChevronLeft className="w-5 h-5" />
-          </Button>
-          <span className="text-sm font-medium px-3">
-            {formatDate(weekDates[0])} - {formatDate(weekDates[6])}
-          </span>
-          <Button variant="ghost" size="sm" onClick={handleNextWeek}>
-            <ChevronRight className="w-5 h-5" />
-          </Button>
+        <div className="flex items-center gap-4">
+          {isExpanded && (
+            <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+              <Button variant="ghost" size="sm" onClick={handlePrevWeek}>
+                <ChevronLeft className="w-5 h-5" />
+              </Button>
+              <span className="text-sm font-medium px-3 hidden md:inline">
+                {formatDate(weekDates[0])} - {formatDate(weekDates[6])}
+              </span>
+              <Button variant="ghost" size="sm" onClick={handleNextWeek}>
+                <ChevronRight className="w-5 h-5" />
+              </Button>
+            </div>
+          )}
+          <button 
+            className={`p-2 rounded-full transition-colors ${isExpanded ? 'bg-[var(--bg-tertiary)] hover:bg-[var(--bg-secondary)]' : 'bg-[rgba(0,255,136,0.1)] text-[var(--accent-green)] group-hover:bg-[var(--accent-green)] group-hover:text-black'}`}
+            onClick={(e) => { e.stopPropagation(); setIsExpanded(!isExpanded); }}
+          >
+             {isExpanded ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
+          </button>
         </div>
       </div>
 
-      {/* Time Filter */}
-      <div className="flex gap-2 mb-4">
-        <Button variant={timeFilter === 'all' ? 'primary' : 'outline'} size="sm" onClick={() => setTimeFilter('all')}>
-          All Day
-        </Button>
-        <Button variant={timeFilter === 'morning' ? 'primary' : 'outline'} size="sm" onClick={() => setTimeFilter('morning')}>
-          Morning (6AM-12PM)
-        </Button>
-        <Button variant={timeFilter === 'afternoon' ? 'primary' : 'outline'} size="sm" onClick={() => setTimeFilter('afternoon')}>
-          Afternoon (12PM-6PM)
-        </Button>
-        <Button variant={timeFilter === 'evening' ? 'primary' : 'outline'} size="sm" onClick={() => setTimeFilter('evening')}>
-          Evening (6PM-11PM)
-        </Button>
-      </div>
+      {/* Expandable Body */}
+      {isExpanded && (
+        <div className="pt-6 mt-6 border-t border-[var(--border-subtle)] animate-fade-in">
+          {/* Time Filter */}
+          <div className="flex flex-wrap gap-2 mb-4">
+            <Button variant={timeFilter === 'all' ? 'primary' : 'outline'} size="sm" onClick={() => setTimeFilter('all')}>
+              All Day
+            </Button>
+            <Button variant={timeFilter === 'morning' ? 'primary' : 'outline'} size="sm" onClick={() => setTimeFilter('morning')}>
+              Morning (6AM-12PM)
+            </Button>
+            <Button variant={timeFilter === 'afternoon' ? 'primary' : 'outline'} size="sm" onClick={() => setTimeFilter('afternoon')}>
+              Afternoon (12PM-6PM)
+            </Button>
+            <Button variant={timeFilter === 'evening' ? 'primary' : 'outline'} size="sm" onClick={() => setTimeFilter('evening')}>
+              Evening (6PM-11PM)
+            </Button>
+          </div>
 
       {/* Legend */}
       <div className="flex flex-wrap gap-4 mb-4 text-sm">
@@ -418,6 +435,9 @@ export const PublicAvailabilityCalendar = ({ facility, onSlotSelect, isBooking, 
           <p className="text-sm text-[var(--text-muted)]">
             <span className="flex items-center gap-2"><Lightbulb className="w-4 h-4 text-[var(--accent-yellow)]" /> Now click an end time on the same day to complete your selection</span>
           </p>
+        </div>
+      )}
+
         </div>
       )}
 
