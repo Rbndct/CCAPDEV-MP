@@ -157,6 +157,16 @@ router.get('/search', verifyToken, async (req, res) => {
     }
 });
 
+// GET /api/profiles/count  — get exact user count (no auth required)
+router.get('/count', async (req, res) => {
+    try {
+        const count = await User.countDocuments();
+        res.json({ count });
+    } catch (err) {
+        res.status(500).json({ message: 'Error fetching count.', error: err.message });
+    }
+});
+
 // GET /api/profiles/:id  — public profile (no auth required)
 router.get('/:id', async (req, res) => {
     try {

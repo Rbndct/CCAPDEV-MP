@@ -143,11 +143,17 @@ export const Navbar = () => {
 // Hero Section Component
 export const Hero = () => {
   const [facilityCount, setFacilityCount] = useState(0);
+  const [memberCount, setMemberCount] = useState(0);
 
   useEffect(() => {
     fetch('/api/reservations/facilities')
       .then(r => r.json())
       .then(data => { if (Array.isArray(data)) setFacilityCount(data.length); })
+      .catch(() => { });
+      
+    fetch('/api/profiles/count')
+      .then(r => r.json())
+      .then(data => { if (data && typeof data.count === 'number') setMemberCount(data.count); })
       .catch(() => { });
   }, []);
 
@@ -190,12 +196,14 @@ export const Hero = () => {
         <div className="grid grid-cols-3 gap-8 mt-16 max-w-2xl mx-auto">
           <div className="text-center">
             <div className="text-3xl md:text-4xl font-bold text-[var(--accent-green)]">
-              {facilityCount > 0 ? `${facilityCount}+` : '—'}
+              {facilityCount > 0 ? facilityCount : '—'}
             </div>
             <div className="text-sm text-[var(--text-muted)] mt-1">Facilities</div>
           </div>
           <div className="text-center">
-            <div className="text-3xl md:text-4xl font-bold text-[var(--accent-green)]">10K+</div>
+            <div className="text-3xl md:text-4xl font-bold text-[var(--accent-green)]">
+              {memberCount > 0 ? new Intl.NumberFormat().format(memberCount) : '—'}
+            </div>
             <div className="text-sm text-[var(--text-muted)] mt-1">Members</div>
           </div>
           <div className="text-center">
