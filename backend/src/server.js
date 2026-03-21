@@ -10,8 +10,10 @@ const adminRoutes = require('./routes/admin');
 const reservationRoutes = require('./routes/reservations');
 const profileRoutes = require('./routes/profiles');
 const paymentRoutes = require('./routes/payments');
+const uploadRoutes = require('./routes/upload');
 
 const app = express();
+const path = require('path');
 const PORT = process.env.PORT || 5000;
 
 // Middleware
@@ -31,6 +33,9 @@ app.use(cors({
 }));
 app.use(express.json());
 app.use(cookieParser());
+
+// Serve uploaded images securely
+app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
 // Database connection
 mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/sportsplex', {
@@ -60,6 +65,7 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/reservations', reservationRoutes);
 app.use('/api/profiles', profileRoutes);
 app.use('/api/payments', paymentRoutes);
+app.use('/api/admin/upload', uploadRoutes);
 
 // Shared/Utility Routes
 app.get('/api/health', (req, res) => {
