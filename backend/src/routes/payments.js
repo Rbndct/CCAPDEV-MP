@@ -78,7 +78,7 @@ router.get('/history', verifyToken, async (req, res) => {
     try {
         const paidReservations = await Reservation.find({
             user: req.userId,
-            payment_status: 'paid'
+            payment_status: { $in: ['paid', 'refunded'] }
         }).populate('facility', 'facility_name hourly_rate_php').sort({ updated_at: -1 });
 
         const items = [];
@@ -90,6 +90,7 @@ router.get('/history', verifyToken, async (req, res) => {
                 date: r.date,
                 start_time: r.start_time,
                 end_time: r.end_time,
+                payment_status: r.payment_status,
                 payment_method: r.payment_method,
                 paid_at: r.updated_at,
                 ...due
@@ -132,7 +133,6 @@ router.post('/:reservationId', verifyToken, async (req, res) => {
 
         // Success! Update status
         reservation.payment_status = 'paid';
-        reservation.status = 'confirmed'; // reserved -> confirmed after payment
         if (paymentMethod) reservation.payment_method = paymentMethod;
 
         await reservation.save();

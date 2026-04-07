@@ -102,7 +102,7 @@ export const DashboardPage = () => {
             facilityId: r.facility?._id,
             date: r.date,
             time: `${r.start_time} - ${r.end_time}`,
-            status: r.status === 'reserved' ? 'confirmed' : r.status,
+            status: r.status === 'reserved' && r.payment_status === 'pending' ? 'pending' : (r.status === 'reserved' ? 'confirmed' : r.status),
             price: r.total_price || (duration * hourlyRate),
             edit_history: r.edit_history || []
           };
@@ -295,7 +295,7 @@ export const DashboardPage = () => {
                             <div className="flex items-center gap-2 mt-1">
                               {booking.status === 'pending' && (
                                 <Link
-                                  to={`/dashboard/payment?reservationId=${booking.id}`}
+                                  to={`/dashboard/payments?reservationId=${booking.id}`}
                                   className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-lg bg-[var(--accent-green)] text-black hover:bg-[rgba(0,255,136,0.8)] transition-all"
                                   title="Pay for reservation"
                                 >

@@ -2,7 +2,11 @@ import { useState } from 'react';
 import { Modal } from '../Modal';
 import { Button, Input, Select } from '../ui';
 
-export const AddStaffModal = ({ isOpen, onClose }) => {
+import { useAuth, API_BASE_URL } from '../../contexts/AuthContext';
+
+export const AddStaffModal = ({ isOpen, onClose, onSuccess }) => {
+    const { token } = useAuth();
+    const [isSubmitting, setIsSubmitting] = useState(false);
     const [formData, setFormData] = useState({
         name: '',
         email: '',
@@ -13,6 +17,8 @@ export const AddStaffModal = ({ isOpen, onClose }) => {
 
     const roles = [
         { value: '', label: 'Select a role' },
+        { value: 'admin', label: 'Admin' },
+        { value: 'staff', label: 'Staff' },
         { value: 'Trainer', label: 'Trainer' },
         { value: 'Receptionist', label: 'Receptionist' },
         { value: 'Maintenance', label: 'Maintenance' },
@@ -33,20 +39,50 @@ export const AddStaffModal = ({ isOpen, onClose }) => {
         });
     };
 
-    const handleSubmit = (e) => {
-        e.preventDefault();
-        // TODO: Add validation and API call
-        console.log('New staff:', formData);
-        alert('Staff member added successfully!');
-        onClose();
-        // Reset form
-        setFormData({
-            name: '',
-            email: '',
-            phone: '',
-            role: '',
-            status: 'Active'
-        });
+    const handleSubmit = async (e) => {
+        if (e) e.preventDefault();
+        if (!formData.name || !formData.email || !formData.role) {
+            alert("Please fill in all required fields.");
+            return;
+        }
+
+        setIsSubmitting(true);
+        try {
+            const response = await fetch(`${API_BASE_URL || 'http://localhost:5001/api'}/admin/users`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    full_name: formData.name,
+                    email: formData.email,
+                    role: formData.role,
+                    phone_number: formData.phone
+                })
+            });
+
+            const data = await response.json();
+            if (response.ok) {
+                alert('User created successfully! Default password: password');
+                if (onSuccess) onSuccess();
+                onClose();
+                setFormData({
+                    name: '',
+                    email: '',
+                    phone: '',
+                    role: '',
+                    status: 'Active'
+                });
+            } else {
+                alert(data.message || 'Failed to create user.');
+            }
+        } catch (error) {
+            console.error("Error creating user:", error);
+            alert("An error occurred while creating the user.");
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     return (
@@ -60,8 +96,8 @@ export const AddStaffModal = ({ isOpen, onClose }) => {
                     <Button variant="outline" onClick={onClose}>
                         Cancel
                     </Button>
-                    <Button variant="primary" onClick={handleSubmit}>
-                        Add Staff
+                     <Button variant="primary" onClick={handleSubmit} disabled={isSubmitting}>
+                        {isSubmitting ? 'Adding...' : 'Add User'}
                     </Button>
                 </>
             }

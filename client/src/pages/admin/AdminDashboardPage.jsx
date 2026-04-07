@@ -24,46 +24,46 @@ export function AdminDashboardPage() {
     });
     const [noShowAlerts, setNoShowAlerts] = useState([]);
 
-    useEffect(() => {
-        const fetchDashboardData = async () => {
-            try {
-                const [userRes, statsRes, resRes] = await Promise.all([
-                    fetch(`${API_BASE_URL || 'http://localhost:5001/api'}/admin/users`, {
-                        headers: { 'Authorization': `Bearer ${token}` }
-                    }),
-                    fetch(`${API_BASE_URL || 'http://localhost:5001/api'}/admin/stats`, {
-                        headers: { 'Authorization': `Bearer ${token}` }
-                    }),
-                    fetch(`${API_BASE_URL || 'http://localhost:5001/api'}/admin/reservations`, {
-                        headers: { 'Authorization': `Bearer ${token}` }
-                    })
-                ]);
+    const fetchDashboardData = async () => {
+        try {
+            const [userRes, statsRes, resRes] = await Promise.all([
+                fetch(`${API_BASE_URL || 'http://localhost:5001/api'}/admin/users`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                }),
+                fetch(`${API_BASE_URL || 'http://localhost:5001/api'}/admin/stats`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                }),
+                fetch(`${API_BASE_URL || 'http://localhost:5001/api'}/admin/reservations`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                })
+            ]);
 
-                if (userRes.ok) {
-                    const userData = await userRes.json();
-                    setRecentUsers(userData.slice(0, 5));
-                }
-
-                if (statsRes.ok) {
-                    const sd = await statsRes.json();
-                    setStatsData({
-                        revenue: sd.totalRevenue || 0,
-                        activeBookings: sd.activeBookings || 0,
-                        noShows: sd.noShows || 0,
-                        occupancyRate: sd.occupancyRate || 0
-                    });
-                }
-
-                if (resRes.ok) {
-                    const resData = await resRes.json();
-                    const noShows = resData.filter(r => r.status === 'no-show');
-                    setNoShowAlerts(noShows.slice(0, 3));
-                }
-            } catch (error) {
-                console.error("Failed to fetch dashboard data:", error);
+            if (userRes.ok) {
+                const userData = await userRes.json();
+                setRecentUsers(userData.slice(0, 5));
             }
-        };
 
+            if (statsRes.ok) {
+                const sd = await statsRes.json();
+                setStatsData({
+                    revenue: sd.totalRevenue || 0,
+                    activeBookings: sd.activeBookings || 0,
+                    noShows: sd.noShows || 0,
+                    occupancyRate: sd.occupancyRate || 0
+                });
+            }
+
+            if (resRes.ok) {
+                const resData = await resRes.json();
+                const unresolvedNoShows = resData.filter(r => r.status === 'no-show' && !r.resolved_no_show);
+                setNoShowAlerts(unresolvedNoShows.slice(0, 3));
+            }
+        } catch (error) {
+            console.error("Failed to fetch dashboard data:", error);
+        }
+    };
+
+    useEffect(() => {
         if (token) fetchDashboardData();
     }, [token]);
 
@@ -71,7 +71,7 @@ export function AdminDashboardPage() {
         { label: 'Total Revenue', value: `₱${statsData.revenue.toLocaleString()}`, change: '+12%', icon: DollarSign, color: 'text-green-500' },
         { label: 'Occupancy Rate', value: `${statsData.occupancyRate}%`, change: '+5%', icon: TrendingUp, color: 'text-blue-500' },
         { label: 'Active Bookings', value: statsData.activeBookings.toString(), change: '+18%', icon: Calendar, color: 'text-purple-500' },
-        { label: 'No-Shows', value: statsData.noShows.toString(), change: '-2%', icon: AlertTriangle, color: 'text-orange-500' },
+        { label: 'Unresolved No-Shows', value: statsData.noShows.toString(), change: '-2%', icon: AlertTriangle, color: 'text-orange-500' },
     ];
 
     return (
@@ -179,7 +179,7 @@ export function AdminDashboardPage() {
 
             {/* Modals */}
             <ViewAllReservationsModal isOpen={isViewAllModalOpen} onClose={() => setIsViewAllModalOpen(false)} />
-            <ViewNoShowsModal isOpen={isNoShowsModalOpen} onClose={() => setIsNoShowsModalOpen(false)} />
+            <ViewNoShowsModal isOpen={isNoShowsModalOpen} onClose={() => setIsNoShowsModalOpen(false)} onResolve={fetchDashboardData} />
             <NewBookingModal isOpen={isNewBookingModalOpen} onClose={() => setIsNewBookingModalOpen(false)} />
             <BlockSlotModal isOpen={isBlockSlotModalOpen} onClose={() => setIsBlockSlotModalOpen(false)} />
         </div>

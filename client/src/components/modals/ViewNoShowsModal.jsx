@@ -4,7 +4,7 @@ import { Badge, Button } from '../ui';
 import { Mail, Phone, Clock, Calendar, CheckCircle2 } from 'lucide-react';
 import { useAuth, API_BASE_URL } from '../../contexts/AuthContext';
 
-export const ViewNoShowsModal = ({ isOpen, onClose }) => {
+export const ViewNoShowsModal = ({ isOpen, onClose, onResolve }) => {
     const { token } = useAuth();
     const [noShows, setNoShows] = useState([]);
 
@@ -32,17 +32,46 @@ export const ViewNoShowsModal = ({ isOpen, onClose }) => {
                 facility: res.facility ? res.facility.name : 'N/A',
                 date: res.date ? new Date(res.date).toISOString().split('T')[0] : 'N/A',
                 time: `${res.start_time} - ${res.end_time}`,
-                resolved: false
+                resolved: res.resolved_no_show || false
             })));
         } catch (error) {
             console.error('Error fetching no-shows:', error);
         }
     };
 
-    const handleResolve = (id) => {
+    const handleResolve = async (id) => {
+        const item = noShows.find(n => n.id === id);
+        if (!item) return;
+
+        const newResolvedStatus = !item.resolved;
+
+        // Optimistic update
         setNoShows(noShows.map(item =>
-            item.id === id ? { ...item, resolved: !item.resolved } : item
+            item.id === id ? { ...item, resolved: newResolvedStatus } : item
         ));
+
+        try {
+            const response = await fetch(`${API_BASE_URL}/admin/reservations/${id}/resolve-no-show`, {
+                method: 'PATCH',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ resolved: newResolvedStatus })
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to update resolution status');
+            }
+            if (onResolve) onResolve();
+        } catch (error) {
+            console.error('Error updating no-show resolution:', error);
+            // Revert on error
+            setNoShows(noShows.map(item =>
+                item.id === id ? { ...item, resolved: !newResolvedStatus } : item
+            ));
+            alert("Failed to save resolution. Please try again.");
+        }
     };
 
     return (

@@ -87,7 +87,7 @@ export const BookingsPage = () => {
             facilityId: r.facility?._id,
             date: r.date,
             time: `${r.start_time} - ${r.end_time}`,
-            status: r.status === 'reserved' ? 'confirmed' : r.status, // Map 'reserved' to 'confirmed' for student view
+            status: r.status === 'reserved' && r.payment_status === 'pending' ? 'pending' : (r.status === 'reserved' ? 'confirmed' : r.status),
             price: r.total_price || (duration * hourlyRate),
             edit_history: r.edit_history || []
           };
@@ -349,7 +349,7 @@ export const BookingsPage = () => {
                         <div className="flex items-center justify-end gap-2">
                           {booking.status === 'pending' && (
                             <Link
-                              to={`/dashboard/payment?reservationId=${booking.id}`}
+                              to={`/dashboard/payments?reservationId=${booking.id}`}
                               className="px-3 py-1.5 text-xs font-medium rounded-lg bg-[var(--accent-green)] text-black hover:bg-[rgba(0,255,136,0.8)] transition-all flex items-center h-8"
                               title="Pay for reservation"
                             >

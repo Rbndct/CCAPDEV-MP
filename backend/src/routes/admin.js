@@ -4,6 +4,7 @@ const SportFacility = require('../models/SportFacility');
 const FacilityOperatingSchedule = require('../models/FacilityOperatingSchedule');
 const Reservation = require('../models/Reservation');
 const User = require('../models/User');
+const bcrypt = require('bcryptjs');
 const FacilityReview = require('../models/FacilityReview');
 const { verifyToken, isAdminOrStaff } = require('../middleware/auth');
 
@@ -221,6 +222,22 @@ router.put('/reservations/:id', async (req, res) => {
     }
 });
 
+// PATCH /api/admin/reservations/:id/resolve-no-show
+router.patch('/reservations/:id/resolve-no-show', async (req, res) => {
+    try {
+        const { resolved } = req.body;
+        const updated = await Reservation.findByIdAndUpdate(
+            req.params.id,
+            { resolved_no_show: resolved },
+            { new: true }
+        );
+        if (!updated) return res.status(404).json({ message: 'Reservation not found.' });
+        res.json(updated);
+    } catch (err) {
+        res.status(500).json({ message: 'Error resolving no-show.', error: err.message });
+    }
+});
+
 // DELETE /api/admin/reservations/:id
 router.delete('/reservations/:id', async (req, res) => {
     try {
@@ -370,7 +387,7 @@ router.get('/stats', async (req, res) => {
             Reservation.find().populate('facility', 'hourly_rate_php')
         ]);
 
-        const noShows = reservations.filter(r => r.status === 'no-show').length;
+        const noShows = reservations.filter(r => r.status === 'no-show' && !r.resolved_no_show).length;
         const activeBookings = reservations.filter(r => ['reserved', 'confirmed', 'pending'].includes(r.status)).length;
 
         // Revenue: sum of (duration * hourly_rate) for confirmed/completed reservations
@@ -438,6 +455,70 @@ router.get('/users', async (req, res) => {
         res.json(enriched);
     } catch (err) {
         res.status(500).json({ message: 'Error fetching users.', error: err.message });
+    }
+});
+
+// PATCH /api/admin/users/:id/status
+router.patch('/users/:id/status', async (req, res) => {
+    try {
+        const { status } = req.body;
+        if (!['active', 'inactive'].includes(status)) {
+            return res.status(400).json({ message: 'Invalid status value.' });
+        }
+        const updated = await User.findByIdAndUpdate(req.params.id, { status }, { new: true });
+        if (!updated) return res.status(404).json({ message: 'User not found.' });
+        res.json(updated);
+    } catch (err) {
+        res.status(500).json({ message: 'Error updating user status.', error: err.message });
+    }
+});
+
+// DELETE /api/admin/users/:id
+router.delete('/users/:id', async (req, res) => {
+    try {
+        const deleted = await User.findByIdAndDelete(req.params.id);
+        if (!deleted) return res.status(404).json({ message: 'User not found.' });
+        // Also delete their reservations for future sanity
+        await Reservation.deleteMany({ user: req.params.id });
+        res.json({ message: 'User deleted successfully.' });
+    } catch (err) {
+        res.status(500).json({ message: 'Error deleting user.', error: err.message });
+    }
+});
+
+// POST /api/admin/users - Admin creates another user (admin, staff, student)
+router.post('/users', async (req, res) => {
+    try {
+        const { full_name, email, role, phone_number } = req.body;
+
+        if (!email || !full_name || !role) {
+            return res.status(400).json({ message: 'Missing required fields (email, full_name, role).' });
+        }
+
+        const existing = await User.findOne({ email: email.toLowerCase() });
+        if (existing) {
+            return res.status(400).json({ message: 'A user with this email already exists.' });
+        }
+
+        // Default password is "password" as requested
+        const password_hash = await bcrypt.hash('password', 10);
+
+        const newUser = await User.create({
+            full_name,
+            email: email.toLowerCase(),
+            password_hash,
+            role: role.toLowerCase(),
+            phone_number,
+            status: 'active',
+            is_verified: true
+        });
+
+        const userResponse = newUser.toObject();
+        delete userResponse.password_hash;
+
+        res.status(201).json(userResponse);
+    } catch (err) {
+        res.status(500).json({ message: 'Error creating user.', error: err.message });
     }
 });
 

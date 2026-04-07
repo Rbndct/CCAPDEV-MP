@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Card, Button, Badge, Select, DatePicker } from '../../components/ui';
-import { Filter, Calendar as CalendarIcon, ChevronLeft, ChevronRight, Grid, List, Loader } from 'lucide-react';
+import { Filter, Calendar as CalendarIcon, ChevronLeft, ChevronRight, Grid, List, Loader, Eye } from 'lucide-react';
 import { useAuth, API_BASE_URL } from '../../contexts/AuthContext';
+import { ViewDailyActivityModal } from '../../components/modals/ViewDailyActivityModal';
 
 export function BookingsPage() {
     const { token } = useAuth();
@@ -10,6 +11,11 @@ export function BookingsPage() {
     const [filterFacility, setFilterFacility] = useState('all');
     const [filterStatus, setFilterStatus] = useState('all');
     const [showFilters, setShowFilters] = useState(false);
+
+    // Activity modal state
+    const [isActivityModalOpen, setIsActivityModalOpen] = useState(false);
+    const [activeDayBookings, setActiveDayBookings] = useState([]);
+    const [activeDayDate, setActiveDayDate] = useState(null);
 
     // DB Data
     const [bookings, setBookings] = useState([]);
@@ -247,29 +253,44 @@ export function BookingsPage() {
                                 return (
                                     <div
                                         key={index}
-                                        className={`min-h-[100px] p-2 rounded-lg border transition-colors ${day
-                                            ? 'bg-[var(--bg-secondary)] border-[var(--border-subtle)] hover:border-[var(--accent-green)] cursor-pointer'
+                                        onClick={() => {
+                                            if (day) {
+                                                const year = selectedDate.getFullYear();
+                                                const month = selectedDate.getMonth() + 1;
+                                                const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                                                setActiveDayDate(dateStr);
+                                                setActiveDayBookings(dayBookings);
+                                                setIsActivityModalOpen(true);
+                                            }
+                                        }}
+                                        className={`min-h-[100px] p-2 rounded-lg border transition-all ${day
+                                            ? 'bg-[var(--bg-secondary)] border-[var(--border-subtle)] hover:border-[var(--accent-green)] hover:shadow-md cursor-pointer group'
                                             : 'bg-transparent border-transparent'
-                                            } ${isToday ? 'ring-2 ring-[var(--accent-green)]' : ''}`}
+                                            } ${isToday ? 'ring-2 ring-[var(--accent-green)] border-[var(--accent-green)]' : ''}`}
                                     >
                                         {day && (
                                             <>
-                                                <div className={`text-sm font-medium mb-1 ${isToday ? 'text-[var(--accent-green)]' : ''}`}>
-                                                    {day}
+                                                <div className="flex justify-between items-start mb-1">
+                                                    <div className={`text-sm font-bold ${isToday ? 'text-[var(--accent-green)]' : ''}`}>
+                                                        {day}
+                                                    </div>
+                                                    {dayBookings.length > 0 && (
+                                                        <Eye size={12} className="opacity-0 group-hover:opacity-100 transition-opacity text-[var(--accent-green)]" />
+                                                    )}
                                                 </div>
                                                 <div className="space-y-1">
                                                     {dayBookings.slice(0, 3).map(booking => (
                                                         <div
                                                             key={booking.id}
-                                                            className={`text-xs p-1 rounded ${getStatusColor(booking.status)} text-white truncate`}
+                                                            className={`text-[10px] p-1 rounded-sm ${getStatusColor(booking.status)} text-white truncate font-medium`}
                                                             title={`${booking.facility} - ${booking.user} (${booking.startTime}-${booking.endTime})`}
                                                         >
                                                             {booking.startTime} {booking.facility.split(' ')[0]}
                                                         </div>
                                                     ))}
                                                     {dayBookings.length > 3 && (
-                                                        <div className="text-xs text-[var(--text-muted)] pl-1">
-                                                            +{dayBookings.length - 3} more
+                                                        <div className="text-[10px] text-[var(--text-muted)] pl-1 font-medium bg-[var(--bg-tertiary)] rounded-sm">
+                                                            +{dayBookings.length - 3} others
                                                         </div>
                                                     )}
                                                 </div>
@@ -346,6 +367,13 @@ export function BookingsPage() {
                     )}
                 </Card>
             )}
+            {/* Activity Modal */}
+            <ViewDailyActivityModal 
+                isOpen={isActivityModalOpen} 
+                onClose={() => setIsActivityModalOpen(false)} 
+                date={activeDayDate}
+                bookings={activeDayBookings}
+            />
         </div>
     );
 }

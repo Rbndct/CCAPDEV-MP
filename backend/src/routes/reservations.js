@@ -258,6 +258,17 @@ router.post('/', verifyToken, async (req, res) => {
             return res.status(400).json({ message: 'Invalid date.' });
         }
 
+        // Check facility status
+        const targetFacility = await SportFacility.findById(facility);
+        if (!targetFacility) {
+            return res.status(404).json({ message: 'Facility not found.' });
+        }
+        if (targetFacility.facility_status !== 'available') {
+            return res.status(403).json({ 
+                message: `This facility is currently ${targetFacility.facility_status === 'maintenance' ? 'under maintenance' : 'closed'} and cannot be booked.` 
+            });
+        }
+
         const activeSlots = await Reservation.find({
             facility,
             date: resDate,
@@ -340,6 +351,13 @@ router.patch('/:id', verifyToken, async (req, res) => {
             }
         }
 
+        const targetFacility = await SportFacility.findById(reservation.facility);
+        if (targetFacility && targetFacility.facility_status !== 'available') {
+            return res.status(403).json({ 
+                message: `This facility is currently ${targetFacility.facility_status === 'maintenance' ? 'under maintenance' : 'closed'} and cannot be modified/booked.` 
+            });
+        }
+
         const updatedDate = normalizeDate(date);
         if (Number.isNaN(updatedDate.getTime())) {
             return res.status(400).json({ message: 'Invalid reservation date.' });
@@ -400,6 +418,9 @@ router.patch('/:id/cancel', verifyToken, async (req, res) => {
             });
         }
 
+        if (reservation.payment_status === 'paid') {
+            reservation.payment_status = 'refunded';
+        }
         reservation.status = 'cancelled';
         await reservation.save();
 

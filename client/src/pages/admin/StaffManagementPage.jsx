@@ -27,7 +27,7 @@ export function StaffManagementPage() {
                     email: u.email,
                     phone: u.phone_number || 'N/A',
                     role: u.role.charAt(0).toUpperCase() + u.role.slice(1),
-                    status: u.is_verified ? 'Active' : 'Inactive'
+                    status: u.status || (u.is_verified ? 'Active' : 'Inactive')
                 }));
                 setStaff(mapped);
             }
@@ -41,6 +41,42 @@ export function StaffManagementPage() {
     useEffect(() => {
         if (token) fetchStaff();
     }, [token]);
+
+    const handleStatusToggle = async (id, currentStatus) => {
+        const newStatus = currentStatus.toLowerCase() === 'active' ? 'inactive' : 'active';
+        try {
+            const response = await fetch(`${API_BASE_URL || 'http://localhost:5001/api'}/admin/users/${id}/status`, {
+                method: 'PATCH',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ status: newStatus })
+            });
+            if (response.ok) fetchStaff();
+        } catch (error) {
+            console.error("Failed to toggle staff status:", error);
+        }
+    };
+
+    const handleDelete = async (id) => {
+        if (!window.confirm("Are you sure you want to delete this staff member? This action cannot be undone.")) return;
+        
+        try {
+            const response = await fetch(`${API_BASE_URL || 'http://localhost:5001/api'}/admin/users/${id}`, {
+                method: 'DELETE',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (response.ok) {
+                setStaff(staff.filter(s => s.id !== id));
+            } else {
+                const data = await response.json();
+                alert(data.message || "Failed to delete staff member.");
+            }
+        } catch (error) {
+            console.error("Failed to delete staff:", error);
+        }
+    };
 
     const handleEdit = (staffMember) => {
         setSelectedStaff(staffMember);
@@ -82,7 +118,11 @@ export function StaffManagementPage() {
                                         <td className="p-4 font-medium">{member.name}</td>
                                         <td className="p-4 text-[var(--text-secondary)]">{member.role}</td>
                                         <td className="p-4">
-                                            <Badge variant={member.status === 'Active' ? 'success' : 'warning'}>
+                                            <Badge 
+                                                variant={member.status.toLowerCase() === 'active' ? 'success' : 'warning'}
+                                                className="cursor-pointer hover:opacity-80"
+                                                onClick={() => handleStatusToggle(member.id, member.status)}
+                                            >
                                                 {member.status}
                                             </Badge>
                                         </td>
@@ -94,7 +134,10 @@ export function StaffManagementPage() {
                                                 >
                                                     <Edit2 size={16} />
                                                 </button>
-                                                <button className="p-2 hover:bg-red-500/10 text-red-500 rounded-lg transition-colors">
+                                                <button 
+                                                    className="p-2 hover:bg-red-500/10 text-red-500 rounded-lg transition-colors"
+                                                    onClick={() => handleDelete(member.id)}
+                                                >
                                                     <Trash2 size={16} />
                                                 </button>
                                             </div>
@@ -107,7 +150,7 @@ export function StaffManagementPage() {
             </Card>
 
             {/* Modals */}
-            <AddStaffModal isOpen={isAddModalOpen} onClose={() => setIsAddModalOpen(false)} />
+            <AddStaffModal isOpen={isAddModalOpen} onClose={() => setIsAddModalOpen(false)} onSuccess={fetchStaff} />
             <EditStaffModal isOpen={isEditModalOpen} onClose={() => setIsEditModalOpen(false)} staffMember={selectedStaff} />
         </div>
     );

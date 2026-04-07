@@ -21,10 +21,15 @@ const userSchema = new mongoose.Schema({
     type: String,
     trim: true
   },
-  role: {
+    role: {
     type: String,
     enum: ['student', 'staff', 'admin'],
     default: 'student'
+  },
+  status: {
+    type: String,
+    enum: ['active', 'inactive'],
+    default: 'active'
   },
   avatar_url: {
     type: String,

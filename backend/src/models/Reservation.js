@@ -42,7 +42,7 @@ const reservationSchema = new mongoose.Schema({
     },
     payment_status: {
         type: String,
-        enum: ['pending', 'paid'],
+        enum: ['pending', 'paid', 'refunded'],
         default: 'pending'
     },
     payment_method: {
@@ -63,7 +63,11 @@ const reservationSchema = new mongoose.Schema({
         previous_date: Date,
         previous_start_time: String,
         previous_end_time: String
-    }]
+    }],
+    resolved_no_show: {
+        type: Boolean,
+        default: false
+    }
 }, {
     timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' },
     collection: 'reservations'

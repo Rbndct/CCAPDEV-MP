@@ -28,7 +28,7 @@ export function UserManagementPage() {
                     email: user.email,
                     role: user.role || 'student',
                     bookings: user.booking_count || 0,
-                    status: user.is_verified ? "active" : "inactive",
+                    status: user.status || (user.is_verified ? "active" : "inactive"),
                     joinedAt: user.created_at
                 }));
 
@@ -43,14 +43,36 @@ export function UserManagementPage() {
         fetchUsers();
     }, [token]);
 
-    const toggleUserStatus = (id) => {
-        setUsers(
-            users.map((user) =>
-                user.id === id
-                    ? { ...user, status: user.status === "active" ? "inactive" : "active" }
-                    : user
-            )
-        );
+    const toggleUserStatus = async (id) => {
+        const user = users.find(u => u.id === id);
+        if (!user) return;
+
+        const newStatus = user.status === "active" ? "inactive" : "active";
+
+        // Optimistic update
+        setUsers(users.map((u) =>
+            u.id === id ? { ...u, status: newStatus } : u
+        ));
+
+        try {
+            const response = await fetch(`${API_BASE_URL || 'http://localhost:5001/api'}/admin/users/${id}/status`, {
+                method: 'PATCH',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ status: newStatus })
+            });
+
+            if (!response.ok) throw new Error('Failed to update status');
+        } catch (error) {
+            console.error("Error toggling user status:", error);
+            // Revert on error
+            setUsers(users.map((u) =>
+                u.id === id ? { ...u, status: user.status } : u
+            ));
+            alert("Failed to update user status. Please try again.");
+        }
     };
 
     const filteredUsers = users.filter(

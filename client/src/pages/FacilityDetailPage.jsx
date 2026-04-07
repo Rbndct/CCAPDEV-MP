@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { ArrowLeft, Calendar, Clock, Star, Users, MapPin, Check, Zap, Trophy, Loader, Heart, Maximize, Layers, Image as ImageIcon } from 'lucide-react';
+import { ArrowLeft, Calendar, Clock, Star, Users, MapPin, Check, Zap, Trophy, Loader, Heart, Maximize, Layers, Image as ImageIcon, TriangleAlert } from 'lucide-react';
 import { Navbar, Footer } from '../components/LandingPage';
 import { Card, Button, Badge } from '../components/ui';
 import { AuthModal } from '../components/AuthModal';
@@ -342,6 +342,27 @@ export const FacilityDetailPage = () => {
 
       <div className="min-h-screen bg-[var(--bg-primary)] pt-24 pb-16 px-6">
         <div className="max-w-7xl mx-auto">
+          {/* Maintenance / Unavailable Banner */}
+          {facility.facility_status !== 'available' && (
+            <div className={`mb-8 p-6 rounded-2xl border flex flex-col md:flex-row items-center gap-4 animate-pulse ${
+              facility.facility_status === 'maintenance' 
+                ? 'bg-orange-500/10 border-orange-500 text-orange-500' 
+                : 'bg-red-500/10 border-red-500 text-red-500'
+            }`}>
+              <div className="p-3 rounded-full bg-current bg-opacity-10">
+                <TriangleAlert className="w-8 h-8" />
+              </div>
+              <div className="text-center md:text-left">
+                <h2 className="text-xl font-bold mb-1">
+                  Facility Currently {facility.facility_status === 'maintenance' ? 'Under Maintenance' : 'Unavailable'}
+                </h2>
+                <p className="opacity-80">
+                  This facility is temporarily closed for bookings. We apologize for the inconvenience.
+                </p>
+              </div>
+            </div>
+          )}
+
           {/* Back Button */}
           <button
             onClick={() => navigate('/facilities')}
@@ -670,9 +691,18 @@ export const FacilityDetailPage = () => {
                        <span className="text-[var(--text-muted)] font-medium mb-1">/ hour</span>
                     </div>
 
-                    <a href="#schedule" className="block w-full text-center">
-                      <Button variant="primary" className="w-full !rounded-xl py-6 text-lg font-bold shadow-lg shadow-[rgba(0,255,136,0.2)] hover:shadow-[rgba(0,255,136,0.4)] transition-all transform hover:-translate-y-0.5" icon={<Calendar className="w-5 h-5"/>}>
-                        Check Availability
+                    <a href={facility.facility_status === 'available' ? "#schedule" : "#overview"} className="block w-full text-center">
+                      <Button 
+                        variant={facility.facility_status === 'available' ? "primary" : "outline"} 
+                        className={`w-full !rounded-xl py-6 text-lg font-bold shadow-lg transition-all transform ${
+                          facility.facility_status === 'available' 
+                            ? 'shadow-[rgba(0,255,136,0.2)] hover:shadow-[rgba(0,255,136,0.4)] hover:-translate-y-0.5' 
+                            : 'opacity-50 cursor-not-allowed'
+                        }`} 
+                        icon={facility.facility_status === 'available' ? <Calendar className="w-5 h-5"/> : <TriangleAlert className="w-5 h-5"/>}
+                        disabled={facility.facility_status !== 'available'}
+                      >
+                        {facility.facility_status === 'available' ? 'Check Availability' : (facility.facility_status === 'maintenance' ? 'Under Maintenance' : 'Unavailable')}
                       </Button>
                     </a>
                     <div className="text-center text-sm text-[var(--text-muted)] mt-4 mb-6">You won't be charged yet</div>
@@ -711,8 +741,14 @@ export const FacilityDetailPage = () => {
           <span className="text-2xl font-bold">₱{facility.price}</span>
           <span className="text-[var(--text-muted)] text-sm mb-1">/ hr</span>
         </div>
-        <a href="#schedule">
-          <Button variant="primary" className="px-8 font-bold shadow-[rgba(0,255,136,0.2)]">Book</Button>
+        <a href={facility.facility_status === 'available' ? "#schedule" : "#overview"}>
+          <Button 
+            variant={facility.facility_status === 'available' ? "primary" : "outline"} 
+            className={`px-8 font-bold ${facility.facility_status === 'available' ? 'shadow-[rgba(0,255,136,0.2)]' : 'opacity-50'}`}
+            disabled={facility.facility_status !== 'available'}
+          >
+            {facility.facility_status === 'available' ? 'Book' : 'Unavailable'}
+          </Button>
         </a>
       </div>
 

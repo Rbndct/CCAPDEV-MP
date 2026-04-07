@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Calendar, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Clock, X, Check, Lightbulb, Loader } from 'lucide-react';
+import { Calendar, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Clock, X, Check, Lightbulb, Loader, TriangleAlert } from 'lucide-react';
 import { Card, Button, Badge } from './ui';
 import { useAuth, API_BASE_URL } from '../contexts/AuthContext';
 import { AuthModal } from './AuthModal';
@@ -302,8 +302,28 @@ export const PublicAvailabilityCalendar = ({ facility, onSlotSelect, isBooking, 
         </div>
       </div>
 
+      {/* Calendar Grid Container */}
+      <div className="relative">
+        {/* Maintenance / Unavailable Overlay */}
+        {facility.facility_status !== 'available' && (
+          <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-[var(--bg-primary)]/80 backdrop-blur-sm rounded-xl border-2 border-[var(--border-subtle)] p-8 text-center">
+            <div className={`p-4 rounded-full mb-4 ${
+              facility.facility_status === 'maintenance' ? 'bg-orange-500/20 text-orange-500' : 'bg-red-500/20 text-red-500'
+            }`}>
+              <TriangleAlert className="w-12 h-12" />
+            </div>
+            <h3 className="text-2xl font-bold mb-2">
+              Calendars are Disabled
+            </h3>
+            <p className="text-[var(--text-secondary)] max-w-md">
+              This facility is currently {facility.facility_status === 'maintenance' ? 'under maintenance' : 'closed'}. 
+              No new bookings are being accepted at this time.
+            </p>
+          </div>
+        )}
+
       {/* Calendar Grid */}
-      <div className="overflow-x-auto relative">
+      <div className={`overflow-x-auto relative ${facility.facility_status !== 'available' ? 'opacity-30 pointer-events-none' : ''}`}>
         {isLoadingAvailability && (
           <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-[var(--bg-primary)]/50 backdrop-blur-sm rounded-lg min-h-[300px]">
             <Loader className="w-8 h-8 animate-spin text-[var(--accent-green)] mb-2" />
@@ -433,6 +453,7 @@ export const PublicAvailabilityCalendar = ({ facility, onSlotSelect, isBooking, 
         </div>
       )}
 
+      {/* Selection Info Step 2 */}
       {selectionStart && !selectionEnd && (
         <div className="mt-2 p-3 bg-[var(--bg-secondary)] rounded-lg">
           <p className="text-sm text-[var(--text-muted)]">
@@ -440,6 +461,8 @@ export const PublicAvailabilityCalendar = ({ facility, onSlotSelect, isBooking, 
           </p>
         </div>
       )}
+
+      </div> {/* End of relative calendar grid container */}
 
         </div>
       )}

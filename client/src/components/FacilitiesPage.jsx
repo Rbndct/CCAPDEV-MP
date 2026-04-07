@@ -309,10 +309,23 @@ const FacilityCard = ({ facility, onViewSchedule, isFavorite, onToggleFavorite, 
       text: 'Few Slots Left',
       color: 'error',
       icon: Clock
+    },
+    maintenance: {
+      text: 'Under Maintenance',
+      color: 'warning',
+      icon: AlertTriangle
+    },
+    closed: {
+      text: 'Unavailable',
+      color: 'error',
+      icon: X
     }
   };
 
-  const status = availabilityConfig['high']; // Default to high for now, could be dynamic
+  const statusKey = (facility.facility_status === 'maintenance' || facility.facility_status === 'closed') 
+    ? facility.facility_status 
+    : 'high';
+  const status = availabilityConfig[statusKey];
   const StatusIcon = status.icon;
 
   // Map sport types to iconify URLs if not provided
@@ -454,6 +467,7 @@ export const FacilitiesPage = () => {
             capacity: f.total_capacity,
             hourly_rate: f.hourly_rate_php,
             amenities: f.facility_amenities || [],
+            facility_status: f.facility_status || 'available',
           }));
           setFacilitiesData(normalized);
           setFilteredFacilities(normalized);
