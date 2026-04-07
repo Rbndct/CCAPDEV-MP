@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
 import { Card, Button, Badge } from '../../components/ui';
-import { Users, DollarSign, Calendar, TrendingUp, ArrowRight, AlertTriangle, Plus, Lock } from 'lucide-react';
+import { Users, DollarSign, Calendar, TrendingUp, ArrowRight, AlertTriangle, Plus } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { ViewAllReservationsModal } from '../../components/modals/ViewAllReservationsModal';
 import { ViewNoShowsModal } from '../../components/modals/ViewNoShowsModal';
 import { NewBookingModal } from '../../components/modals/NewBookingModal';
-import { BlockSlotModal } from '../../components/modals/BlockSlotModal';
+
 import { useAuth, API_BASE_URL } from '../../contexts/AuthContext';
 
 export function AdminDashboardPage() {
@@ -13,7 +13,7 @@ export function AdminDashboardPage() {
     const [isViewAllModalOpen, setIsViewAllModalOpen] = useState(false);
     const [isNoShowsModalOpen, setIsNoShowsModalOpen] = useState(false);
     const [isNewBookingModalOpen, setIsNewBookingModalOpen] = useState(false);
-    const [isBlockSlotModalOpen, setIsBlockSlotModalOpen] = useState(false);
+
 
     const [recentUsers, setRecentUsers] = useState([]);
     const [statsData, setStatsData] = useState({
@@ -85,9 +85,7 @@ export function AdminDashboardPage() {
                     <Button variant="primary" className="gap-2" onClick={() => setIsNewBookingModalOpen(true)}>
                         <Plus size={18} /> New Booking
                     </Button>
-                    <Button variant="outline" className="gap-2" onClick={() => setIsBlockSlotModalOpen(true)}>
-                        <Lock size={18} /> Block Slot
-                    </Button>
+
                 </div>
             </div>
 
@@ -181,7 +179,7 @@ export function AdminDashboardPage() {
             <ViewAllReservationsModal isOpen={isViewAllModalOpen} onClose={() => setIsViewAllModalOpen(false)} />
             <ViewNoShowsModal isOpen={isNoShowsModalOpen} onClose={() => setIsNoShowsModalOpen(false)} onResolve={fetchDashboardData} />
             <NewBookingModal isOpen={isNewBookingModalOpen} onClose={() => setIsNewBookingModalOpen(false)} />
-            <BlockSlotModal isOpen={isBlockSlotModalOpen} onClose={() => setIsBlockSlotModalOpen(false)} />
+
         </div>
     );
 }

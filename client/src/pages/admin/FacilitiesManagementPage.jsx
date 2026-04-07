@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
 import { Card, Button } from '../../components/ui';
-import { Plus, Edit2, Lock, Calendar } from 'lucide-react';
+import { Plus, Edit2, Calendar } from 'lucide-react';
 import { AddFacilityModal } from '../../components/modals/AddFacilityModal';
 import { EditFacilityModal } from '../../components/modals/EditFacilityModal';
-import { BlockSlotModal } from '../../components/modals/BlockSlotModal';
+
 import { NewBookingModal } from '../../components/modals/NewBookingModal';
 import { useAuth, API_BASE_URL } from '../../contexts/AuthContext';
 
@@ -11,10 +11,10 @@ export function FacilitiesManagementPage() {
     const { token } = useAuth();
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-    const [isBlockModalOpen, setIsBlockModalOpen] = useState(false);
+
     const [isBookModalOpen, setIsBookModalOpen] = useState(false);
     const [selectedFacility, setSelectedFacility] = useState(null);
-    const [facilityForAction, setFacilityForAction] = useState(null);
+
     const [facilities, setFacilities] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
 
@@ -52,13 +52,9 @@ export function FacilitiesManagementPage() {
         setIsEditModalOpen(true);
     };
 
-    const handleBlock = (facility) => {
-        setFacilityForAction(facility);
-        setIsBlockModalOpen(true);
-    };
+
 
     const handleBook = (facility) => {
-        setFacilityForAction(facility);
         setIsBookModalOpen(true);
     };
 
@@ -127,13 +123,7 @@ export function FacilitiesManagementPage() {
                                                 >
                                                     <Calendar size={16} />
                                                 </button>
-                                                <button
-                                                    className="p-2 hover:bg-orange-500/10 text-orange-500 rounded-lg transition-colors"
-                                                    title="Block / Set Maintenance"
-                                                    onClick={() => handleBlock(facility)}
-                                                >
-                                                    <Lock size={16} />
-                                                </button>
+
                                             </div>
                                         </td>
                                     </tr>
@@ -156,15 +146,10 @@ export function FacilitiesManagementPage() {
                 facility={selectedFacility}
                 onRefresh={fetchFacilities}
             />
-            <BlockSlotModal
-                isOpen={isBlockModalOpen}
-                onClose={() => { setIsBlockModalOpen(false); setFacilityForAction(null); }}
-                defaultFacilityId={facilityForAction?.id}
-            />
+
             <NewBookingModal
                 isOpen={isBookModalOpen}
-                onClose={() => { setIsBookModalOpen(false); setFacilityForAction(null); }}
-                defaultFacilityId={facilityForAction?.id}
+                onClose={() => setIsBookModalOpen(false)}
             />
         </div>
     );
