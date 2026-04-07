@@ -5,26 +5,15 @@ import { useAuth, API_BASE_URL } from '../contexts/AuthContext';
 
 export const SettingsPage = () => {
   const { token, refreshUser } = useAuth();
-  const [notifications, setNotifications] = useState({
-    email: true,
-    sms: false,
-    promos: true
-  });
-
   const [language, setLanguage] = useState('English (US)');
   const [timezone, setTimezone] = useState('Asia/Manila (GMT+8)');
   const [saveStatus, setSaveStatus] = useState('');
 
   const [isPasswordOpen, setIsPasswordOpen] = useState(false);
-  const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [passwordStatus, setPasswordStatus] = useState('');
   const [isChangingPassword, setIsChangingPassword] = useState(false);
-
-  const toggleNotification = (key) => {
-    setNotifications(prev => ({ ...prev, [key]: !prev[key] }));
-  };
 
   useEffect(() => {
     const loadPreferences = async () => {
@@ -77,8 +66,8 @@ export const SettingsPage = () => {
       setPasswordStatus('New password and confirm password do not match.');
       return;
     }
-    if (!currentPassword || !newPassword) {
-      setPasswordStatus('Please fill in current and new password.');
+    if (!newPassword || newPassword.length < 8) {
+      setPasswordStatus('Please provide a new password of at least 8 characters.');
       return;
     }
 
@@ -90,7 +79,7 @@ export const SettingsPage = () => {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ currentPassword, newPassword })
+        body: JSON.stringify({ newPassword })
       });
 
       if (!res.ok) {
@@ -99,7 +88,6 @@ export const SettingsPage = () => {
       }
 
       setPasswordStatus('Password changed successfully.');
-      setCurrentPassword('');
       setNewPassword('');
       setConfirmPassword('');
       setIsPasswordOpen(false);
@@ -144,24 +132,19 @@ export const SettingsPage = () => {
                   <div className="space-y-4">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <Input
-                        label="Current Password"
-                        type="password"
-                        value={currentPassword}
-                        onChange={(e) => setCurrentPassword(e.target.value)}
-                      />
-                      <Input
                         label="New Password"
                         type="password"
                         value={newPassword}
                         onChange={(e) => setNewPassword(e.target.value)}
                       />
+                      <Input
+                        label="Confirm New Password"
+                        type="password"
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                      />
                     </div>
-                    <Input
-                      label="Confirm New Password"
-                      type="password"
-                      value={confirmPassword}
-                      onChange={(e) => setConfirmPassword(e.target.value)}
-                    />
+
                     {passwordStatus && (
                       <div className={`text-sm ${passwordStatus.toLowerCase().includes('success') ? 'text-[var(--accent-green)]' : 'text-red-500'}`}>
                         {passwordStatus}
@@ -177,68 +160,8 @@ export const SettingsPage = () => {
                     </Button>
                   </div>
                 )}
-
-                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                    <div>
-                        <h3 className="font-semibold">Two-Factor Authentication</h3>
-                        <p className="text-sm text-[var(--text-secondary)]">Add an extra layer of security to your account.</p>
-                    </div>
-                    <div className="relative inline-block w-12 h-6 transition-colors duration-200 ease-in-out border-2 border-[var(--border-subtle)] rounded-full cursor-pointer bg-[var(--bg-tertiary)]">
-                         <span className="translate-x-0 inline-block w-5 h-5 transform bg-[var(--text-muted)] rounded-full transition duration-200 ease-in-out" />
-                    </div>
-                </div>
             </div>
         </Card>
-
-        {/* Notifications */}
-        <Card variant="glass" className="p-6">
-             <div className="flex items-center gap-3 mb-6">
-                <Bell className="w-6 h-6 text-[var(--accent-green)]" />
-                <h2 className="text-xl font-bold">Notifications</h2>
-            </div>
-
-            <div className="space-y-4">
-                <div className="flex items-center justify-between p-3 rounded-lg bg-[var(--bg-tertiary)]">
-                    <div>
-                        <h4 className="font-medium">Email Notifications</h4>
-                        <p className="text-xs text-[var(--text-secondary)]">Receive booking confirmations via email</p>
-                    </div>
-                    <button 
-                        onClick={() => toggleNotification('email')}
-                        className={`w-12 h-6 rounded-full p-1 transition-colors ${notifications.email ? 'bg-[var(--accent-green)]' : 'bg-[var(--bg-primary)] border border-[var(--text-muted)]'}`}
-                    >
-                        <div className={`w-4 h-4 rounded-full bg-white transition-transform ${notifications.email ? 'translate-x-6' : 'translate-x-0'}`} />
-                    </button>
-                </div>
-
-                <div className="flex items-center justify-between p-3 rounded-lg bg-[var(--bg-tertiary)]">
-                    <div>
-                        <h4 className="font-medium">SMS Notifications</h4>
-                        <p className="text-xs text-[var(--text-secondary)]">Receive booking reminders via SMS</p>
-                    </div>
-                    <button 
-                        onClick={() => toggleNotification('sms')}
-                        className={`w-12 h-6 rounded-full p-1 transition-colors ${notifications.sms ? 'bg-[var(--accent-green)]' : 'bg-[var(--bg-primary)] border border-[var(--text-muted)]'}`}
-                    >
-                        <div className={`w-4 h-4 rounded-full bg-white transition-transform ${notifications.sms ? 'translate-x-6' : 'translate-x-0'}`} />
-                    </button>
-                </div>
-
-                <div className="flex items-center justify-between p-3 rounded-lg bg-[var(--bg-tertiary)]">
-                    <div>
-                        <h4 className="font-medium">Marketing & Promos</h4>
-                        <p className="text-xs text-[var(--text-secondary)]">Receive news about discounts and events</p>
-                    </div>
-                    <button 
-                        onClick={() => toggleNotification('promos')}
-                        className={`w-12 h-6 rounded-full p-1 transition-colors ${notifications.promos ? 'bg-[var(--accent-green)]' : 'bg-[var(--bg-primary)] border border-[var(--text-muted)]'}`}
-                    >
-                        <div className={`w-4 h-4 rounded-full bg-white transition-transform ${notifications.promos ? 'translate-x-6' : 'translate-x-0'}`} />
-                    </button>
-                </div>
-            </div>
-        </Card>
-
         {/* Global Preferences */}
         <Card variant="glass" className="p-6">
             <div className="flex items-center gap-3 mb-6">

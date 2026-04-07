@@ -1,37 +1,80 @@
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, User, Mail, Calendar, Trophy } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { ArrowLeft, User, Mail, Calendar, Trophy, Loader } from 'lucide-react';
 import { Card, Badge } from '../components/ui';
-
-// Mock user profiles (matches mockPlayers in DashboardPage)
-const mockUserProfiles = {
-  1: {
-    id: 1,
-    name: 'Pogi 1',
-    email: 'pogi1@gmail.com',
-    avatar: 'J',
-    sport: 'Basketball',
-    bio: 'Pogi lang',
-    memberSince: 'Jan 2026',
-    totalBookings: 24,
-    hoursPlayed: 56,
-  }
-};
+import { API_BASE_URL } from '../contexts/AuthContext';
 
 export const UserProfilePage = () => {
   const { userId } = useParams();
   const navigate = useNavigate();
-  const profile = mockUserProfiles[userId];
+  const [profile, setProfile] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState('');
 
-  if (!profile) {
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        setIsLoading(true);
+        const res = await fetch(`${API_BASE_URL || 'http://localhost:5001/api'}/profiles/${userId}`);
+        if (!res.ok) {
+          throw new Error('User not found');
+        }
+        const data = await res.json();
+        
+        let totalHours = 0;
+        let totalBookings = data.reservations ? data.reservations.length : 0;
+        
+        if (data.reservations) {
+            data.reservations.forEach(r => {
+                 if (r.start_time && r.end_time) {
+                     const [startH, startM = 0] = String(r.start_time).split(':').map(Number);
+                     const [endH, endM = 0] = String(r.end_time).split(':').map(Number);
+                     if (!isNaN(startH) && !isNaN(endH) && endH > startH) {
+                         totalHours += (endH + endM / 60) - (startH + startM / 60);
+                     }
+                 }
+            });
+        }
+        
+        setProfile({
+          id: data.user._id,
+          name: data.user.full_name,
+          email: 'Hidden',
+          avatar: data.user.full_name.charAt(0),
+          sport: data.user.role === 'student' ? 'Member' : 'Admin',
+          bio: data.user.bio || 'This user is mysterious.',
+          memberSince: new Date(data.user.created_at).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
+          totalBookings: totalBookings,
+          hoursPlayed: totalHours
+        });
+      } catch (err) {
+        setError(err.message);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    fetchProfile();
+  }, [userId]);
+
+  if (isLoading) {
+      return (
+          <div className="flex justify-center py-16">
+              <Loader className="w-8 h-8 animate-spin text-[var(--accent-green)]" />
+          </div>
+      );
+  }
+
+  if (error || !profile) {
     return (
-      <div className="max-w-4xl mx-auto text-center py-16">
+      <div className="max-w-4xl mx-auto text-center py-16 animate-fade-in">
         <h1 className="text-3xl font-bold mb-4">User Not Found</h1>
         <p className="text-[var(--text-secondary)] mb-6">This user profile doesn't exist.</p>
         <button
           onClick={() => navigate(-1)}
-          className="text-[var(--accent-green)] hover:underline"
+          className="text-[var(--accent-green)] hover:underline flex items-center justify-center gap-2 mx-auto"
         >
-          Go Back
+          <ArrowLeft className="w-4 h-4"/> Go Back
         </button>
       </div>
     );

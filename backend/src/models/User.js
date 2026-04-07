@@ -46,10 +46,13 @@ const userSchema = new mongoose.Schema({
     type: Boolean,
     default: false
   },
-  favorites: [{
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'SportFacility'
-  }]
+  favorites: {
+    type: [{
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'SportFacility'
+    }],
+    default: []
+  }
 }, {
   timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' }
 });

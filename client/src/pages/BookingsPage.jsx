@@ -11,7 +11,8 @@ const statusConfig = {
   confirmed: { variant: 'success', label: 'Confirmed' },
   pending: { variant: 'warning', label: 'Pending' },
   cancelled: { variant: 'error', label: 'Cancelled' },
-  completed: { variant: 'info', label: 'Completed' }
+  completed: { variant: 'info', label: 'Completed' },
+  edited: { variant: 'warning', label: 'Edited' }
 };
 
 export const BookingsPage = () => {
@@ -57,13 +58,7 @@ export const BookingsPage = () => {
     return diffMs <= 24 * 60 * 60 * 1000;
   };
 
-  const buildFeeMessage = (booking) => {
-    const feePercent = 20;
-    const price = Number(booking?.price || 0);
-    const feeAmount = price > 0 ? Math.ceil(price * (feePercent / 100)) : null;
-    if (feeAmount !== null) return `A 20% last-minute cancellation fee (~₱${feeAmount}) applies.`;
-    return `A 20% last-minute cancellation fee applies.`;
-  };
+
 
   const fetchBookings = async () => {
     try {
@@ -93,7 +88,8 @@ export const BookingsPage = () => {
             date: r.date,
             time: `${r.start_time} - ${r.end_time}`,
             status: r.status === 'reserved' ? 'confirmed' : r.status, // Map 'reserved' to 'confirmed' for student view
-            price: r.total_price || (duration * hourlyRate)
+            price: r.total_price || (duration * hourlyRate),
+            edit_history: r.edit_history || []
           };
         });
         setAllBookings(formatted);
@@ -128,7 +124,7 @@ export const BookingsPage = () => {
   const handleCancelClick = (booking) => {
     setRestrictionMessage('');
     if (isLockedWithin24Hours(booking)) {
-      const msg = `You can't cancel this booking within 24 hours of the scheduled start time. ${buildFeeMessage(booking)}`;
+      const msg = `You can't cancel this booking within 24 hours of the scheduled start time.`;
       setWarningMessage(msg);
       setPendingAction({ type: 'cancel', booking });
       setIsWarningModalOpen(true);
@@ -140,29 +136,11 @@ export const BookingsPage = () => {
 
   const handleEditClick = (booking) => {
     setRestrictionMessage('');
-    if (isLockedWithin24Hours(booking)) {
-      const msg = `You can't modify this booking within 24 hours of the scheduled start time. ${buildFeeMessage(booking)}`;
-      setWarningMessage(msg);
-      setPendingAction({ type: 'edit', booking });
-      setIsWarningModalOpen(true);
-      return;
-    }
-    setBookingToEdit(booking);
+    setBookingToEdit({ ...booking, isWithin24Hours: isLockedWithin24Hours(booking) });
     setIsEditModalOpen(true);
   };
 
-  const handleWarningProceed = () => {
-    setIsWarningModalOpen(false);
-    if (!pendingAction) return;
-    if (pendingAction.type === 'cancel') {
-      setBookingToCancel(pendingAction.booking);
-      setIsCancelModalOpen(true);
-    } else if (pendingAction.type === 'edit') {
-      setBookingToEdit(pendingAction.booking);
-      setIsEditModalOpen(true);
-    }
-    setPendingAction(null);
-  };
+
 
   const handleSaveEdit = async (updatedBooking) => {
     const response = await fetch(`${API_BASE_URL || 'http://localhost:5001/api'}/reservations/${updatedBooking.id}`, {
@@ -222,8 +200,30 @@ export const BookingsPage = () => {
     switch (currentTab) {
       case 'upcoming':
         return allBookings.filter(b => b.status === 'confirmed' || b.status === 'pending');
-      case 'history':
-        return allBookings.filter(b => b.status === 'completed');
+      case 'history': {
+        let historyEvents = [];
+        allBookings.forEach(b => {
+          if (b.status === 'completed') {
+            historyEvents.push({ ...b, sortDate: new Date(b.date).getTime() });
+          }
+          if (b.edit_history && b.edit_history.length > 0) {
+            b.edit_history.forEach((edit, index) => {
+              historyEvents.push({
+                id: `${b.id}-edit-${index}`,
+                court: b.court,
+                facilityId: b.facilityId,
+                date: edit.modified_at,
+                time: `Used to be ${edit.previous_start_time} - ${edit.previous_end_time}`,
+                status: 'edited',
+                price: b.price,
+                sortDate: new Date(edit.modified_at).getTime()
+              });
+            });
+          }
+        });
+        historyEvents.sort((a, b) => b.sortDate - a.sortDate);
+        return historyEvents;
+      }
       case 'cancelled':
         return allBookings.filter(b => b.status === 'cancelled');
       default:
@@ -256,15 +256,8 @@ export const BookingsPage = () => {
         size="small"
         footer={
           <>
-            <Button variant="ghost" onClick={() => { setIsWarningModalOpen(false); setPendingAction(null); }}>
-              Go Back
-            </Button>
-            <Button
-              variant="primary"
-              className="bg-orange-500 hover:bg-orange-600 text-white"
-              onClick={handleWarningProceed}
-            >
-              Proceed Anyway
+            <Button variant="primary" onClick={() => { setIsWarningModalOpen(false); setPendingAction(null); }}>
+              Okay
             </Button>
           </>
         }
@@ -275,9 +268,6 @@ export const BookingsPage = () => {
           </div>
           <h3 className="text-lg font-bold mb-3">Important Notice</h3>
           <p className="text-[var(--text-secondary)] text-sm leading-relaxed">{warningMessage}</p>
-          <p className="mt-3 text-xs text-[var(--text-muted)] bg-[var(--bg-tertiary)] p-3 rounded-lg w-full">
-            By proceeding, you acknowledge this policy and any applicable fees.
-          </p>
         </div>
       </Modal>
 
@@ -442,9 +432,7 @@ export const BookingsPage = () => {
           <p className="text-[var(--text-secondary)] mb-4">
             You are about to cancel your reservation for <span className="font-bold text-[var(--text-primary)]">{bookingToCancel?.court}</span> on {bookingToCancel && new Date(bookingToCancel.date).toLocaleDateString()}.
           </p>
-          <p className="text-sm text-[var(--text-muted)] bg-[var(--bg-tertiary)] p-3 rounded-lg w-full">
-            Note: Cancellations made less than 24 hours before the reservation may be subject to a cancellation fee.
-          </p>
+
         </div>
       </Modal>
 

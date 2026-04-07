@@ -73,10 +73,10 @@ router.put('/me/preferences', verifyToken, async (req, res) => {
 // POST /api/profiles/me/change-password  — change password (protected)
 router.post('/me/change-password', verifyToken, async (req, res) => {
     try {
-        const { currentPassword, newPassword } = req.body || {};
+        const { newPassword } = req.body || {};
 
-        if (!currentPassword || !newPassword) {
-            return res.status(400).json({ message: 'Current password and new password are required.' });
+        if (!newPassword) {
+            return res.status(400).json({ message: 'New password is required.' });
         }
         if (String(newPassword).length < 8) {
             return res.status(400).json({ message: 'New password must be at least 8 characters.' });
@@ -84,9 +84,6 @@ router.post('/me/change-password', verifyToken, async (req, res) => {
 
         const user = await User.findById(req.userId).select('password_hash');
         if (!user) return res.status(404).json({ message: 'User not found.' });
-
-        const isMatch = await bcrypt.compare(currentPassword, user.password_hash);
-        if (!isMatch) return res.status(400).json({ message: 'Current password is incorrect.' });
 
         const newHash = await bcrypt.hash(newPassword, 10);
         user.password_hash = newHash;
@@ -112,9 +109,15 @@ router.delete('/me', verifyToken, async (req, res) => {
 // GET /api/profiles/me/favorites  — get populated favorites (protected)
 router.get('/me/favorites', verifyToken, async (req, res) => {
     try {
-        const user = await User.findById(req.userId).populate('favorites');
-        if (!user) return res.status(404).json({ message: 'User not found.' });
-        res.json(user.favorites);
+        try {
+            const user = await User.findById(req.userId).populate('favorites');
+            if (!user) return res.status(404).json({ message: 'User not found.' });
+            res.json(user.favorites);
+        } catch (err) {
+            console.error('[profiles] GET /me/favorites error:', err);
+            // Return empty array to avoid breaking UI
+            res.json([]);
+        }
     } catch (err) {
         res.status(500).json({ message: 'Error fetching favorites.', error: err.message });
     }
@@ -186,8 +189,8 @@ router.get('/:id', async (req, res) => {
         const reservations = await Reservation.find({
             user: req.params.id,
             is_anonymous: false,
-            status: 'reserved',
-        }).populate('facility', 'name type');
+            status: { $in: ['reserved', 'confirmed', 'completed'] },
+        }).select('start_time end_time').populate('facility', 'name type');
 
         res.json({ user, reservations });
     } catch (err) {

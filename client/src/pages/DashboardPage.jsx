@@ -31,10 +31,11 @@ const mockAnnouncements = [
 ];
 
 const statusConfig = {
-  confirmed: { variant: 'success', label: 'Confirmed' },
-  pending: { variant: 'warning', label: 'Pending' },
-  cancelled: { variant: 'error', label: 'Cancelled' },
-  completed: { variant: 'info', label: 'Completed' }
+  confirmed: { label: 'Confirmed', variant: 'success' },
+  pending: { label: 'Payment Pending', variant: 'warning' },
+  completed: { label: 'Completed', variant: 'success' },
+  cancelled: { label: 'Cancelled', variant: 'danger' },
+  edited: { label: 'Edited', variant: 'warning' }
 };
 
 export const DashboardPage = () => {
@@ -71,13 +72,7 @@ export const DashboardPage = () => {
     return diffMs <= 24 * 60 * 60 * 1000;
   };
 
-  const buildFeeMessage = (booking) => {
-    const feePercent = 20;
-    const price = Number(booking?.price || 0);
-    const feeAmount = price > 0 ? Math.ceil(price * (feePercent / 100)) : null;
-    if (feeAmount !== null) return `A 20% last-minute cancellation fee (~₱${feeAmount}) applies.`;
-    return `A 20% last-minute cancellation fee applies.`;
-  };
+
 
   const fetchDashboardData = async () => {
     try {
@@ -108,12 +103,35 @@ export const DashboardPage = () => {
             date: r.date,
             time: `${r.start_time} - ${r.end_time}`,
             status: r.status === 'reserved' ? 'confirmed' : r.status,
-            price: r.total_price || (duration * hourlyRate)
+            price: r.total_price || (duration * hourlyRate),
+            edit_history: r.edit_history || []
           };
         });
 
         setUpcomingBookings(formatted.filter(b => ['pending', 'confirmed'].includes(b.status)));
-        setBookingHistory(formatted.filter(b => ['completed', 'cancelled'].includes(b.status)).slice(0, 3)); // Only show top 3 history
+        
+        let historyEvents = [];
+        formatted.forEach(b => {
+          if (['completed', 'cancelled'].includes(b.status)) {
+            historyEvents.push({ ...b, sortDate: new Date(b.date).getTime() });
+          }
+          if (b.edit_history && b.edit_history.length > 0) {
+            b.edit_history.forEach((edit, index) => {
+              historyEvents.push({
+                id: `${b.id}-edit-${index}`,
+                court: b.court,
+                facilityId: b.facilityId,
+                date: edit.modified_at,
+                time: `Used to be ${edit.previous_start_time} - ${edit.previous_end_time}`,
+                status: 'edited',
+                price: b.price,
+                sortDate: new Date(edit.modified_at).getTime()
+              });
+            });
+          }
+        });
+        historyEvents.sort((a, b) => b.sortDate - a.sortDate);
+        setBookingHistory(historyEvents.slice(0, 3));
       }
 
       // Fetch all public profiles for search
@@ -152,11 +170,7 @@ export const DashboardPage = () => {
 
   const handleEditClick = (booking) => {
     setRestrictionMessage('');
-    if (isLockedWithin24Hours(booking)) {
-      setRestrictionMessage(`You can't modify this booking within 24 hours of the scheduled start time. ${buildFeeMessage(booking)}`);
-      return;
-    }
-    setEditingBooking(booking);
+    setEditingBooking({ ...booking, isWithin24Hours: isLockedWithin24Hours(booking) });
     setIsEditModalOpen(true);
   };
 
@@ -185,7 +199,7 @@ export const DashboardPage = () => {
   const handleCancelBooking = async (booking) => {
     setRestrictionMessage('');
     if (isLockedWithin24Hours(booking)) {
-      setRestrictionMessage(`You can't cancel this booking within 24 hours of the scheduled start time. ${buildFeeMessage(booking)}`);
+      setRestrictionMessage(`You can't cancel this booking within 24 hours of the scheduled start time.`);
       return;
     }
 

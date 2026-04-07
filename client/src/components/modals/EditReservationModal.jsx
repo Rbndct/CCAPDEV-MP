@@ -79,6 +79,33 @@ export const EditReservationModal = ({ isOpen, onClose, booking, onSave, mode = 
             return;
         }
 
+        if (booking?.isWithin24Hours && mode === 'student') {
+            const getMinutes = (time) => {
+                if (!time) return 0;
+                const [h, m = 0] = time.split(':').map(Number);
+                return h * 60 + m;
+            };
+
+            const oldStart = (booking.time || '').split(' - ')[0] || '';
+            const oldEnd = (booking.time || '').split(' - ')[1] || '';
+            const originalDate = normalizeDateValue(booking.date);
+
+            if (formData.date !== originalDate) {
+                setErrorMessage('You cannot change the date within 24 hours of the reservation.');
+                return;
+            }
+            
+            if (getMinutes(formData.startTime) > getMinutes(oldStart)) {
+                setErrorMessage('You cannot delay the start time within 24 hours, as it reduces your reserved block.');
+                return;
+            }
+
+            if (getMinutes(formData.endTime) < getMinutes(oldEnd)) {
+                setErrorMessage('You cannot shorten the end time within 24 hours, as it reduces your reserved block.');
+                return;
+            }
+        }
+
         try {
             setIsSaving(true);
             setErrorMessage('');

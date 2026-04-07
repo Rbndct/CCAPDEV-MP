@@ -15,6 +15,10 @@ async function computeDueForReservation(reservation) {
     // Matches the frontend's simple checkout model:
     // due = durationHours * facilityHourlyRate + serviceFee
     const serviceFee = 50;
+    if (!reservation.facility) {
+        // No facility data; cannot compute rate, return zero subtotal and service fee only
+        return { subtotal: 0, serviceFee, totalDue: serviceFee };
+    }
     const startMinutes = parseTimeToMinutes(reservation.start_time);
     const endMinutes = parseTimeToMinutes(reservation.end_time);
 
@@ -66,6 +70,36 @@ router.get('/due', verifyToken, async (req, res) => {
     } catch (err) {
         console.error('[payments] GET /due error:', err);
         res.status(500).json({ message: 'Error fetching payment due.', error: err.message });
+    }
+});
+
+// GET /api/payments/history — list paid reservations for the logged-in user
+router.get('/history', verifyToken, async (req, res) => {
+    try {
+        const paidReservations = await Reservation.find({
+            user: req.userId,
+            payment_status: 'paid'
+        }).populate('facility', 'facility_name hourly_rate_php').sort({ updated_at: -1 });
+
+        const items = [];
+        for (const r of paidReservations) {
+            const due = await computeDueForReservation(r);
+            items.push({
+                reservationId: r._id,
+                facilityName: r.facility?.facility_name || 'Facility',
+                date: r.date,
+                start_time: r.start_time,
+                end_time: r.end_time,
+                payment_method: r.payment_method,
+                paid_at: r.updated_at,
+                ...due
+            });
+        }
+
+        res.json({ items });
+    } catch (err) {
+        console.error('[payments] GET /history error:', err);
+        res.status(500).json({ message: 'Error fetching payment history.', error: err.message });
     }
 });
 

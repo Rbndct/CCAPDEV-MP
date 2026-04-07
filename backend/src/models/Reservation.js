@@ -57,7 +57,13 @@ const reservationSchema = new mongoose.Schema({
     request_date: {
         type: Date,
         default: Date.now
-    }
+    },
+    edit_history: [{
+        modified_at: { type: Date, default: Date.now },
+        previous_date: Date,
+        previous_start_time: String,
+        previous_end_time: String
+    }]
 }, {
     timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' },
     collection: 'reservations'

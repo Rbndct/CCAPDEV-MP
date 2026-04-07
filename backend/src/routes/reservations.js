@@ -320,13 +320,24 @@ router.patch('/:id', verifyToken, async (req, res) => {
 
         const startDateTime = reservationStartDateTime(reservation);
         if (withinLastHours(startDateTime, 24)) {
-            const fee = await computeCancellationFee(reservation);
-            return res.status(403).json({
-                message: `Modifications are not allowed within 24 hours of the scheduled start time. ${
-                    fee.fee_amount !== null ? `An estimated last-minute cancellation fee of ${fee.fee_percent}% (~₱${fee.fee_amount}) would apply.` : `A last-minute cancellation fee of ${fee.fee_percent}% would apply.`
-                }`,
-                policy: { within_hours: 24, cancellation_fee_percent: fee.fee_percent, cancellation_fee_amount: fee.fee_amount, currency: fee.currency }
-            });
+            const getMinutes = (time) => {
+                if (!time) return 0;
+                const [h, m = 0] = String(time).split(':').map(Number);
+                return h * 60 + m;
+            };
+
+            const updatedDateTemp = normalizeDate(date);
+            const originalDateTemp = normalizeDate(reservation.date);
+
+            if (updatedDateTemp.getTime() !== originalDateTemp.getTime()) {
+                return res.status(403).json({ message: 'You cannot change the date within 24 hours of the reservation.' });
+            }
+            if (getMinutes(start_time) > getMinutes(reservation.start_time)) {
+                return res.status(403).json({ message: 'You cannot delay the start time within 24 hours of the reservation.' });
+            }
+            if (getMinutes(end_time) < getMinutes(reservation.end_time)) {
+                return res.status(403).json({ message: 'You cannot shorten the end time within 24 hours of the reservation.' });
+            }
         }
 
         const updatedDate = normalizeDate(date);
@@ -348,6 +359,14 @@ router.patch('/:id', verifyToken, async (req, res) => {
         if (conflict) {
             return res.status(409).json({ message: 'This slot is already taken.' });
         }
+
+        reservation.edit_history = reservation.edit_history || [];
+        reservation.edit_history.push({
+            modified_at: new Date(),
+            previous_date: reservation.date,
+            previous_start_time: reservation.start_time,
+            previous_end_time: reservation.end_time
+        });
 
         reservation.date = updatedDate;
         reservation.start_time = start_time;
@@ -376,12 +395,8 @@ router.patch('/:id/cancel', verifyToken, async (req, res) => {
 
         const startDateTime = reservationStartDateTime(reservation);
         if (withinLastHours(startDateTime, 24)) {
-            const fee = await computeCancellationFee(reservation);
             return res.status(403).json({
-                message: `Cancellations are not allowed within 24 hours of the scheduled start time. ${
-                    fee.fee_amount !== null ? `An estimated last-minute cancellation fee of ${fee.fee_percent}% (~₱${fee.fee_amount}) applies to this policy.` : `A last-minute cancellation fee of ${fee.fee_percent}% applies to this policy.`
-                }`,
-                policy: { within_hours: 24, cancellation_fee_percent: fee.fee_percent, cancellation_fee_amount: fee.fee_amount, currency: fee.currency }
+                message: `Cancellations are not allowed within 24 hours of the scheduled start time.`
             });
         }
 

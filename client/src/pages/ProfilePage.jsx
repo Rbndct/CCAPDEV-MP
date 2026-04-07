@@ -167,12 +167,7 @@ export const ProfilePage = () => {
               </h3>
             </div>
             <div className="p-4 space-y-4">
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-[var(--text-secondary)]">2-Factor Auth</span>
-                <div className={`w-10 h-6 rounded-full p-1 cursor-pointer transition-colors ${userInfo.twoFactor ? 'bg-[var(--accent-green)]' : 'bg-[var(--bg-tertiary)]'}`} onClick={() => setUserInfo({ ...userInfo, twoFactor: !userInfo.twoFactor })}>
-                  <div className={`w-4 h-4 bg-white rounded-full transition-transform ${userInfo.twoFactor ? 'translate-x-4' : 'translate-x-0'}`} />
-                </div>
-              </div>
+
               <Button variant="outline" className="w-full text-xs">Change Password</Button>
             </div>
           </Card>

@@ -2,6 +2,8 @@ import { CheckCircle, Copy, Download, Calendar as CalendarIcon, X } from 'lucide
 import { Link } from 'react-router-dom';
 import { Button, Card, Badge } from './ui';
 import { useState } from 'react';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 export const BookingSuccessModal = ({ isOpen, onClose, booking }) => {
   const [copied, setCopied] = useState(false);
@@ -12,11 +14,6 @@ export const BookingSuccessModal = ({ isOpen, onClose, booking }) => {
     navigator.clipboard.writeText(booking.confirmationCode);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
-  };
-
-  const handleDownloadReceipt = () => {
-    // Mock download functionality
-    console.log('Downloading receipt for:', booking.confirmationCode);
   };
 
   const formatDate = (dateString) => {
@@ -34,6 +31,46 @@ export const BookingSuccessModal = ({ isOpen, onClose, booking }) => {
     const ampm = hour >= 12 ? 'PM' : 'AM';
     const displayHour = hour % 12 || 12;
     return `${displayHour}:${minutes} ${ampm}`;
+  };
+
+  const handleDownloadReceipt = () => {
+    const doc = new jsPDF();
+    
+    // Title
+    doc.setFontSize(22);
+    // Green somewhat matching Sportsplex theme
+    doc.setTextColor(34, 197, 94);
+    doc.text('SportsPlex', 105, 20, { align: 'center' });
+    
+    doc.setFontSize(16);
+    doc.setTextColor(0, 0, 0);
+    doc.text('Booking Receipt', 105, 30, { align: 'center' });
+    
+    // Receipt Details
+    doc.setFontSize(12);
+    doc.text(`Confirmation Code: ${booking.confirmationCode}`, 14, 50);
+    doc.text(`Date Issued: ${new Date().toLocaleDateString()}`, 14, 58);
+
+    autoTable(doc, {
+      startY: 70,
+      head: [['Description', 'Details']],
+      body: [
+        ['Court', booking.courtName],
+        ['Date', formatDate(booking.date)],
+        ['Time', `${formatTime(booking.startTime)} - ${formatTime(booking.endTime)} (${booking.duration}h)`],
+        ['Total Amount', `Php ${booking.totalPrice}`],
+      ],
+      theme: 'grid',
+      headStyles: { fillColor: [34, 197, 94] },
+    });
+    
+    const finalY = doc.lastAutoTable.finalY || 120;
+    doc.setFontSize(10);
+    doc.setTextColor(100);
+    doc.text('Thank you for booking with SportsPlex!', 105, finalY + 20, { align: 'center' });
+    doc.text('Free cancellation up to 24 hours before your booking.', 105, finalY + 27, { align: 'center' });
+
+    doc.save(`Receipt_SportsPlex_${booking.confirmationCode}.pdf`);
   };
 
   return (
