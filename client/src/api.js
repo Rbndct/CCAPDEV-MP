@@ -1,1 +1,1 @@
-export const API_BASE_URL = "https://ccapdev-mp-backend.onrender.com/api";
+export const API_BASE_URL = "https://ccapdev-mp-backend.onrender.com";
