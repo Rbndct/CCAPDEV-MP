@@ -10,6 +10,11 @@ const { verifyToken, isAdminOrStaff } = require('../middleware/auth');
 // All routes below require a valid JWT and admin/staff role
 router.use(verifyToken, isAdminOrStaff);
 
+/** Check if two time ranges overlap (times as "HH:mm" strings) */
+function timesOverlap(startA, endA, startB, endB) {
+    return startA < endB && startB < endA;
+}
+
 // ─── Facilities ─────────────────────────────────────────────────────────────
 
 // GET /api/admin/facilities
@@ -146,23 +151,31 @@ router.post('/reservations/walk-in', async (req, res) => {
             return res.status(400).json({ message: 'Missing required fields.' });
         }
 
+        const resDate = new Date(date);
+        if (Number.isNaN(resDate.getTime())) {
+            return res.status(400).json({ message: 'Invalid date.' });
+        }
+
         // Overlap check
-        const conflict = await Reservation.findOne({
+        const activeSlots = await Reservation.find({
             facility,
             seat_number: seat_number || 1,
-            date: new Date(date),
-            start_time,
+            date: resDate,
             status: { $in: ['reserved', 'blocked'] },
-        });
+        }).select('start_time end_time');
+
+        const conflict = activeSlots.some(slot =>
+            timesOverlap(start_time, end_time, slot.start_time, slot.end_time)
+        );
         if (conflict) {
-            return res.status(409).json({ message: 'This slot is already booked or blocked.' });
+            return res.status(409).json({ message: 'This slot is already taken.' });
         }
 
         const reservation = await Reservation.create({
             walk_in_name,
             facility,
             seat_number: seat_number || 1,
-            date: new Date(date),
+            date: resDate,
             start_time,
             end_time,
             reserved_by: req.userId,

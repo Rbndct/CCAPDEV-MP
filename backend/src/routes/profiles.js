@@ -5,6 +5,16 @@ const Reservation = require('../models/Reservation');
 const { verifyToken } = require('../middleware/auth');
 const bcrypt = require('bcryptjs');
 
+// GET /api/profiles/ — all public profiles (protected)
+router.get('/', verifyToken, async (req, res) => {
+    try {
+        const users = await User.find({}).select('full_name avatar_url bio role').sort({ full_name: 1 });
+        res.json({ data: users });
+    } catch (err) {
+        res.status(500).json({ message: 'Error fetching profiles.', error: err.message });
+    }
+});
+
 // GET /api/profiles/me  — own profile (protected)
 router.get('/me', verifyToken, async (req, res) => {
     try {

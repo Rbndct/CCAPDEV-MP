@@ -140,17 +140,17 @@ router.get('/facilities/:id/schedule', async (req, res) => {
     }
 });
 
-// GET /api/reservations/facilities/:id/availability  — 7-day availability (public)
+// GET /api/reservations/facilities/:id/availability  — availability (public)
 router.get('/facilities/:id/availability', async (req, res) => {
     try {
         const today = new Date();
         today.setHours(0, 0, 0, 0);
-        const nextWeek = new Date(today);
-        nextWeek.setDate(today.getDate() + 7);
+        const endDate = new Date(today);
+        endDate.setDate(today.getDate() + 30); // Fetch 30 days ahead
 
         const slots = await Reservation.find({
             facility: req.params.id,
-            date: { $gte: today, $lt: nextWeek },
+            date: { $gte: today, $lt: endDate },
             status: { $in: ['reserved', 'blocked'] },
         })
             .populate('user', 'full_name')

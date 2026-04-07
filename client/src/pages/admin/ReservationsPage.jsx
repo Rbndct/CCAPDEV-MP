@@ -12,6 +12,9 @@ export function ReservationsPage() {
     const [editingReservation, setEditingReservation] = useState(null);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
+    const [showMoreFilters, setShowMoreFilters] = useState(false);
+    const [facilityFilter, setFacilityFilter] = useState('all');
+    const [dateFilter, setDateFilter] = useState('');
 
     // Helper function to check if booking is older than 2 days
     const isOlderThanTwoDays = (dateString) => {
@@ -38,7 +41,7 @@ export function ReservationsPage() {
                     facility: r.facility?.facility_name || r.facility?.name || 'Unknown',
                     date: new Date(r.date).toISOString().split('T')[0],
                     time: `${r.start_time} - ${r.end_time}`,
-                    status: r.status,
+                    status: r.status === 'reserved' ? 'confirmed' : r.status,
                     payment: r.payment_status || 'paid',
                     archived: false
                 }));
@@ -125,7 +128,9 @@ export function ReservationsPage() {
         const matchesSearch = res.user.toLowerCase().includes(searchTerm.toLowerCase()) ||
             res.id.toLowerCase().includes(searchTerm.toLowerCase());
         const matchesArchiveFilter = showArchived ? res.archived : !res.archived;
-        return matchesStatus && matchesSearch && matchesArchiveFilter;
+        const matchesFacility = facilityFilter === 'all' || res.facility === facilityFilter;
+        const matchesDate = !dateFilter || res.date === dateFilter;
+        return matchesStatus && matchesSearch && matchesArchiveFilter && matchesFacility && matchesDate;
     });
 
     // Count bookings that can be archived
@@ -152,8 +157,9 @@ export function ReservationsPage() {
                 </div>
                 <div className="flex gap-2 flex-wrap">
                     <Button variant={filterStatus === 'all' ? 'primary' : 'outline'} onClick={() => setFilterStatus('all')}>All</Button>
-                    <Button variant={filterStatus === 'pending' ? 'primary' : 'outline'} onClick={() => setFilterStatus('pending')}>Pending</Button>
                     <Button variant={filterStatus === 'confirmed' ? 'primary' : 'outline'} onClick={() => setFilterStatus('confirmed')}>Confirmed</Button>
+                    <Button variant={filterStatus === 'cancelled' ? 'primary' : 'outline'} onClick={() => setFilterStatus('cancelled')}>Cancelled</Button>
+                    <Button variant={filterStatus === 'no-show' ? 'primary' : 'outline'} onClick={() => setFilterStatus('no-show')}>No-show</Button>
                     <Button
                         variant="outline"
                         className="gap-2 border-blue-500/50 text-blue-500 hover:bg-blue-500/10"
@@ -186,10 +192,44 @@ export function ReservationsPage() {
                             onChange={(e) => setSearchTerm(e.target.value)}
                         />
                     </div>
-                    <Button variant="outline" className="gap-2">
+                    <Button variant="outline" className="gap-2" onClick={() => setShowMoreFilters(!showMoreFilters)}>
                         <Filter className="w-4 h-4" /> More Filters
                     </Button>
                 </div>
+
+                {showMoreFilters && (
+                    <div className="p-4 border-b border-[var(--border-subtle)] bg-[var(--bg-secondary)]/50">
+                        <div className="flex flex-col md:flex-row gap-4">
+                            <div className="flex-1">
+                                <label className="block text-sm font-medium mb-1">Facility</label>
+                                <select
+                                    value={facilityFilter}
+                                    onChange={(e) => setFacilityFilter(e.target.value)}
+                                    className="w-full p-2 bg-[var(--bg-primary)] border border-[var(--border-subtle)] rounded focus:outline-none focus:border-[var(--accent-green)]"
+                                >
+                                    <option value="all">All Facilities</option>
+                                    {[...new Set(reservations.map(r => r.facility))].map(facility => (
+                                        <option key={facility} value={facility}>{facility}</option>
+                                    ))}
+                                </select>
+                            </div>
+                            <div className="flex-1">
+                                <label className="block text-sm font-medium mb-1">Date</label>
+                                <input
+                                    type="date"
+                                    value={dateFilter}
+                                    onChange={(e) => setDateFilter(e.target.value)}
+                                    className="w-full p-2 bg-[var(--bg-primary)] border border-[var(--border-subtle)] rounded focus:outline-none focus:border-[var(--accent-green)]"
+                                />
+                            </div>
+                            <div className="flex items-end">
+                                <Button variant="outline" onClick={() => { setFacilityFilter('all'); setDateFilter(''); }}>
+                                    Clear Filters
+                                </Button>
+                            </div>
+                        </div>
+                    </div>
+                )}
 
                 {/* Table */}
                 <div className="overflow-x-auto">

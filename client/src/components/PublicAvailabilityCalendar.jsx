@@ -59,7 +59,10 @@ export const PublicAvailabilityCalendar = ({ facility, onSlotSelect, isBooking, 
                 statuses.set(`${dateStr}|${ALL_TIME_SLOTS[i]}`, booking.status);
               }
             } else if (startIdx !== -1) {
-               statuses.set(`${dateStr}|${booking.start_time}`, booking.status);
+              // Mark slots from startIdx until end_time
+              for (let i = startIdx; i < ALL_TIME_SLOTS.length && ALL_TIME_SLOTS[i] < booking.end_time; i++) {
+                statuses.set(`${dateStr}|${ALL_TIME_SLOTS[i]}`, booking.status);
+              }
             }
           });
           
