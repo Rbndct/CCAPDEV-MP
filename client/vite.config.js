@@ -6,7 +6,9 @@ import { fileURLToPath } from 'url'
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
-// https://vite.dev/config/
+// 👇 Detect if running inside Docker
+const isDocker = process.env.DOCKER === "true"
+
 export default defineConfig({
   plugins: [react()],
   resolve: {
@@ -15,10 +17,12 @@ export default defineConfig({
     },
   },
   server: {
-    host: true, // Listen on all local IPs
+    host: true,
     proxy: {
       '/api': {
-        target: 'http://127.0.0.1:5000',
+        target: isDocker
+          ? 'http://backend:5000'   // Docker
+          : 'http://127.0.0.1:5000', // Local
         changeOrigin: true,
       }
     }

@@ -158,19 +158,6 @@ export const ProfilePage = () => {
               </div>
             </div>
           </Card>
-
-          <Card variant="glass" className="p-0 overflow-hidden">
-            <div className="p-4 border-b border-[var(--border-subtle)]">
-              <h3 className="font-bold flex items-center gap-2">
-                <Shield className="w-4 h-4 text-[var(--accent-green)]" />
-                Account Security
-              </h3>
-            </div>
-            <div className="p-4 space-y-4">
-
-              <Button variant="outline" className="w-full text-xs">Change Password</Button>
-            </div>
-          </Card>
         </div>
 
         {/* Right Column - Details & Settings */}

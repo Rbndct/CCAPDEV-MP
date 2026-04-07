@@ -475,7 +475,7 @@ export const Footer = () => {
   return (
     <footer className="bg-[var(--bg-primary)] border-t border-[var(--border-subtle)] pt-16 pb-8 px-6">
       <div className="max-w-7xl mx-auto">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-12 mb-16">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-12 mb-16 items-start">
           {/* Column 1: Brand */}
           <div className="space-y-6">
             <div className="flex items-center gap-3">
@@ -489,49 +489,19 @@ export const Footer = () => {
             </p>
           </div>
 
-          {/* Column 2: Quick Links */}
-          <div>
-            <h4 className="font-bold text-[var(--text-primary)] mb-6">Explore</h4>
-            <ul className="space-y-4">
-              <li>
-                <Link to="/facilities" className="text-[var(--text-muted)] hover:text-[var(--accent-green)] transition-colors text-sm">
-                  Find a Court
-                </Link>
-              </li>
-              <li>
-                <Link to="/about" className="text-[var(--text-muted)] hover:text-[var(--accent-green)] transition-colors text-sm">
-                  About Us
-                </Link>
-              </li>
-              <li>
-                <Link to="/contact" className="text-[var(--text-muted)] hover:text-[var(--accent-green)] transition-colors text-sm">
-                  Contact Support
-                </Link>
-              </li>
-
-              {useAuth().isLoggedIn && (
-                <li>
-                  <Link to="/dashboard" className="text-[var(--text-muted)] hover:text-[var(--accent-green)] transition-colors text-sm">
-                    My Dashboard
-                  </Link>
-                </li>
-              )}
-            </ul>
-          </div>
-
           {/* Column 3: Contact */}
-          <div>
+          <div className="space-y-4 text-center">
             <h4 className="font-bold text-[var(--text-primary)] mb-6">Contact</h4>
             <ul className="space-y-4">
-              <li className="flex items-start gap-3">
-                <div className="w-5 h-5 flex items-center justify-center text-[var(--accent-green)] flex-shrink-0 mt-0.5">
+              <li className="flex items-center justify-center gap-3 mx-auto max-w-[420px]">
+                <div className="w-5 h-5 flex items-center justify-center text-[var(--accent-green)] flex-shrink-0">
                   <MapPin className="w-4 h-4" />
                 </div>
-                <span className="text-[var(--text-muted)] text-sm text-left">
+                <span className="text-[var(--text-muted)] text-sm">
                   123 Sports Ave, <br />Metro Manila, Philippines
                 </span>
               </li>
-              <li className="flex items-center gap-3">
+              <li className="flex items-center justify-center gap-3 mx-auto">
                 <div className="w-5 h-5 flex items-center justify-center text-[var(--accent-green)]">
                   <Mail className="w-4 h-4" />
                 </div>
@@ -539,7 +509,7 @@ export const Footer = () => {
                   hello@sportsplex.com
                 </a>
               </li>
-              <li className="flex items-center gap-3">
+              <li className="flex items-center justify-center gap-3 mx-auto">
                 <div className="w-5 h-5 flex items-center justify-center text-[var(--accent-green)]">
                   <Phone className="w-4 h-4" />
                 </div>

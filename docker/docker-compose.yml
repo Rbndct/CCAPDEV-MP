@@ -14,6 +14,7 @@ services:
     environment:
       - NODE_ENV=development
       - CHOKIDAR_USEPOLLING=true
+      - DOCKER=true
     stdin_open: true
     tty: true
     depends_on:
