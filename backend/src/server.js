@@ -18,7 +18,7 @@ const PORT = process.env.PORT || 5000;
 
 // Middleware
 const allowedOrigins = [
-  'http://localhost:5173', 'http://127.0.0.1:5173', 
+  'http://localhost:5173', 'http://127.0.0.1:5173',
   'http://localhost:5174', 'http://127.0.0.1:5174'
 ];
 
@@ -27,8 +27,13 @@ if (process.env.FRONTEND_PORT) {
   allowedOrigins.push(`http://127.0.0.1:${process.env.FRONTEND_PORT}`);
 }
 
+// Allow production client URL (e.g. Render deployed URL)
+if (process.env.CLIENT_URL) {
+  allowedOrigins.push(process.env.CLIENT_URL);
+}
+
 app.use(cors({
-  origin: allowedOrigins,
+  origin: process.env.NODE_ENV === 'production' ? false : allowedOrigins,
   credentials: true
 }));
 app.use(express.json());
@@ -75,6 +80,20 @@ app.get('/api/health', (req, res) => {
     database: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected'
   });
 });
+
+// Production: Serve frontend
+if (process.env.NODE_ENV === 'production') {
+  const distPath = path.join(__dirname, '../../client/dist');
+  app.use(express.static(distPath));
+  
+  // Catch-all to serve index.html for React Router
+  app.get('*', (req, res) => {
+    // Only catch if it doesn't look like an API request
+    if (!req.path.startsWith('/api')) {
+      res.sendFile(path.join(distPath, 'index.html'));
+    }
+  });
+}
 
 app.listen(PORT, () => {
   console.log(`SportsPlex Server running on port ${PORT}`);

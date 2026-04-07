@@ -1,0 +1,16 @@
+# Render Deployment Configuration
+# This file tells Render how to build and deploy your app.
+
+services:
+  - type: web
+    name: sportsplex
+    env: node
+    buildCommand: npm run build
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: MONGODB_URI
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
