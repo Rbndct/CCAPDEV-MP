@@ -1,6 +1,6 @@
 import { Navbar, Footer } from '../components/LandingPage';
-import { Mail, Phone, MapPin, Send, Facebook } from 'lucide-react';
-import { Card, Button, Input } from '../components/ui';
+import { Mail, Phone, MapPin, Facebook } from 'lucide-react';
+import { Card } from '../components/ui';
 import kirstenImg from '../assets/images/kirs.jpg';
 import rbeeImg from '../assets/images/rbeeImg.jpg';
 import aaronImg from '../assets/images/aaronImg.jpg';
@@ -98,33 +98,11 @@ export const ContactPage = () => {
                 </div>
             </section>
 
-            {/* General Contact Form & Info */}
+            {/* General Contact Info */}
             <section className="py-16 px-6 bg-[var(--bg-secondary)]">
-                <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-16">
-                    {/* Contact Form */}
-                    <div>
-                        <h2 className="text-3xl font-bold mb-8">Send us a Message</h2>
-                        <form className="space-y-6">
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <Input label="First Name" placeholder="John" />
-                                <Input label="Last Name" placeholder="Doe" />
-                            </div>
-                            <Input type="email" label="Email" placeholder="john@example.com" />
-                            <div className="flex flex-col gap-2">
-                                <label className="text-sm font-medium text-[var(--text-secondary)]">Message</label>
-                                <textarea
-                                    className="w-full bg-[var(--bg-tertiary)] border border-[var(--border-subtle)] rounded-[var(--radius-md)] px-4 py-3 text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent-green)] focus:ring-2 focus:ring-[rgba(0,255,136,0.2)] transition-all min-h-[150px] resize-y"
-                                    placeholder="How can we help you?"
-                                ></textarea>
-                            </div>
-                            <Button variant="primary" size="lg" className="w-full" icon={<Send className="w-5 h-5" />}>
-                                Send Message
-                            </Button>
-                        </form>
-                    </div>
-
+                <div className="max-w-4xl mx-auto">
                     {/* General Info */}
-                    <div className="flex flex-col justify-center">
+                    <div className="text-center">
                         <h2 className="text-3xl font-bold mb-8">Visit Us</h2>
                         <Card variant="glass" className="p-8">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 h-full">

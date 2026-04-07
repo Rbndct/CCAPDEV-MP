@@ -121,7 +121,7 @@ export const SettingsPage = () => {
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 pb-6 border-b border-[var(--border-subtle)]">
                     <div>
                         <h3 className="font-semibold">Password</h3>
-                        <p className="text-sm text-[var(--text-secondary)]">Last changed 3 months ago</p>
+                        <p className="text-sm text-[var(--text-secondary)]">Keep your account secure with a strong password</p>
                     </div>
                     <Button variant="outline" size="sm" onClick={() => setIsPasswordOpen(v => !v)}>
                       {isPasswordOpen ? 'Close' : 'Change Password'}
@@ -203,7 +203,6 @@ export const SettingsPage = () => {
             </div>
             
             <div className="flex flex-col md:flex-row gap-4">
-                <Button variant="outline" className="border-red-500/50 text-red-500 hover:bg-red-500/10">Download My Data</Button>
                 <Button variant="ghost" className="text-red-500 hover:bg-red-500/10">Delete Account</Button>
             </div>
         </Card>

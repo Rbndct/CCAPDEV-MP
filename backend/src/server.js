@@ -38,6 +38,7 @@ app.use(cookieParser());
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
 // Database connection
+console.log("MONGODB_URI:", process.env.MONGODB_URI);
 mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/sportsplex', {
   useNewUrlParser: true,
   useUnifiedTopology: true,
