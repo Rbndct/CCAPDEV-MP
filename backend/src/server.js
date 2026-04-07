@@ -27,10 +27,6 @@ if (process.env.FRONTEND_PORT) {
   allowedOrigins.push(`http://127.0.0.1:${process.env.FRONTEND_PORT}`);
 }
 
-if (process.env.FRONTEND_URL) {
-  allowedOrigins.push(process.env.FRONTEND_URL);
-}
-
 app.use(cors({
   origin: allowedOrigins,
   credentials: true
