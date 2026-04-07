@@ -1,42 +1,43 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Modal } from '../Modal';
 import { Badge, Button } from '../ui';
 import { Mail, Phone, Clock, Calendar, CheckCircle2 } from 'lucide-react';
+import { useAuth, API_BASE_URL } from '../../contexts/AuthContext';
 
 export const ViewNoShowsModal = ({ isOpen, onClose }) => {
-    // Mock data for no-shows
-    const [noShows, setNoShows] = useState([
-        {
-            id: 'R-1003',
-            user: 'Mike Ross',
-            email: 'mike@example.com',
-            phone: '0917-xxx-xxxx',
-            facility: 'Badminton Hall',
-            date: '2026-02-10',
-            time: '09:00 - 10:00',
-            resolved: false
-        },
-        {
-            id: 'R-1008',
-            user: 'Harvey Specter',
-            email: 'harvey@example.com',
-            phone: '0922-xxx-xxxx',
-            facility: 'Basketball Court A',
-            date: '2026-02-11',
-            time: '18:00 - 20:00',
-            resolved: false
-        },
-        {
-            id: 'R-1009',
-            user: 'Louis Litt',
-            email: 'louis@example.com',
-            phone: '0933-xxx-xxxx',
-            facility: 'Tennis Court 1',
-            date: '2026-02-12',
-            time: '10:00 - 11:00',
-            resolved: true
+    const { token } = useAuth();
+    const [noShows, setNoShows] = useState([]);
+
+    useEffect(() => {
+        if (isOpen) {
+            fetchNoShows();
         }
-    ]);
+    }, [isOpen]);
+
+    const fetchNoShows = async () => {
+        try {
+            const response = await fetch(`${API_BASE_URL}/admin/reservations`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+            const data = await response.json();
+
+            const noShowData = data.filter(r => r.status === 'no-show');
+            setNoShows(noShowData.map(res => ({
+                id: res._id,
+                user: res.walk_in_name || (res.user ? res.user.full_name : 'N/A'),
+                email: res.user ? res.user.email : 'N/A',
+                phone: res.user && res.user.phone ? res.user.phone : 'N/A',
+                facility: res.facility ? res.facility.name : 'N/A',
+                date: res.date ? new Date(res.date).toISOString().split('T')[0] : 'N/A',
+                time: `${res.start_time} - ${res.end_time}`,
+                resolved: false
+            })));
+        } catch (error) {
+            console.error('Error fetching no-shows:', error);
+        }
+    };
 
     const handleResolve = (id) => {
         setNoShows(noShows.map(item =>
@@ -56,8 +57,8 @@ export const ViewNoShowsModal = ({ isOpen, onClose }) => {
                         <div
                             key={item.id}
                             className={`p-4 rounded-xl border transition-colors ${item.resolved
-                                    ? 'bg-[var(--bg-secondary)]/50 border-[var(--border-subtle)] opacity-75'
-                                    : 'bg-red-500/5 border-red-500/20'
+                                ? 'bg-[var(--bg-secondary)]/50 border-[var(--border-subtle)] opacity-75'
+                                : 'bg-red-500/5 border-red-500/20'
                                 }`}
                         >
                             <div className="flex flex-col md:flex-row justify-between gap-4">
